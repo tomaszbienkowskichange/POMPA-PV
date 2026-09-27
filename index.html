@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monitor pompy ciepła</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#10151a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pompa+PV">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#10151a;--panel:#171f26;--panel2:#1d2731;--line:#2a343e;--text:#e7edf2;--muted:#8b98a5;--amber:#e0904f;--cyan:#49b4cf;--danger:#d16a63;--ok:#5fb87a;--pv:#e8c547;color-scheme:dark;box-sizing:border-box}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.4;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+header{padding:18px 16px 6px;max-width:1000px;margin:0 auto}
+h1{font-size:1.25rem;margin:0 0 2px;font-weight:700}
+header p{margin:0;color:var(--muted);font-size:.85rem}
+.storebar{max-width:1000px;margin:10px auto 0;padding:0 16px}
+.storebar .inner{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.8rem}
+.storebar .stat-dot{width:8px;height:8px;border-radius:50%;background:var(--danger)}
+.storebar .stat-dot.ok{background:var(--ok)}
+.storebar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.76rem;cursor:pointer;font-family:inherit}
+nav{display:flex;gap:6px;max-width:1000px;margin:12px auto 0;padding:0 16px;flex-wrap:wrap}
+nav button{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:8px;font-size:.83rem;cursor:pointer;font-family:inherit}
+nav button.on{color:var(--text);border-color:#3a4652;background:var(--panel2)}
+main{max-width:1000px;margin:0 auto;padding:14px 16px 60px}
+.tab{display:none} .tab.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.card h2{font-size:.95rem;margin:0 0 12px;font-weight:700;display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.dot.co{background:var(--amber)} .dot.cwu{background:var(--cyan)} .dot.pv{background:var(--pv)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:4px}
+input,select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:8px 9px;border-radius:6px;font-size:.86rem;font-family:'IBM Plex Mono',monospace}
+input[type=datetime-local]{min-width:205px}
+.full{grid-column:1/-1}
+.calcrow{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.calcbox{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;flex:1;min-width:150px}
+.calcbox .calcval{font-family:'IBM Plex Mono',monospace;font-size:1.25rem;font-weight:700}
+#coForm .calcval{color:var(--amber)} #cwuForm .calcval{color:var(--cyan)}
+.calcbox .calclbl{font-size:.72rem;color:var(--muted);margin-top:2px}
+button.submit{margin-top:12px;background:var(--amber);color:#12100c;border:none;padding:10px 18px;border-radius:7px;font-weight:700;cursor:pointer;font-size:.86rem}
+#cwuForm button.submit{background:var(--cyan)}
+.typeToggle{display:flex;gap:8px;margin-bottom:14px}
+.typeToggle button{flex:1;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700}
+.typeToggle button.on.co{color:var(--amber);border-color:var(--amber)}
+.typeToggle button.on.cwu{color:var(--cyan);border-color:var(--cyan)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat-co{border-left:3px solid var(--amber)} .stat-cwu{border-left:3px solid var(--cyan)} .stat-pv{border-left:3px solid var(--pv)}
+.stat .v{font-size:1.4rem;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.stat .l{font-size:.7rem;color:var(--muted);margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:600;font-size:.68rem;text-transform:uppercase}
+td.num{font-family:'IBM Plex Mono',monospace}
+td.params{white-space:normal;min-width:170px}
+tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
+.tbl-wrap{overflow-x:auto}
+.pill{padding:2px 7px;border-radius:5px;font-size:.7rem;font-family:'IBM Plex Mono',monospace}
+.pill.co{background:#3a2a1a;color:var(--amber)} .pill.cwu{background:#173038;color:var(--cyan)}
+.chip{display:flex;gap:6px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;margin:0 0 5px 0;font-size:.76rem;width:fit-content}
+.chip .lbl{color:var(--muted)}
+.btn2{background:none;border:1px solid var(--line);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:.72rem;margin-right:4px}
+.del{color:var(--danger)} .edit{color:var(--ok)}
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.toolbar button,.toolbar select,.toolbar input{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:7px 11px;border-radius:6px;font-size:.8rem;cursor:pointer;font-family:inherit;width:auto}
+.toolbar label{font-size:.72rem;color:var(--muted);margin:0}
+.legend{display:flex;gap:14px;font-size:.75rem;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend b{color:var(--text)}
+.timeline{position:relative;height:16px;background:var(--panel2);border-radius:4px;margin-top:10px}
+.seg{position:absolute;top:0;bottom:0;border-radius:2px;min-width:2px}
+.ticks{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-top:2px}
+.empty{color:var(--muted);font-size:.85rem;padding:10px 0}
+.note{color:var(--muted);font-size:.78rem;line-height:1.4}
+.legend2{font-size:.78rem;margin-top:8px}
+.legend2 div{margin:2px 0}
+.dotc{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.panelGrid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
+@media(min-width:760px){.panelGrid{grid-template-columns:1fr 1fr}}
+.panel{border-radius:10px;padding:16px;background:var(--panel);border:1px solid var(--line)}
+.panel-co{border-left:4px solid var(--amber)} .panel-cwu{border-left:4px solid var(--cyan)}
+.panel h3{margin:0 0 12px;font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.miniStats{display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap}
+.miniStats .big{font-size:1.35rem;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.miniStats .lbl{font-size:.68rem;color:var(--muted);margin-top:1px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Monitor pompy ciepła</h1>
+  <p>Rejestr cykli CO i CWU, produkcja PV, faktury, koszty i statystyki — dane zapisywane automatycznie na tym urządzeniu, z opcją zapisu na dysku.</p>
+</header>
+<div class="storebar"><div class="inner" id="storebar">
+  <span class="stat-dot" id="storeDot"></span>
+  <span id="storeText">Plik danych: niepołączony</span>
+  <span style="flex:1"></span>
+  <button onclick="connectFile(false)">Otwórz plik .json</button>
+  <button onclick="connectFile(true)">Utwórz nowy plik</button>
+  <button onclick="exportJSON()">Zapisz kopię teraz</button>
+</div></div>
+<nav>
+  <button class="on" data-tab="dashboard">Przegląd</button>
+  <button data-tab="dodaj">+ Dodaj</button>
+  <button data-tab="dzien">Dzień</button>
+  <button data-tab="dane">Dane</button>
+  <button data-tab="raporty">Raporty</button>
+  <button data-tab="pv">☀️ PV</button>
+  <button data-tab="faktury">🧾 Faktury</button>
+  <button data-tab="ustawienia">Ustawienia</button>
+</nav>
+<main>
+
+<div class="tab on" id="dashboard">
+  <div class="card">
+    <h2>Udział CO / CWU — cały zebrany okres</h2>
+    <div id="dashDonut"></div>
+    <div class="miniStats" id="dashTotals" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)"></div>
+  </div>
+  <div class="toolbar"><label>Zakres trendu miesięcznego</label>
+    <select id="dashRange" onchange="renderDashboard()"><option value="3">Ostatnie 3 mies.</option><option value="6" selected>Ostatnie 6 mies.</option><option value="12">Ostatnie 12 mies.</option></select>
+  </div>
+  <div class="panelGrid">
+    <div class="panel panel-co"><h3>🔥 CO — ogrzewanie domu</h3><div id="dashCoWrap"></div></div>
+    <div class="panel panel-cwu"><h3>💧 CWU — ciepła woda</h3><div id="dashCwuWrap"></div></div>
+  </div>
+  <div class="card panel-pv" style="border-left:4px solid var(--pv)">
+    <h2><span class="dot pv"></span>☀️ Bilans energetyczny: PV a pompa ciepła</h2>
+    <div id="dashBalance"></div>
+  </div>
+  <div id="dashLatestDay"></div>
+</div>
+
+<div class="tab" id="dodaj">
+  <div id="cancelEditBar" style="display:none;margin-bottom:10px;align-items:center;gap:8px">
+    <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji wpisu</span>
+    <button onclick="cancelEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
+  </div>
+  <div class="typeToggle">
+    <button class="on co" id="btnCO" onclick="setType('CO')">Cykl CO (ogrzewanie domu)</button>
+    <button class="cwu" id="btnCWU" onclick="setType('CWU')">Cykl CWU (ciepła woda)</button>
+  </div>
+  <div class="card" id="coForm">
+    <h2><span class="dot co"></span>Nowy cykl ogrzewania domu</h2>
+    <div id="coHint" style="font-size:.78rem;color:var(--muted);margin-bottom:10px"></div>
+    <div class="grid">
+      <div><label>Start (data i godz.)</label><input type="datetime-local" id="co_start"></div>
+      <div><label>Koniec (data i godz.)</label><input type="datetime-local" id="co_end"></div>
+      <div><label>Liczba grzejników</label><input type="number" id="co_rad" step="1"></div>
+      <div><label>Temp. zewn. start (°C)</label><input type="number" id="co_out1" step="0.1"></div>
+      <div><label>Temp. zewn. koniec (°C)</label><input type="number" id="co_out2" step="0.1"></div>
+      <div><label>Nachylenie krzywej</label><input type="number" id="co_slope" step="0.1"></div>
+      <div><label>Przesunięcie krzywej (°C)</label><input type="number" id="co_offset" step="0.1"></div>
+      <div><label>Zużycie z licznika (kWh)</label><input type="number" id="co_kwh" step="0.01"></div>
+      <div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="co_price" step="0.01" min="0"></div>
+      <div class="full"><label>Notatka</label><input type="text" id="co_note"></div>
+    </div>
+    <div class="calcrow">
+      <div class="calcbox"><div class="calcval" id="co_target1">—</div><div class="calclbl">Cel przy temp. startu</div></div>
+      <div class="calcbox"><div class="calcval" id="co_target2">—</div><div class="calclbl">Cel przy temp. końca</div></div>
+      <div class="calcbox"><div class="calcval" id="co_dur">—</div><div class="calclbl">Czas trwania cyklu</div></div>
+    </div>
+    <button class="submit" id="coSubmitBtn" onclick="addCO()">Zapisz cykl CO</button>
+  </div>
+  <div class="card" id="cwuForm" style="display:none">
+    <h2><span class="dot cwu"></span>Nowy cykl podgrzewu CWU</h2>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Ten cykl automatycznie liczy się jako przerwa w ogrzewaniu domu tego dnia — zobacz zakładkę „Dzień”.</div>
+    <div class="grid">
+      <div><label>Start (data i godz.)</label><input type="datetime-local" id="w_start"></div>
+      <div><label>Koniec (data i godz.)</label><input type="datetime-local" id="w_end"></div>
+      <div><label>Temp. wody pocz. (°C)</label><input type="number" id="w_t1" step="0.1"></div>
+      <div><label>Temp. wody docel. (°C)</label><input type="number" id="w_t2" step="0.1"></div>
+      <div><label>Temp. zewnętrzna (°C)</label><input type="number" id="w_out" step="0.1"></div>
+      <div><label>Zużycie z licznika (kWh)</label><input type="number" id="w_kwh" step="0.01"></div>
+      <div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="w_price" step="0.01" min="0"></div>
+      <div class="full"><label>Notatka</label><input type="text" id="w_note"></div>
+    </div>
+    <div class="calcrow">
+      <div class="calcbox"><div class="calcval" id="w_delta">—</div><div class="calclbl">Przyrost temperatury wody</div></div>
+      <div class="calcbox"><div class="calcval" id="w_dur">—</div><div class="calclbl">Czas trwania cyklu</div></div>
+    </div>
+    <button class="submit" id="cwuSubmitBtn" onclick="addCWU()">Zapisz cykl CWU</button>
+  </div>
+</div>
+
+<div class="tab" id="dzien">
+  <div class="toolbar">
+    <label>Typ</label><select id="dzienType" onchange="renderDaily()"><option value="all">CO + CWU</option><option value="CO">Tylko CO</option><option value="CWU">Tylko CWU</option></select>
+    <label>Od</label><input type="date" id="dzienFrom" onchange="renderDaily()">
+    <label>Do</label><input type="date" id="dzienTo" onchange="renderDaily()">
+  </div>
+  <div id="dailyList"></div>
+</div>
+
+<div class="tab" id="dane">
+  <div class="toolbar">
+    <label>Typ</label><select id="filterType" onchange="renderTable()">
+      <option value="all">Wszystkie wpisy</option><option value="CO">Tylko CO</option><option value="CWU">Tylko CWU</option>
+    </select>
+    <label>Od</label><input type="date" id="danFrom" onchange="renderTable()">
+    <label>Do</label><input type="date" id="danTo" onchange="renderTable()">
+    <button onclick="exportXLSX()">Eksportuj XLS</button>
+  </div>
+  <div class="card tbl-wrap">
+    <table><thead><tr><th>Data</th><th>Typ</th><th>Start → Koniec</th><th>Czas</th><th>kWh</th><th>Koszt</th><th>Cel (°C)</th><th>Zewn. (°C)</th><th>Woda (°C)</th><th>Grzej.</th><th>Notatka</th><th></th></tr></thead>
+    <tbody id="tbody"></tbody><tfoot id="tblFoot"></tfoot></table>
+    <div id="emptyMsg" class="empty" style="display:none">Brak wpisów.</div>
+  </div>
+  <div class="card" style="border-left:4px solid var(--pv)">
+    <h2><span class="dot pv"></span>☀️ Produkcja PV w tym samym zakresie dat (Od/Do powyżej)</h2>
+    <div id="danePvWrap"></div>
+  </div>
+</div>
+
+<div class="tab" id="raporty">
+  <div class="toolbar">
+    <label>Grupuj wg</label><select id="repGroupBy" onchange="renderReports()">
+      <option value="period">Okresu czasu</option><option value="temp">Temperatury zewnętrznej</option>
+    </select>
+    <span id="granWrap"><label>Granulacja</label><select id="gran" onchange="renderReports()">
+      <option value="day">Dziennie</option><option value="week">Tygodniowo</option>
+      <option value="month" selected>Miesięcznie</option><option value="quarter">Kwartalnie</option>
+      <option value="half">Półrocznie</option><option value="year">Rocznie (wielolecie)</option>
+    </select></span>
+    <label>Metryka</label><select id="repMetric" onchange="renderReports()">
+      <option value="kwh">Zużycie (kWh)</option><option value="koszt">Koszt (zł)</option>
+      <option value="czas">Czas trwania (h)</option><option value="cykle">Liczba cykli</option>
+    </select>
+    <label>Wykres</label><select id="repChartType" onchange="renderReports()">
+      <option value="bar">Słupkowy</option><option value="line">Liniowy</option>
+    </select>
+  </div>
+  <div class="card"><h2>Udział CO / CWU — cały zebrany okres (kWh)</h2><div id="splitChartWrap"></div></div>
+  <div class="panelGrid">
+    <div class="panel panel-co"><h3>🔥 CO — ogrzewanie domu</h3><div id="panelCoWrap"></div></div>
+    <div class="panel panel-cwu"><h3>💧 CWU — ciepła woda</h3><div id="panelCwuWrap"></div></div>
+  </div>
+  <div class="card" style="border-left:4px solid var(--pv)"><h3 style="margin:0 0 12px;font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px"><span class="dot pv"></span>☀️ PV — produkcja (ta sama granulacja co powyżej)</h3><div id="panelPvWrap"></div></div>
+  <div class="card tbl-wrap"><h2 style="margin-bottom:8px">Zestawienie szczegółowe</h2><table><thead><tr id="repThead"></tr></thead><tbody id="repTbody"></tbody></table>
+    <p class="note" id="repPvNote" style="margin-top:8px;display:none">Kolumna PV pojawia się tylko przy grupowaniu „wg okresu czasu” i metryce kWh/koszt (zł) — produkcja PV nie jest powiązana z temperaturą zewnętrzną ani z „cyklami”/„czasem trwania” pompy.</p>
+  </div>
+</div>
+
+<div class="tab" id="pv">
+  <div class="card">
+    <h2><span class="dot pv"></span>Ustawienia instalacji PV</h2>
+    <div class="grid">
+      <div><label>Moc instalacji (kWp)</label><input type="number" id="pvPowerInput" step="0.1" min="0" onchange="updatePvSettings()"></div>
+      <div><label>Sposób rozliczania nadwyżek</label>
+        <select id="pvModeInput" onchange="updatePvSettings()">
+          <option value="netbilling">Net-billing (wartość rynkowa, zł) — nowe zasady</option>
+          <option value="opusty">Opusty / net-metering (ilościowo, stare zasady)</option>
+        </select>
+      </div>
+      <div id="pvOpustWrap"><label>Współczynnik opustu</label><input type="number" id="pvOpustInput" step="0.01" min="0" max="1" onchange="updatePvSettings()"></div>
+      <div><label id="pvPriceLabel">Domyślna cena energii oddanej do sieci (zł/kWh)</label><input type="number" id="pvPriceInput" step="0.001" min="0" onchange="updatePvSettings()"></div>
+    </div>
+    <p class="note" id="pvModeNote" style="margin-top:10px"></p>
+  </div>
+
+  <div class="stats" id="pvStats"></div>
+
+  <div class="card">
+    <div class="toolbar">
+      <label>Granulacja</label><select id="pvGran" onchange="renderPv()">
+        <option value="day">Dziennie</option><option value="week">Tygodniowo</option>
+        <option value="month" selected>Miesięcznie</option><option value="quarter">Kwartalnie</option>
+        <option value="half">Półrocznie</option><option value="year">Rocznie</option>
+      </select>
+      <label>Metryka</label><select id="pvMetric" onchange="renderPv()">
+        <option value="kwh">Produkcja (kWh)</option><option value="wartosc">Wartość (zł)</option>
+      </select>
+      <label>Wykres</label><select id="pvChartType" onchange="renderPv()">
+        <option value="bar">Słupkowy</option><option value="line">Liniowy</option>
+      </select>
+    </div>
+    <h2 style="margin-bottom:8px">Trend produkcji</h2>
+    <div id="pvChartWrap"></div>
+  </div>
+
+  <div class="card">
+    <div id="pvCancelBar" style="display:none;margin-bottom:10px;align-items:center;gap:8px">
+      <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji wpisu PV</span>
+      <button onclick="cancelPvEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
+    </div>
+    <h2>Dodaj wpis produkcji</h2>
+    <div class="grid">
+      <div><label>Data</label><input type="date" id="pv_date"></div>
+      <div><label>Produkcja (kWh)</label><input type="number" id="pv_kwh" step="0.01" min="0"></div>
+      <div><label>Cena zastosowana w tym wpisie (zł/kWh)</label><input type="number" id="pv_price" step="0.001" min="0"></div>
+      <div class="full"><label>Notatka</label><input type="text" id="pv_note"></div>
+    </div>
+    <p class="note" style="margin-top:6px">Pole ceny podpowiada domyślną stawkę z ustawień powyżej — zmień ją tutaj, jeśli akurat tego dnia cena była inna. Zapisuje się wraz z wpisem (razem ze sposobem rozliczania obowiązującym w tym momencie), więc historia zachowuje prawdziwe dane z danego dnia, nawet gdy później zmienisz ustawienia.</p>
+    <button class="submit" id="pvSubmitBtn" style="background:var(--pv);color:#231d05" onclick="addPv()">Zapisz wpis PV</button>
+  </div>
+
+  <div class="card tbl-wrap">
+    <h2 style="margin-bottom:8px">Historia produkcji PV</h2>
+    <table><thead><tr><th>Data</th><th>kWh</th><th>kWh do rozliczenia</th><th>Cena (zł/kWh)</th><th>Wartość</th><th>Notatka</th><th></th></tr></thead>
+    <tbody id="pvTbody"></tbody><tfoot id="pvTblFoot"></tfoot></table>
+    <div id="pvEmptyMsg" class="empty" style="display:none">Brak wpisów.</div>
+  </div>
+</div>
+
+<div class="tab" id="faktury">
+  <div class="card">
+    <div id="invCancelBar" style="display:none;margin-bottom:10px;align-items:center;gap:8px">
+      <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji faktury</span>
+      <button onclick="cancelInvEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
+    </div>
+    <h2>🧾 Dodaj fakturę za prąd</h2>
+    <div class="grid">
+      <div><label>Data wystawienia</label><input type="date" id="inv_issue"></div>
+      <div><label>Okres rozliczeniowy od</label><input type="date" id="inv_from"></div>
+      <div><label>Okres rozliczeniowy do</label><input type="date" id="inv_to"></div>
+      <div><label>Sprzedawca</label><input type="text" id="inv_seller"></div>
+      <div><label>Nr faktury</label><input type="text" id="inv_no"></div>
+      <div><label>Kwota do zapłaty — całość (zł)</label><input type="number" id="inv_amount" step="0.01" min="0"></div>
+      <div><label>Energia pobrana z sieci (kWh)</label><input type="number" id="inv_kwhpob" step="0.01" min="0"></div>
+      <div><label>Energia rozliczona z depozytu / oddana (kWh) — opcjonalnie</label><input type="number" id="inv_kwhodd" step="0.01" min="0"></div>
+      <div class="full"><label>Notatka</label><input type="text" id="inv_note"></div>
+    </div>
+    <p class="note" style="margin-top:6px">Pole „energia rozliczona z depozytu” to opcjonalna informacja z faktury (np. przy rozliczeniu rocznym prosumenta na starych zasadach) — nie jest wymagana do obliczeń, ale warto ją zapisać dla własnej historii.</p>
+    <button class="submit" id="invSubmitBtn" style="background:var(--ok);color:#0c1f13" onclick="addInv()">Zapisz fakturę</button>
+  </div>
+
+  <div class="stats" id="invStats"></div>
+
+  <div class="card tbl-wrap">
+    <h2 style="margin-bottom:8px">Historia faktur</h2>
+    <table><thead><tr><th>Wystawiona</th><th>Okres</th><th>Sprzedawca</th><th>Nr faktury</th><th>Pobrana (kWh)</th><th>Oddana/depozyt (kWh)</th><th>Kwota</th><th>Notatka</th><th></th></tr></thead>
+    <tbody id="invTbody"></tbody><tfoot id="invTblFoot"></tfoot></table>
+    <div id="invEmptyMsg" class="empty" style="display:none">Brak faktur.</div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--ok)">
+    <h2>💡 Hipotetyczny koszt zużycia, gdyby nie było PV</h2>
+    <div class="toolbar">
+      <label>Od</label><input type="date" id="hipFrom" onchange="renderInv()">
+      <label>Do</label><input type="date" id="hipTo" onchange="renderInv()">
+    </div>
+    <div id="hipWrap"></div>
+    <p class="note" style="margin-top:10px">Sposób liczenia: Twoje <b>całkowite</b> zużycie prądu w domu to energia, którą realnie pobrałeś z sieci (wg faktur) <b>plus</b> cała energia, którą w tym czasie wyprodukowało PV (bo bez instalacji musiałbyś kupić tę samą ilość z sieci — niezależnie, czy dziś część zużywasz na miejscu, a część oddajesz i odbierasz z depozytu). Do wyceny używana jest <b>rzeczywista cena z Twoich faktur</b> (kwota ÷ kWh pobrane w tym okresie) — a dopiero gdy brak faktur w wybranym zakresie, domyślna cena z zakładki Ustawienia. To realistyczne przybliżenie, nie precyzyjne rozliczenie taryfowe (pomija opłaty stałe niezależne od zużycia, ewentualne różne stawki dzień/noc itp.).</p>
+  </div>
+</div>
+
+<div class="tab" id="ustawienia">
+  <div class="card">
+    <h2>Cena energii — zużycie pompy ciepła</h2>
+    <div class="grid"><div><label>Domyślna cena za 1 kWh (zł)</label><input type="number" id="priceInput" step="0.01" onchange="updatePrice()"></div></div>
+    <p style="font-size:.8rem;color:var(--muted);margin-top:10px">To tylko podpowiedź, która wpisuje się automatycznie w pole „Cena zastosowana w tym cyklu” w nowym wpisie CO/CWU. Zmiana tej wartości <b>nie przelicza</b> już zapisanych cykli — każdy zapisany wpis zachowuje cenę z dnia, w którym został dodany (widoczną i edytowalną per wpis w formularzu „+ Dodaj”, tak samo jak przy PV). Dzięki temu historia kosztów zostaje poprawna nawet gdy cena zakupu energii się zmieni.</p>
+  </div>
+  <div class="card">
+    <h2>Przechowywanie danych</h2>
+    <p style="font-size:.85rem;color:var(--muted)">Dane zapisują się <b>automatycznie w tej przeglądarce/na tym urządzeniu</b> (localStorage) — nic nie musisz klikać, działa też na iPhonie/iPadzie. Jeśli przeglądarka wspiera bezpośredni zapis do pliku na dysku (np. Chrome/Edge na komputerze), możesz dodatkowo połączyć plik .json u góry strony — wtedy dane zapisują się w obu miejscach naraz. Użyj „Pobierz plik danych”, by zrobić kopię zapasową lub przenieść dane na inne urządzenie/przeglądarkę.</p>
+    <div class="toolbar"><button onclick="exportJSON()">Pobierz plik danych</button>
+      <label style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:0">Wczytaj plik danych<input type="file" accept=".json" style="display:none" onchange="importJSONFile(event)"></label>
+    </div>
+  </div>
+</div>
+
+</main>
+<script>
+let R=[], PV=[], INV=[], SET={price:0,pvPower:10,pvPrice:0.25,pvMode:'netbilling',pvOpust:0.8}, fileHandle=null, editId=null, pvEditId=null, invEditId=null;
+const hasFS = 'showOpenFilePicker' in window;
+const LS_KEY = 'hp_pv_dane_v1';
+
+function normalizeSet(){
+  if(SET.pvPower==null) SET.pvPower=10; if(SET.pvPrice==null) SET.pvPrice=0.25;
+  if(SET.pvMode==null) SET.pvMode='netbilling'; if(SET.pvOpust==null) SET.pvOpust=SET.pvPower>10?0.7:0.8;
+  if(SET.price==null) SET.price=0;
+}
+function applySettingsToInputs(){
+  document.getElementById('priceInput').value = SET.price||'';
+  document.getElementById('pvPowerInput').value = SET.pvPower;
+  document.getElementById('pvModeInput').value = SET.pvMode;
+  document.getElementById('pvOpustInput').value = SET.pvOpust;
+  document.getElementById('pvPriceInput').value = SET.pvPrice;
+  document.getElementById('pv_price').value = SET.pvPrice;
+  document.getElementById('co_price').value = SET.price||'';
+  document.getElementById('w_price').value = SET.price||'';
+  updatePvModeUI();
+}
+function saveToLocalStorage(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({settings:SET,records:R,pv:PV,inv:INV})); return true; }catch(e){ return false; }
+}
+function loadFromLocalStorage(){
+  try{
+    const txt=localStorage.getItem(LS_KEY); if(!txt) return false;
+    const d=JSON.parse(txt); R=d.records||[]; SET=d.settings||SET; PV=d.pv||[]; INV=d.inv||[];
+    normalizeSet(); return true;
+  }catch(e){ return false; }
+}
+
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); document.getElementById(b.dataset.tab).classList.add('on');
+  renderAll();
+}));
+function setType(t){
+  document.getElementById('coForm').style.display = t==='CO'?'block':'none';
+  document.getElementById('cwuForm').style.display = t==='CWU'?'block':'none';
+  document.getElementById('btnCO').classList.toggle('on', t==='CO');
+  document.getElementById('btnCWU').classList.toggle('on', t==='CWU');
+}
+
+function idbOp(mode,k,v){return new Promise((res,rej)=>{const rq=indexedDB.open('hp_store',1);
+  rq.onupgradeneeded=()=>rq.result.createObjectStore('kv');
+  rq.onsuccess=()=>{const tx=rq.result.transaction('kv',mode);const st=tx.objectStore('kv');
+    const q = mode==='readonly'? st.get(k) : st.put(v,k);
+    q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error);};
+  rq.onerror=()=>rej(rq.error);});}
+function updateStoreBar(){
+  const dot=document.getElementById('storeDot'), txt=document.getElementById('storeText');
+  if(fileHandle){ dot.classList.add('ok'); txt.textContent='Plik danych: '+(fileHandle.name||'połączony')+' ('+R.length+' wpisów) — kopia też zapisana lokalnie w przeglądarce'; }
+  else { dot.classList.add('ok'); txt.textContent = (hasFS ? 'Zapisano lokalnie w przeglądarce (' : 'Zapisano na tym urządzeniu (')+R.length+' wpisów) — '+(hasFS?'możesz też otworzyć plik .json':'użyj Ustawienia → Pobierz plik, by zrobić kopię'); }
+}
+async function connectFile(create){
+  if(!hasFS){ alert('Ta przeglądarka nie wspiera bezpośredniego zapisu na dysk. Użyj zakładki Ustawienia (Pobierz/Wczytaj plik).'); return; }
+  try{
+    let h;
+    if(create) h = await window.showSaveFilePicker({suggestedName:'pompa_dane.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    else [h] = await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    fileHandle=h; await idbOp('readwrite','handle',h); await loadFromFile();
+  }catch(e){ if(e.name!=='AbortError') alert('Błąd: '+e.message); }
+}
+async function loadFromFile(){
+  try{ const f=await fileHandle.getFile(); const txt=await f.text();
+    const d = txt.trim()? JSON.parse(txt) : {}; R=d.records||[]; SET=d.settings||{price:0}; PV=d.pv||[]; INV=d.inv||[];
+  }catch(e){ R=[]; SET={price:0}; PV=[]; INV=[]; }
+  normalizeSet();
+  applySettingsToInputs();
+  const migrated = migratePrices();
+  saveToLocalStorage();
+  updateStoreBar();
+  if(migrated) persist(); else renderAll();
+}
+async function persist(){
+  if(fileHandle){
+    try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify({settings:SET,records:R,pv:PV,inv:INV},null,1)); await w.close(); }
+    catch(e){ alert('Błąd zapisu na dysk: '+e.message); }
+  }
+  saveToLocalStorage();
+  updateStoreBar(); renderAll();
+}
+document.getElementById('pv_date').value = ymd(new Date());
+document.getElementById('inv_issue').value = ymd(new Date());
+loadFromLocalStorage();
+applySettingsToInputs();
+updateStoreBar();
+renderAll();
+(async()=>{
+  if(!hasFS) return;
+  try{ const h=await idbOp('readonly','handle'); if(h){
+    const perm = await h.queryPermission({mode:'readwrite'});
+    if(perm==='granted'){ fileHandle=h; await loadFromFile(); }
+    else { document.getElementById('storeText').textContent+=' — poprzedni plik: '+h.name+' (kliknij „Otwórz plik .json”, aby wznowić bezpośredni zapis)'; }
+  } }catch(e){}
+})();
+async function saveBlob(blob,suggestedName,desc,accept){
+  if('showSaveFilePicker' in window){
+    try{ const h=await window.showSaveFilePicker({suggestedName,types:[{description:desc,accept}]});
+      const w=await h.createWritable(); await w.write(blob); await w.close(); return; }
+    catch(e){ if(e.name==='AbortError') return; }
+  }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=suggestedName; a.click();
+}
+async function exportJSON(){
+  const data=JSON.stringify({settings:SET,records:R,pv:PV,inv:INV},null,1);
+  const blob=new Blob([data],{type:'application/json'});
+  await saveBlob(blob,'pompa_dane.json','JSON',{'application/json':['.json']});
+}
+function importJSONFile(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ try{ const d=JSON.parse(e.target.result); R=d.records||[]; SET=d.settings||{price:0}; PV=d.pv||[]; INV=d.inv||[];
+    normalizeSet();
+    applySettingsToInputs();
+    migratePrices();
+    saveToLocalStorage();
+    renderAll(); alert('Wczytano.'); }catch(err){ alert('Błędny plik.'); } };
+  reader.readAsText(file);
+}
+function updatePrice(){ SET.price=parseFloat(document.getElementById('priceInput').value)||0; persist(); }
+function updatePvSettings(){
+  SET.pvPower=parseFloat(document.getElementById('pvPowerInput').value)||0;
+  SET.pvPrice=parseFloat(document.getElementById('pvPriceInput').value)||0;
+  SET.pvMode=document.getElementById('pvModeInput').value;
+  SET.pvOpust=parseFloat(document.getElementById('pvOpustInput').value)||0;
+  updatePvModeUI();
+  persist();
+}
+function updatePvModeUI(){
+  const mode=document.getElementById('pvModeInput').value;
+  const opusty = mode==='opusty';
+  document.getElementById('pvOpustWrap').style.display = opusty ? '' : 'none';
+  document.getElementById('pvPriceLabel').textContent = opusty
+    ? 'Cena zakupu energii — do oszacowania oszczędności (zł/kWh)'
+    : 'Domyślna cena energii oddanej do sieci (zł/kWh)';
+  document.getElementById('pvModeNote').innerHTML = opusty
+    ? 'Na starych zasadach (opusty) nie dostajesz zapłaty za oddaną energię — każda oddana 1 kWh trafia do „depozytu” pomniejszona o współczynnik opustu (ustawowo <b>0,8</b> dla instalacji ≤10 kWp, <b>0,7</b> dla instalacji &gt;10 kWp — sprawdź na fakturze/w umowie z OSD) i możesz ją odebrać w ciągu 365 dni, pomniejszając ilość kWh do zapłacenia. „Wartość” pokazywana przy wpisach to więc <b>szacunek oszczędności</b> (kWh do rozliczenia × cena zakupu), a nie realny przychód.'
+    : 'Ta cena to tylko <b>domyślna propozycja</b>, która wpisuje się automatycznie w formularz nowego wpisu poniżej — nie przelicza wpisów już zapisanych. Strona nie pobiera cen automatycznie z sieci; zaktualizuj ją ręcznie (np. wg aktualnej średniej RCEm), gdy chcesz, by kolejne wpisy liczyły się wg nowej stawki.';
+}
+function cancelPvEdit(){
+  pvEditId=null;
+  document.getElementById('pvSubmitBtn').textContent='Zapisz wpis PV';
+  document.getElementById('pvCancelBar').style.display='none';
+}
+function editPv(id){
+  const r=PV.find(x=>x.id===id); if(!r) return;
+  document.querySelector('nav button[data-tab="pv"]').click();
+  pvEditId=id;
+  document.getElementById('pvCancelBar').style.display='flex';
+  document.getElementById('pvSubmitBtn').textContent='Zapisz zmiany (PV)';
+  document.getElementById('pv_date').value=r.date;
+  document.getElementById('pv_kwh').value=r.kwh;
+  document.getElementById('pv_price').value=r.price;
+  document.getElementById('pv_note').value=r.note||'';
+}
+async function addPv(){
+  const date=document.getElementById('pv_date').value, kwh=parseFloat(document.getElementById('pv_kwh').value);
+  if(!date||isNaN(kwh)){ alert('Podaj datę i produkcję (kWh).'); return; }
+  const price=parseFloat(document.getElementById('pv_price').value)||SET.pvPrice||0;
+  const mode=SET.pvMode||'netbilling', opust=mode==='opusty'?(SET.pvOpust||0):1;
+  const creditKwh=+(kwh*opust).toFixed(3);
+  const rec={date,kwh,price,mode,opust,creditKwh,value:+(creditKwh*price).toFixed(2),note:document.getElementById('pv_note').value||''};
+  const wasEdit=!!pvEditId;
+  if(wasEdit){ const idx=PV.findIndex(x=>x.id===pvEditId); if(idx>-1) PV[idx]={...PV[idx],...rec}; }
+  else PV.push({id:uid(),...rec});
+  cancelPvEdit();
+  ['pv_kwh','pv_note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pv_price').value=SET.pvPrice;
+  await persist(); alert(wasEdit?'Zaktualizowano wpis PV.':'Zapisano wpis PV na dysku.');
+}
+async function delPv(id){ if(!confirm('Usunąć wpis PV?')) return; PV=PV.filter(r=>r.id!==id); await persist(); }
+function buildPvAgg(gran){
+  const map=new Map();
+  PV.forEach(r=>{ if(!r.date) return; const k=periodKey(r.date,gran); if(!map.has(k)) map.set(k,{kwh:0,creditKwh:0,value:0});
+    const o=map.get(k); o.kwh+=r.kwh||0; o.creditKwh+=(r.creditKwh??r.kwh)||0; o.value+=r.value||0; });
+  return {keys:[...map.keys()].sort(), map};
+}
+function renderPv(){
+  const totKwh=PV.reduce((s,r)=>s+(r.kwh||0),0), totCredit=PV.reduce((s,r)=>s+((r.creditKwh??r.kwh)||0),0), totVal=PV.reduce((s,r)=>s+(r.value||0),0);
+  const avgDaily=PV.length?totKwh/PV.length:0;
+  document.getElementById('pvStats').innerHTML = `
+    <div class="stat stat-pv"><div class="v">${totKwh.toFixed(2)} kWh</div><div class="l">Łączna produkcja</div></div>
+    <div class="stat stat-pv"><div class="v">${totCredit.toFixed(2)} kWh</div><div class="l">Łącznie do rozliczenia</div></div>
+    <div class="stat stat-pv"><div class="v">${totVal.toFixed(2)} zł</div><div class="l">${SET.pvMode==='opusty'?'Szac. oszczędność':'Łączna wartość'}</div></div>
+    <div class="stat stat-pv"><div class="v">${PV.length}</div><div class="l">Liczba wpisów</div></div>`;
+
+  const gran=document.getElementById('pvGran').value, metric=document.getElementById('pvMetric').value, chartType=document.getElementById('pvChartType').value;
+  const {keys,map}=buildPvAgg(gran);
+  const show=keys.slice(-24);
+  const lbl = metric==='kwh' ? 'kWh' : 'zł';
+  const vals = show.map(k=> +( (metric==='kwh'?map.get(k).kwh:map.get(k).value) ).toFixed(2));
+  document.getElementById('pvChartWrap').innerHTML = show.length ? panelChart('#e8c547', show, vals, lbl, chartType) : '<div class="empty">Brak danych — dodaj wpisy poniżej.</div>';
+
+  const rows=[...PV].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('pvEmptyMsg').style.display = rows.length?'none':'block';
+  document.getElementById('pvTbody').innerHTML = rows.map(r=>`<tr>
+      <td>${r.date}</td><td class="num">${r.kwh.toFixed(2)}</td><td class="num">${((r.creditKwh??r.kwh)||0).toFixed(2)}</td><td class="num">${r.price.toFixed(3)}</td>
+      <td class="num">${r.value.toFixed(2)} zł</td><td>${r.note||'—'}</td>
+      <td><button class="btn2 edit" onclick="editPv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delPv('${r.id}')">Usuń</button></td></tr>`).join('');
+  document.getElementById('pvTblFoot').innerHTML = rows.length ? `<tr><td style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCredit.toFixed(2)}</td><td></td><td class="num">${totVal.toFixed(2)} zł</td><td colspan="2"></td></tr>` : '';
+}
+
+function cancelInvEdit(){
+  invEditId=null;
+  document.getElementById('invSubmitBtn').textContent='Zapisz fakturę';
+  document.getElementById('invCancelBar').style.display='none';
+}
+function editInv(id){
+  const r=INV.find(x=>x.id===id); if(!r) return;
+  document.querySelector('nav button[data-tab="faktury"]').click();
+  invEditId=id;
+  document.getElementById('invCancelBar').style.display='flex';
+  document.getElementById('invSubmitBtn').textContent='Zapisz zmiany (faktura)';
+  document.getElementById('inv_issue').value=r.issue||'';
+  document.getElementById('inv_from').value=r.from||'';
+  document.getElementById('inv_to').value=r.to||'';
+  document.getElementById('inv_seller').value=r.seller||'';
+  document.getElementById('inv_no').value=r.no||'';
+  document.getElementById('inv_amount').value=r.amount??'';
+  document.getElementById('inv_kwhpob').value=r.kwhPob??'';
+  document.getElementById('inv_kwhodd').value=r.kwhOdd??'';
+  document.getElementById('inv_note').value=r.note||'';
+}
+async function addInv(){
+  const from=document.getElementById('inv_from').value, to=document.getElementById('inv_to').value;
+  const amount=parseFloat(document.getElementById('inv_amount').value), kwhPob=parseFloat(document.getElementById('inv_kwhpob').value);
+  if(!from||!to||isNaN(amount)||isNaN(kwhPob)){ alert('Podaj co najmniej okres (od/do), kwotę i energię pobraną (kWh).'); return; }
+  const rec={issue:document.getElementById('inv_issue').value||from,from,to,
+    seller:document.getElementById('inv_seller').value||'',no:document.getElementById('inv_no').value||'',
+    amount,kwhPob,kwhOdd:parseFloat(document.getElementById('inv_kwhodd').value)||null,
+    note:document.getElementById('inv_note').value||''};
+  const wasEdit=!!invEditId;
+  if(wasEdit){ const idx=INV.findIndex(x=>x.id===invEditId); if(idx>-1) INV[idx]={...INV[idx],...rec}; }
+  else INV.push({id:uid(),...rec});
+  cancelInvEdit();
+  ['inv_issue','inv_from','inv_to','inv_seller','inv_no','inv_amount','inv_kwhpob','inv_kwhodd','inv_note'].forEach(id=>document.getElementById(id).value='');
+  await persist(); alert(wasEdit?'Zaktualizowano fakturę.':'Zapisano fakturę na dysku.');
+}
+async function delInv(id){ if(!confirm('Usunąć fakturę?')) return; INV=INV.filter(r=>r.id!==id); await persist(); }
+function renderInv(){
+  const totAmount=INV.reduce((s,r)=>s+(r.amount||0),0), totKwhPob=INV.reduce((s,r)=>s+(r.kwhPob||0),0);
+  const realPrice = totKwhPob>0 ? totAmount/totKwhPob : 0;
+  document.getElementById('invStats').innerHTML = `
+    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${totAmount.toFixed(2)} zł</div><div class="l">Suma zapłacona</div></div>
+    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${totKwhPob.toFixed(2)} kWh</div><div class="l">Suma energii pobranej</div></div>
+    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${realPrice.toFixed(3)} zł/kWh</div><div class="l">Rzeczywista śr. cena (z faktur)</div></div>
+    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${INV.length}</div><div class="l">Liczba faktur</div></div>`;
+
+  const rows=[...INV].sort((a,b)=>b.from.localeCompare(a.from));
+  document.getElementById('invEmptyMsg').style.display = rows.length?'none':'block';
+  document.getElementById('invTbody').innerHTML = rows.map(r=>`<tr>
+      <td>${r.issue||'—'}</td><td>${r.from} → ${r.to}</td><td>${r.seller||'—'}</td><td>${r.no||'—'}</td>
+      <td class="num">${(r.kwhPob||0).toFixed(2)}</td><td class="num">${r.kwhOdd!=null?r.kwhOdd.toFixed(2):'—'}</td>
+      <td class="num">${(r.amount||0).toFixed(2)} zł</td><td>${r.note||'—'}</td>
+      <td><button class="btn2 edit" onclick="editInv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delInv('${r.id}')">Usuń</button></td></tr>`).join('');
+  document.getElementById('invTblFoot').innerHTML = rows.length ? `<tr><td colspan="4" style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwhPob.toFixed(2)}</td><td></td><td class="num">${totAmount.toFixed(2)} zł</td><td colspan="2"></td></tr>` : '';
+
+  // --- Hipotetyczny koszt bez PV ---
+  const hf=document.getElementById('hipFrom').value, ht=document.getElementById('hipTo').value;
+  let invRows=[...INV]; if(hf) invRows=invRows.filter(r=>r.to>=hf); if(ht) invRows=invRows.filter(r=>r.from<=ht);
+  let pvRows=[...PV]; if(hf) pvRows=pvRows.filter(r=>r.date>=hf); if(ht) pvRows=pvRows.filter(r=>r.date<=ht);
+  const kwhPobRange=invRows.reduce((s,r)=>s+(r.kwhPob||0),0), amountRange=invRows.reduce((s,r)=>s+(r.amount||0),0);
+  const pvKwhRange=pvRows.reduce((s,r)=>s+(r.kwh||0),0);
+  if(!invRows.length && !pvRows.length){
+    document.getElementById('hipWrap').innerHTML='<div class="empty">Dodaj faktury i/lub wpisy PV (ewentualnie zawęź zakres dat), aby zobaczyć wyliczenie.</div>';
+  } else {
+    const priceUsed = kwhPobRange>0 ? amountRange/kwhPobRange : (SET.price||0);
+    const priceSrc = kwhPobRange>0 ? 'rzeczywista z faktur' : 'domyślna z Ustawień (brak faktur w zakresie)';
+    const totalKwh = kwhPobRange+pvKwhRange;
+    const hipCost = totalKwh*priceUsed;
+    const savings = hipCost-amountRange;
+    document.getElementById('hipWrap').innerHTML = `
+      <div class="miniStats">
+        <div><div class="big">${kwhPobRange.toFixed(1)} kWh</div><div class="lbl">Pobrane z sieci (faktury)</div></div>
+        <div><div class="big" style="color:var(--pv)">+ ${pvKwhRange.toFixed(1)} kWh</div><div class="lbl">Wyprodukowane przez PV</div></div>
+        <div><div class="big">= ${totalKwh.toFixed(1)} kWh</div><div class="lbl">Szac. całkowite zużycie domu</div></div>
+      </div>
+      <div class="miniStats" style="padding-top:10px;border-top:1px dashed var(--line)">
+        <div><div class="big">${priceUsed.toFixed(3)} zł/kWh</div><div class="lbl">Cena użyta (${priceSrc})</div></div>
+        <div><div class="big" style="font-size:1.3rem">${hipCost.toFixed(2)} zł</div><div class="lbl">Szac. koszt, gdyby nie było PV</div></div>
+        <div><div class="big" style="font-size:1.3rem">${amountRange.toFixed(2)} zł</div><div class="lbl">Rzeczywiście zapłacono (faktury)</div></div>
+        <div><div class="big" style="font-size:1.3rem;color:var(--ok)">${savings.toFixed(2)} zł</div><div class="lbl">Szacowana oszczędność dzięki PV</div></div>
+      </div>`;
+  }
+}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function durMin(start,end){ if(!start||!end) return null; const s=new Date(start), e=new Date(end); const m=Math.round((e-s)/60000); return m>=0?m:null; }
+function fmtDT(s){ if(!s) return '—'; const[d,t]=s.split('T'); if(!d||!t) return s; const p=d.split('-'); return p[2]+'.'+p[1]+' '+t; }
+function fmtDur(m){ if(m==null) return '—'; const h=Math.floor(m/60),mm=m%60; return (h?h+'h ':'')+mm+'min'; }
+function recCost(r){ if(!r.kwh) return 0; const p = (r.price!=null && !isNaN(r.price)) ? r.price : (SET.price||0); return r.kwh*p; }
+function parsedPrice(id){ const v=parseFloat(document.getElementById(id).value); return isNaN(v)?(SET.price||0):v; }
+function migratePrices(){
+  // Wpisy zapisane przed wprowadzeniem cen "per wpis" nie mają jeszcze swojej ceny —
+  // zamrażamy je jednorazowo na aktualnej cenie domyślnej, żeby dalsze zmiany ceny w Ustawieniach
+  // już nigdy nie przeliczały ich wstecz.
+  let changed=false;
+  R.forEach(r=>{ if(r.price==null || isNaN(r.price)){ r.price=SET.price||0; changed=true; } });
+  return changed;
+}
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+function liveCO(){
+  const out1=parseFloat(document.getElementById('co_out1').value), out2=parseFloat(document.getElementById('co_out2').value);
+  const slope=parseFloat(document.getElementById('co_slope').value), off=parseFloat(document.getElementById('co_offset').value);
+  const calc=o=>(!isNaN(o)&&!isNaN(slope)&&!isNaN(off))?(off-slope*o).toFixed(1)+'°C':'—';
+  document.getElementById('co_target1').textContent=calc(out1);
+  document.getElementById('co_target2').textContent=calc(out2);
+  document.getElementById('co_dur').textContent = fmtDur(durMin(document.getElementById('co_start').value,document.getElementById('co_end').value));
+}
+['co_out1','co_out2','co_slope','co_offset','co_start','co_end'].forEach(id=>document.getElementById(id).addEventListener('input',liveCO));
+function liveW(){
+  const t1=parseFloat(document.getElementById('w_t1').value), t2=parseFloat(document.getElementById('w_t2').value);
+  document.getElementById('w_delta').textContent=(!isNaN(t1)&&!isNaN(t2))?(t2-t1).toFixed(1)+'°C':'—';
+  document.getElementById('w_dur').textContent = fmtDur(durMin(document.getElementById('w_start').value,document.getElementById('w_end').value));
+}
+['w_t1','w_t2','w_start','w_end'].forEach(id=>document.getElementById(id).addEventListener('input',liveW));
+document.getElementById('co_start').addEventListener('change',()=>{
+  const v=document.getElementById('co_start').value; if(!v){document.getElementById('coHint').textContent='';return;}
+  const d=v.slice(0,10);
+  const n=R.filter(r=>r.type==='CO'&&r.date===d&&r.id!==editId);
+  document.getElementById('coHint').textContent = n.length ? `Ten dzień ma już ${n.length} cykl(e) CO — kolejny zostanie dodany jako kolejny segment (zobacz zakładkę „Dzień”).` : '';
+});
+
+function cancelEdit(){
+  editId=null;
+  document.getElementById('coSubmitBtn').textContent='Zapisz cykl CO';
+  document.getElementById('cwuSubmitBtn').textContent='Zapisz cykl CWU';
+  document.getElementById('cancelEditBar').style.display='none';
+  document.getElementById('co_price').value=SET.price||'';
+  document.getElementById('w_price').value=SET.price||'';
+}
+function editRecord(id){
+  const r=R.find(x=>x.id===id); if(!r) return;
+  document.querySelector('nav button[data-tab="dodaj"]').click();
+  setType(r.type); editId=id;
+  document.getElementById('cancelEditBar').style.display='flex';
+  if(r.type==='CO'){
+    document.getElementById('co_start').value=r.start; document.getElementById('co_end').value=r.end;
+    document.getElementById('co_rad').value=r.rad||''; document.getElementById('co_out1').value=r.out1??'';
+    document.getElementById('co_out2').value=r.out2??''; document.getElementById('co_slope').value=r.slope??'';
+    document.getElementById('co_offset').value=r.offset??''; document.getElementById('co_kwh').value=r.kwh??'';
+    document.getElementById('co_price').value=(r.price!=null?r.price:(SET.price||0));
+    document.getElementById('co_note').value=r.note||''; liveCO();
+    document.getElementById('coSubmitBtn').textContent='Zapisz zmiany (CO)';
+  } else {
+    document.getElementById('w_start').value=r.start; document.getElementById('w_end').value=r.end;
+    document.getElementById('w_t1').value=r.t1??''; document.getElementById('w_t2').value=r.t2??'';
+    document.getElementById('w_out').value=r.out??''; document.getElementById('w_kwh').value=r.kwh??'';
+    document.getElementById('w_price').value=(r.price!=null?r.price:(SET.price||0));
+    document.getElementById('w_note').value=r.note||''; liveW();
+    document.getElementById('cwuSubmitBtn').textContent='Zapisz zmiany (CWU)';
+  }
+}
+
+async function addCO(){
+  const start=document.getElementById('co_start').value, end=document.getElementById('co_end').value;
+  if(!start||!end){alert('Podaj start i koniec.');return;}
+  if(new Date(end)<new Date(start)){alert('Koniec jest wcześniejszy niż start — sprawdź datę i godzinę.');return;}
+  const out1=parseFloat(document.getElementById('co_out1').value), out2=parseFloat(document.getElementById('co_out2').value);
+  const slope=parseFloat(document.getElementById('co_slope').value), off=parseFloat(document.getElementById('co_offset').value);
+  const t1=(!isNaN(out1)&&!isNaN(slope)&&!isNaN(off))?+(off-slope*out1).toFixed(2):null;
+  const t2=(!isNaN(out2)&&!isNaN(slope)&&!isNaN(off))?+(off-slope*out2).toFixed(2):null;
+  const rec={type:'CO',date:start.slice(0,10),start,end,
+    rad:document.getElementById('co_rad').value||null,out1:isNaN(out1)?null:out1,out2:isNaN(out2)?null:out2,
+    slope:isNaN(slope)?null:slope,offset:isNaN(off)?null:off,target1:t1,target2:t2,kwh:parseFloat(document.getElementById('co_kwh').value)||null,
+    price:parsedPrice('co_price'),
+    note:document.getElementById('co_note').value||''};
+  const wasEdit=!!editId;
+  if(wasEdit){ const idx=R.findIndex(x=>x.id===editId); if(idx>-1) R[idx]={...R[idx],...rec}; }
+  else R.push({id:uid(),...rec});
+  cancelEdit();
+  ['co_start','co_end','co_rad','co_out1','co_out2','co_kwh','co_note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('co_target1').textContent='—'; document.getElementById('co_target2').textContent='—';
+  document.getElementById('co_dur').textContent='—'; document.getElementById('coHint').textContent='';
+  await persist(); alert(wasEdit?'Zaktualizowano cykl CO.':'Zapisano cykl CO na dysku.');
+}
+async function addCWU(){
+  const start=document.getElementById('w_start').value, end=document.getElementById('w_end').value;
+  if(!start||!end){alert('Podaj start i koniec.');return;}
+  if(new Date(end)<new Date(start)){alert('Koniec jest wcześniejszy niż start — sprawdź datę i godzinę.');return;}
+  const rec={type:'CWU',date:start.slice(0,10),start,end,
+    t1:parseFloat(document.getElementById('w_t1').value)||null,t2:parseFloat(document.getElementById('w_t2').value)||null,
+    out:parseFloat(document.getElementById('w_out').value)||null,kwh:parseFloat(document.getElementById('w_kwh').value)||null,
+    price:parsedPrice('w_price'),
+    note:document.getElementById('w_note').value||''};
+  const wasEdit=!!editId;
+  if(wasEdit){ const idx=R.findIndex(x=>x.id===editId); if(idx>-1) R[idx]={...R[idx],...rec}; }
+  else R.push({id:uid(),...rec});
+  cancelEdit();
+  ['w_start','w_end','w_t1','w_t2','w_out','w_kwh','w_note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('w_delta').textContent='—'; document.getElementById('w_dur').textContent='—';
+  await persist(); alert(wasEdit?'Zaktualizowano cykl CWU.':'Zapisano cykl CWU na dysku.');
+}
+async function delRec(id){ if(!confirm('Usunąć wpis?')) return; R=R.filter(r=>r.id!==id); await persist(); }
+
+function renderTable(){
+  const f=document.getElementById('filterType').value;
+  const from=document.getElementById('danFrom').value, to=document.getElementById('danTo').value;
+  let rows=[...R].filter(r=>f==='all'||r.type===f);
+  if(from) rows=rows.filter(r=>r.date>=from);
+  if(to) rows=rows.filter(r=>r.date<=to);
+  rows.sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));
+  const tbody=document.getElementById('tbody'); tbody.innerHTML='';
+  document.getElementById('emptyMsg').style.display=rows.length?'none':'block';
+  rows.forEach(r=>{
+    const min=durMin(r.start,r.end);
+    const cel = r.type==='CO' ? `${r.target1??'—'}→${r.target2??'—'}` : '—';
+    const zewn = r.type==='CO' ? `${r.out1??'—'}→${r.out2??'—'}` : `${r.out??'—'}`;
+    const woda = r.type==='CWU' ? `${r.t1??'—'}→${r.t2??'—'}` : '—';
+    const grzej = r.type==='CO' ? (r.rad??'—') : '—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="num">${r.date}</td><td><span class="pill ${r.type==='CO'?'co':'cwu'}">${r.type}</span></td>
+      <td class="num">${fmtDT(r.start)} → ${fmtDT(r.end)}</td><td class="num">${fmtDur(min)}</td>
+      <td class="num">${r.kwh??'—'}</td>
+      <td class="num">${r.kwh?recCost(r).toFixed(2)+' zł':'—'}</td>
+      <td class="num">${cel}</td><td class="num">${zewn}</td><td class="num">${woda}</td><td class="num">${grzej}</td>
+      <td>${r.note||'—'}</td>
+      <td><button class="btn2 edit" onclick="editRecord('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></td>`;
+    tbody.appendChild(tr);
+  });
+  const totKwh=rows.reduce((s,r)=>s+(r.kwh||0),0), totCost=rows.reduce((s,r)=>s+recCost(r),0);
+  document.getElementById('tblFoot').innerHTML = rows.length ? `<tr><td colspan="4" style="text-align:right;color:var(--muted)">Razem (${rows.length} wpisów):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCost.toFixed(2)} zł</td><td colspan="6"></td></tr>` : '';
+  renderDanePv();
+}
+function renderDanePv(){
+  const from=document.getElementById('danFrom').value, to=document.getElementById('danTo').value;
+  let rows=[...PV];
+  if(from) rows=rows.filter(r=>r.date>=from);
+  if(to) rows=rows.filter(r=>r.date<=to);
+  const kwh=rows.reduce((s,r)=>s+(r.kwh||0),0), val=rows.reduce((s,r)=>s+(r.value||0),0);
+  document.getElementById('danePvWrap').innerHTML = rows.length
+    ? `<div class="miniStats"><div><div class="big" style="color:var(--pv)">${kwh.toFixed(2)} kWh</div><div class="lbl">Produkcja (${rows.length} wpis.)</div></div><div><div class="big" style="color:var(--pv)">${val.toFixed(2)} zł</div><div class="lbl">Wartość</div></div></div>`
+    : '<div class="empty">Brak wpisów PV w wybranym zakresie dat (filtr Od/Do powyżej).</div>';
+}
+
+function dayCard(date, typeFilter){
+  typeFilter = typeFilter||'all';
+  const dayStart=new Date(date+'T00:00:00'), dayEnd=new Date(dayStart.getTime()+864e5);
+  const overlaps=r=>r.start&&r.end&&new Date(r.start)<dayEnd&&new Date(r.end)>dayStart;
+  const showCo=typeFilter!=='CWU', showCwu=typeFilter!=='CO';
+  const co = showCo ? R.filter(r=>r.type==='CO'&&overlaps(r)) : [];
+  const cwu = showCwu ? R.filter(r=>r.type==='CWU'&&overlaps(r)) : [];
+  const startedCo = showCo ? R.filter(r=>r.type==='CO'&&r.date===date).sort((a,b)=>a.start.localeCompare(b.start)) : [];
+  const startedCwu = showCwu ? R.filter(r=>r.type==='CWU'&&r.date===date) : [];
+  const coKwh=startedCo.reduce((s,r)=>s+(r.kwh||0),0), cwuKwh=startedCwu.reduce((s,r)=>s+(r.kwh||0),0);
+  const coCost=startedCo.reduce((s,r)=>s+recCost(r),0), cwuCost=startedCwu.reduce((s,r)=>s+recCost(r),0);
+  const segs=[...co.map(r=>({...r,bg:'var(--amber)'})),...cwu.map(r=>({...r,bg:'var(--cyan)'}))];
+  const timeline=segs.map(s=>{ const segStart=Math.max(new Date(s.start),dayStart), segEnd=Math.min(new Date(s.end),dayEnd);
+    const left=((segStart-dayStart)/864e5*100).toFixed(2), w=Math.max(0.3,((segEnd-segStart)/864e5*100)).toFixed(2);
+    return `<div class="seg" style="left:${left}%;width:${w}%;background:${s.bg}" title="${s.type} ${fmtDT(s.start)} → ${fmtDT(s.end)}"></div>`; }).join('');
+  let pauses='';
+  for(let i=1;i<startedCo.length;i++){ const prevEnd=startedCo[i-1].end, curStart=startedCo[i].start;
+    const gap=durMin(prevEnd,curStart); if(gap!=null&&gap<600) pauses+=`<div style="font-size:.75rem;color:var(--muted)">przerwa w CO ${fmtDT(prevEnd)} → ${fmtDT(curStart)} (zwykle CWU): ${fmtDur(gap)}</div>`; }
+  function section(rows,label,clr){
+    if(!rows.length) return '';
+    const kwh=rows.reduce((s,r)=>s+(r.kwh||0),0), rcost=rows.reduce((s,r)=>s+recCost(r),0);
+    const rowsHtml=rows.map(r=>`<tr><td class="num">${fmtDT(r.start)}→${fmtDT(r.end)}</td><td class="num">${fmtDur(durMin(r.start,r.end))}</td><td class="num">${r.kwh??'—'}</td><td class="num">${r.kwh?recCost(r).toFixed(2)+' zł':'—'}</td><td>${r.note||'—'}</td><td><button class="btn2 edit" onclick="editRecord('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></td></tr>`).join('');
+    return `<div style="margin-top:10px;border-left:3px solid ${clr};padding-left:10px">
+      <div style="font-size:.82rem;font-weight:700;color:${clr}">${label} — ${kwh.toFixed(2)} kWh · ${rcost.toFixed(2)} zł (${rows.length} cykl.)</div>
+      <table style="margin-top:4px"><thead><tr><th>Godz.</th><th>Czas</th><th>kWh</th><th>Koszt</th><th>Notatka</th><th></th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+  }
+  const secCo=section(startedCo,'CO — ogrzewanie domu','var(--amber)');
+  const secCwu=section(startedCwu,'CWU — ciepła woda','var(--cyan)');
+  const grandKwh=coKwh+cwuKwh, grandCost=coCost+cwuCost;
+  const grand = (startedCo.length&&startedCwu.length) ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line);font-weight:700;font-size:.85rem">Razem dzień: ${grandKwh.toFixed(2)} kWh · ${grandCost.toFixed(2)} zł</div>` : '';
+  const pvDay = PV.filter(r=>r.date===date);
+  const pvKwhDay = pvDay.reduce((s,r)=>s+(r.kwh||0),0), pvValDay = pvDay.reduce((s,r)=>s+(r.value||0),0);
+  const pvLine = pvDay.length ? `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.82rem;color:var(--pv)">☀️ Produkcja PV tego dnia: <b>${pvKwhDay.toFixed(2)} kWh</b> · wartość ${pvValDay.toFixed(2)} zł${grandKwh>0?` · pokrycie zużycia pompy: ${Math.min(999,pvKwhDay/grandKwh*100).toFixed(0)}%`:''}</div>` : '';
+  const empty = (!startedCo.length&&!startedCwu.length&&!pvDay.length) ? '<div class="empty">Brak danych dla wybranego filtru.</div>' : '';
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">${date}</h2>
+      <div class="mono" style="font-size:.82rem;color:var(--muted)">koszt dnia: <b style="color:var(--text)">${grandCost.toFixed(2)} zł</b></div>
+    </div>
+    <div class="timeline">${timeline||''}</div>
+    <div class="ticks"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
+    ${pauses?`<div style="margin-top:6px">${pauses}</div>`:''}
+    ${secCo}${secCwu}${grand}${pvLine}${empty}
+  </div>`;
+}
+function renderDaily(){
+  const el=document.getElementById('dailyList');
+  const typeFilter=document.getElementById('dzienType').value;
+  const from=document.getElementById('dzienFrom').value, to=document.getElementById('dzienTo').value;
+  if(!R.length && !PV.length){ el.innerHTML='<div class="empty">Brak wpisów — dodaj cykl w zakładce „+ Dodaj” lub produkcję w zakładce „☀️ PV”.</div>'; return; }
+  const dateSet=new Set();
+  R.forEach(r=>{ if(!r.start||!r.end) return; let d=new Date(r.start.slice(0,10)+'T00:00:00'); const endD=new Date(r.end.slice(0,10)+'T00:00:00');
+    let guard=0; while(d<=endD&&guard<400){ dateSet.add(ymd(d)); d.setDate(d.getDate()+1); guard++; } });
+  PV.forEach(r=>{ if(r.date) dateSet.add(r.date); });
+  let dates=[...dateSet].sort().reverse();
+  if(from) dates=dates.filter(d=>d>=from);
+  if(to) dates=dates.filter(d=>d<=to);
+  el.innerHTML = dates.length ? dates.map(d=>dayCard(d,typeFilter)).join('') : '<div class="empty">Brak dni w wybranym zakresie/filtrze.</div>';
+}
+
+function svgDonut(data,unitLbl){
+  const total=data.reduce((s,d)=>s+d.value,0)||1;
+  const r=42,cx=60,cy=60,circ=2*Math.PI*r; let off=0;
+  const circles=data.map(d=>{ const frac=d.value/total,len=frac*circ;
+    const seg=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.color}" stroke-width="16" stroke-dasharray="${len} ${circ-len}" stroke-dashoffset="${-off}" transform="rotate(-90 ${cx} ${cy})"><title>${d.label}: ${d.value.toFixed(2)} ${unitLbl||''} (${(d.value/total*100).toFixed(0)}%)</title></circle>`; off+=len; return seg; }).join('');
+  const legend=data.map(d=>`<div><span class="dotc" style="background:${d.color}"></span>${d.label}: <b>${d.value.toFixed(2)} ${unitLbl||'kWh'}</b> (${(d.value/total*100).toFixed(0)}%)</div>`).join('');
+  return `<svg viewBox="0 0 120 120" style="max-width:170px;display:block;margin:0 auto">${circles}</svg><div class="legend2">${legend}</div>`;
+}
+function axisLabel(c,x,yBase){ const txt=String(c).length>16?String(c).slice(0,15)+'…':String(c);
+  return `<text x="${x}" y="${yBase}" font-size="9.5" fill="#8b98a5" text-anchor="end" transform="rotate(-35 ${x} ${yBase})">${txt}</text>`; }
+function svgBars(categories,seriesList,unitLbl){
+  const w=Math.max(340,categories.length*46), h=190, padL=34, padB=44, chartW=w-padL-10, chartH=h-padB-14;
+  const totals=categories.map((_,i)=>seriesList.reduce((s,s2)=>s+(s2.values[i]||0),0));
+  const max=Math.max(1,...totals);
+  const step=chartW/categories.length, barW=Math.max(8,step*0.55);
+  let bars='';
+  categories.forEach((c,i)=>{ let y0=h-padB;
+    seriesList.forEach(s=>{ const v=s.values[i]||0, bh=v/max*chartH, x=padL+i*step+(step-barW)/2;
+      if(bh>0){ bars+=`<rect x="${x.toFixed(1)}" y="${(y0-bh).toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" fill="${s.color}" rx="3"><title>${s.name} ${c}: ${v} ${unitLbl||''}</title></rect>`; y0-=bh; } }); });
+  const labels=categories.map((c,i)=>axisLabel(c,(padL+i*step+step/2).toFixed(1),h-padB+16)).join('');
+  const gridY=[0,.25,.5,.75,1].map(f=>{ const y=(h-padB)-f*chartH; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-4}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="1" y="${(y+3).toFixed(1)}" font-size="9" fill="#8b98a5">${(max*f).toFixed(0)}</text>`; }).join('');
+  const baseline=`<line x1="${padL}" y1="${h-padB}" x2="${w-4}" y2="${h-padB}" stroke="#3a4652"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">${gridY}${baseline}${bars}${labels}</svg>`;
+}
+function svgLine(categories,seriesList,unitLbl){
+  const w=Math.max(340,categories.length*46), h=190, padL=34, padB=44, chartW=w-padL-10, chartH=h-padB-14;
+  const max=Math.max(1,...seriesList.flatMap(s=>s.values));
+  const step= categories.length>1 ? chartW/(categories.length-1) : chartW;
+  const xAt=i=>padL+(categories.length>1?i*step:chartW/2), yAt=v=>(h-padB)-(v/max*chartH);
+  let paths='';
+  seriesList.forEach(s=>{
+    paths+=`<polyline points="${s.values.map((v,i)=>xAt(i).toFixed(1)+','+yAt(v).toFixed(1)).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.4"/>`;
+    paths+=s.values.map((v,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(v).toFixed(1)}" r="3.5" fill="${s.color}"><title>${s.name} ${categories[i]}: ${v} ${unitLbl||''}</title></circle>`).join('');
+  });
+  const labels=categories.map((c,i)=>axisLabel(c,xAt(i).toFixed(1),h-padB+16)).join('');
+  const gridY=[0,.25,.5,.75,1].map(f=>{ const y=(h-padB)-f*chartH; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-4}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="1" y="${(y+3).toFixed(1)}" font-size="9" fill="#8b98a5">${(max*f).toFixed(0)}</text>`; }).join('');
+  const baseline=`<line x1="${padL}" y1="${h-padB}" x2="${w-4}" y2="${h-padB}" stroke="#3a4652"/>`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">${gridY}${baseline}${paths}${labels}</svg>`;
+}
+function panelChart(color,categories,values,unitLbl,chartType){
+  const sum=values.reduce((a,b)=>a+b,0), avg=categories.length?sum/categories.length:0;
+  const chartHtml = categories.length ? (chartType==='line'? svgLine(categories,[{name:'',color,values}],unitLbl) : svgBars(categories,[{name:'',color,values}],unitLbl)) : '<div class="empty">Brak danych.</div>';
+  return `<div class="miniStats"><div><div class="big" style="color:${color}">${sum.toFixed(2)} ${unitLbl}</div><div class="lbl">suma</div></div>
+    <div><div class="big">${avg.toFixed(2)} ${unitLbl}</div><div class="lbl">średnio / kategoria</div></div></div>
+    ${chartHtml}`;
+}
+
+function tempKey(t){ return t.toFixed(1)+'°C'; }
+function outdoorTemp(r){ if(r.type==='CO'){ const vals=[r.out1,r.out2].filter(v=>v!=null); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null; } return r.out!=null?r.out:null; }
+function ensureAgg(map,k){ if(!map.has(k)) map.set(k,{coKwh:0,cwuKwh:0,coCost:0,cwuCost:0,coMin:0,cwuMin:0,coCount:0,cwuCount:0}); }
+function addAgg(o,r){ const min=durMin(r.start,r.end)||0, c=recCost(r); if(r.type==='CO'){o.coKwh+=r.kwh||0;o.coCost+=c;o.coMin+=min;o.coCount++;} else {o.cwuKwh+=r.kwh||0;o.cwuCost+=c;o.cwuMin+=min;o.cwuCount++;} }
+function buildAgg(groupBy,gran){
+  const map=new Map();
+  if(groupBy==='temp'){
+    R.forEach(r=>{ const t=outdoorTemp(r); if(t==null) return; const k=tempKey(t); ensureAgg(map,k); addAgg(map.get(k),r); });
+    return {keys:[...map.keys()].sort((a,b)=>parseFloat(a)-parseFloat(b)), map};
+  }
+  R.forEach(r=>{ if(!r.date) return; const k=periodKey(r.date,gran); ensureAgg(map,k); addAgg(map.get(k),r); });
+  return {keys:[...map.keys()].sort(), map};
+}
+function metricVal(o,t,metric){ if(metric==='kwh') return t==='co'?o.coKwh:o.cwuKwh;
+  if(metric==='koszt') return t==='co'?o.coCost:o.cwuCost;
+  if(metric==='czas') return (t==='co'?o.coMin:o.cwuMin)/60;
+  return t==='co'?o.coCount:o.cwuCount; }
+function buildTable(headId,bodyId,keys,map,metric,headLabel,pvMap){
+  const lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric];
+  const showPv = !!pvMap && (metric==='kwh'||metric==='koszt');
+  const cols=[headLabel,'CO '+lbl,'CWU '+lbl,'Razem '+lbl];
+  if(showPv) cols.push('PV '+(metric==='koszt'?'zł (wartość)':lbl));
+  document.getElementById(headId).innerHTML=cols.map(c=>`<th>${c}</th>`).join('');
+  document.getElementById(bodyId).innerHTML = keys.length ? keys.map(k=>{ const o=map.get(k);
+    const co=metricVal(o,'co',metric), cwu=metricVal(o,'cwu',metric);
+    let pvCell='';
+    if(showPv){ const p=pvMap.get(k); const pv = p ? (metric==='koszt'?p.value:p.kwh) : 0; pvCell=`<td class="num" style="color:var(--pv)">${pv.toFixed(2)}</td>`; }
+    return `<tr><td>${k}</td><td class="num">${co.toFixed(2)}</td><td class="num">${cwu.toFixed(2)}</td><td class="num">${(co+cwu).toFixed(2)}</td>${pvCell}</tr>`; }).join('')
+    : `<tr><td colspan="${showPv?5:4}" class="empty">Brak danych.</td></tr>`;
+}
+function periodKey(date,g){
+  const d=new Date(date+'T00:00:00'); const y=d.getFullYear(), m=d.getMonth();
+  if(g==='day') return date;
+  if(g==='week'){ const jan1=new Date(y,0,1); const wk=Math.ceil((((d-jan1)/86400000)+jan1.getDay()+1)/7); return y+'-T'+wk; }
+  if(g==='month') return y+'-'+String(m+1).padStart(2,'0');
+  if(g==='quarter') return y+'-K'+(Math.floor(m/3)+1);
+  if(g==='half') return y+'-P'+(m<6?1:2);
+  return ''+y;
+}
+function renderReports(){
+  const groupBy=document.getElementById('repGroupBy').value, gran=document.getElementById('gran').value;
+  const metric=document.getElementById('repMetric').value, chartType=document.getElementById('repChartType').value;
+  document.getElementById('granWrap').style.display = groupBy==='temp' ? 'none' : '';
+  const {keys, map} = buildAgg(groupBy,gran);
+  const show = groupBy==='temp' ? keys : keys.slice(-24);
+  const totalCo=[...map.values()].reduce((s,o)=>s+o.coKwh,0), totalCwu=[...map.values()].reduce((s,o)=>s+o.cwuKwh,0);
+  document.getElementById('splitChartWrap').innerHTML = (totalCo+totalCwu)>0 ? svgDonut([{label:'CO',value:totalCo,color:'#e0904f'},{label:'CWU',value:totalCwu,color:'#49b4cf'}],'kWh') : '<div class="empty">Brak danych.</div>';
+  const lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric];
+  const coVals=show.map(k=>+metricVal(map.get(k),'co',metric).toFixed(2));
+  const cwuVals=show.map(k=>+metricVal(map.get(k),'cwu',metric).toFixed(2));
+  document.getElementById('panelCoWrap').innerHTML = panelChart('#e0904f',show,coVals,lbl,chartType);
+  document.getElementById('panelCwuWrap').innerHTML = panelChart('#49b4cf',show,cwuVals,lbl,chartType);
+
+  const {keys:pvKeysAll, map:pvMapAll} = buildPvAgg(gran);
+  const pvShow = pvKeysAll.slice(-24);
+  document.getElementById('panelPvWrap').innerHTML = pvShow.length
+    ? panelChart('#e8c547', pvShow, pvShow.map(k=>+pvMapAll.get(k).kwh.toFixed(2)), 'kWh', chartType)
+    : '<div class="empty">Brak wpisów PV — dodaj je w zakładce „☀️ PV”.</div>';
+
+  const pvMapForTable = groupBy==='period' ? pvMapAll : null;
+  document.getElementById('repPvNote').style.display = (metric==='kwh'||metric==='koszt') && groupBy==='period' ? 'block' : 'none';
+  buildTable('repThead','repTbody',show,map,metric, groupBy==='temp'?'Temp. zewn. (°C)':'Okres', pvMapForTable);
+}
+
+function xmlEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function sheetXML(name,rows){
+  const trs=rows.map(row=>'<Row>'+row.map(v=>`<Cell><Data ss:Type="${typeof v==='number'?'Number':'String'}">${xmlEsc(v)}</Data></Cell>`).join('')+'</Row>').join('');
+  return `<Worksheet ss:Name="${xmlEsc(name)}"><Table>${trs}</Table></Worksheet>`;
+}
+async function exportXLSX(){
+  const cols=['id','type','date','start','end','rad','out1','out2','slope','offset','target1','target2','t1','t2','out','kwh','note'];
+  const headers=['ID','Typ','Data','Start','Koniec','Grzejniki','Temp.zewn.start','Temp.zewn.koniec','Nachylenie','Przesunięcie','Cel@start','Cel@koniec','Temp.wody pocz.','Temp.wody docel.','Temp.zewn.','kWh','Notatka'];
+  const dataRows=[headers,...R.map(r=>cols.map(c=>r[c]??''))];
+  const {keys:pk,map:pm}=buildAgg('period',document.getElementById('gran').value);
+  const repRows=[['Okres','CO kWh','CWU kWh','Razem kWh','Koszt CO','Koszt CWU','Koszt razem'],
+    ...pk.map(k=>{const o=pm.get(k); return [k,+o.coKwh.toFixed(2),+o.cwuKwh.toFixed(2),+(o.coKwh+o.cwuKwh).toFixed(2),+o.coCost.toFixed(2),+o.cwuCost.toFixed(2),+(o.coCost+o.cwuCost).toFixed(2)];})];
+  const {keys:tk,map:tm}=buildAgg('temp');
+  const tempRows=[['Temp. zewn. (°C)','CO kWh','CWU kWh','Razem kWh','Koszt'],
+    ...tk.map(k=>{const o=tm.get(k); return [k,+o.coKwh.toFixed(2),+o.cwuKwh.toFixed(2),+(o.coKwh+o.cwuKwh).toFixed(2),+(o.coCost+o.cwuCost).toFixed(2)];})];
+  const xml='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>'
+    +'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
+    +sheetXML('Dane',dataRows)+sheetXML('Raport okresowy',repRows)+sheetXML('Wg temperatury',tempRows)+'</Workbook>';
+  const blob=new Blob([xml],{type:'application/vnd.ms-excel'});
+  await saveBlob(blob,'pompa_dane.xls','Excel',{'application/vnd.ms-excel':['.xls']});
+}
+
+function renderDashboard(){
+  const totalCo=R.filter(r=>r.type==='CO').reduce((s,r)=>s+(r.kwh||0),0);
+  const totalCwu=R.filter(r=>r.type==='CWU').reduce((s,r)=>s+(r.kwh||0),0);
+  const totalCost=R.reduce((s,r)=>s+recCost(r),0);
+  document.getElementById('dashTotals').innerHTML = `
+    <div><div class="big" style="color:var(--amber)">${totalCo.toFixed(1)} kWh</div><div class="lbl">Suma CO</div></div>
+    <div><div class="big" style="color:var(--cyan)">${totalCwu.toFixed(1)} kWh</div><div class="lbl">Suma CWU</div></div>
+    <div><div class="big">${totalCost.toFixed(2)} zł</div><div class="lbl">Łączny koszt</div></div>
+    <div><div class="big">${R.length}</div><div class="lbl">Liczba wpisów</div></div>`;
+  document.getElementById('dashDonut').innerHTML = (totalCo+totalCwu)>0 ? svgDonut([{label:'CO',value:totalCo,color:'#e0904f'},{label:'CWU',value:totalCwu,color:'#49b4cf'}],'kWh') : '<div class="empty">Brak danych.</div>';
+  const rangeN=parseInt(document.getElementById('dashRange').value);
+  const {map}=buildAgg('period','month');
+  const keys=[...map.keys()].sort().slice(-rangeN);
+  document.getElementById('dashCoWrap').innerHTML = panelChart('#e0904f',keys,keys.map(k=>+map.get(k).coKwh.toFixed(2)),'kWh','bar');
+  document.getElementById('dashCwuWrap').innerHTML = panelChart('#49b4cf',keys,keys.map(k=>+map.get(k).cwuKwh.toFixed(2)),'kWh','bar');
+  const dates=[...new Set(R.map(r=>r.date))].filter(Boolean).sort().reverse();
+  const recent=dates.slice(0,2);
+  document.getElementById('dashLatestDay').innerHTML = recent.length ? '<h2 style="margin:14px 0 10px;font-size:1rem">Ostatnie dni</h2>'+recent.map(d=>dayCard(d,'all')).join('') : '';
+
+  const pvKwh=PV.reduce((s,r)=>s+(r.kwh||0),0), pvVal=PV.reduce((s,r)=>s+(r.value||0),0);
+  const hpKwh=totalCo+totalCwu, hpCost=totalCost;
+  if(!pvKwh && !hpKwh){
+    document.getElementById('dashBalance').innerHTML='<div class="empty">Dodaj wpisy PV (zakładka „☀️ PV”) i cykle pompy ciepła, aby zobaczyć bilans.</div>';
+  } else {
+    const coveragePct = hpKwh ? Math.min(999,(pvKwh/hpKwh*100)) : null;
+    const net = pvVal - hpCost;
+    document.getElementById('dashBalance').innerHTML = `
+      <div class="miniStats">
+        <div><div class="big" style="color:var(--pv)">${pvKwh.toFixed(1)} kWh</div><div class="lbl">Produkcja PV</div></div>
+        <div><div class="big" style="color:var(--amber)">${hpKwh.toFixed(1)} kWh</div><div class="lbl">Zużycie pompy (CO+CWU)</div></div>
+        <div><div class="big" style="color:var(--pv)">${pvVal.toFixed(2)} zł</div><div class="lbl">Wartość wyprodukowanej energii</div></div>
+        <div><div class="big" style="color:var(--amber)">${hpCost.toFixed(2)} zł</div><div class="lbl">Koszt zużycia pompy</div></div>
+      </div>
+      <div style="padding-top:10px;border-top:1px dashed var(--line);display:flex;gap:24px;flex-wrap:wrap">
+        <div><div class="big" style="font-size:1.3rem;color:${net>=0?'var(--ok)':'var(--danger)'}">${net>=0?'+':''}${net.toFixed(2)} zł</div><div class="lbl">Saldo (wartość PV − koszt pompy)</div></div>
+        ${coveragePct!=null ? `<div><div class="big" style="font-size:1.3rem">${coveragePct.toFixed(0)}%</div><div class="lbl">Produkcja PV vs zużycie pompy (wolumen)</div></div>` : ''}
+      </div>
+      <p class="note" style="margin-top:8px">Saldo to porównanie sumarycznych wartości w całym zebranym okresie (nie dzień po dniu) — traktuj je jako orientacyjny obraz opłacalności, nie dokładny autokonsumpcyjny rozdział energii.</p>`;
+  }
+}
+
+function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDashboard(); updateStoreBar(); }
+renderAll();
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+}
+</script>
+</body>
+</html>
