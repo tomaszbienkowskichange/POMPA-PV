@@ -11,10 +11,11 @@
 <meta name="apple-mobile-web-app-title" content="Pompa+PV">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png" type="image/png">
+<script src="qrcode.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#10151a;--panel:#171f26;--panel2:#1d2731;--line:#2a343e;--text:#e7edf2;--muted:#8b98a5;--amber:#e0904f;--cyan:#49b4cf;--danger:#d16a63;--ok:#5fb87a;--pv:#e8c547;color-scheme:dark;box-sizing:border-box}
+:root{--bg:#10151a;--panel:#171f26;--panel2:#1d2731;--line:#2a343e;--text:#e7edf2;--muted:#8b98a5;--amber:#e0904f;--cyan:#49b4cf;--danger:#d16a63;--ok:#5fb87a;--pv:#e8c547;color-scheme:dark}
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.4;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -64,6 +65,20 @@ td.num{font-family:'IBM Plex Mono',monospace}
 td.params{white-space:normal;min-width:170px}
 tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
 .tbl-wrap{overflow-x:auto}
+/* Spójny układ danych: każdy wiersz szerokich tabel to karta z podpisanymi polami (bez przewijania w bok) */
+table.rc{display:block;width:100%}
+table.rc thead{display:none}
+table.rc tbody,table.rc tfoot{display:block}
+table.rc tr{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:6px 14px;background:var(--panel2,transparent);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 8px}
+table.rc td{display:block;white-space:normal;overflow-wrap:anywhere;border:0;padding:0;min-width:0;max-width:none;text-align:left}
+table.rc td[data-l]::before{content:attr(data-l);display:block;font-size:.6rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:1px}
+table.rc td[data-l=""]::before{display:none}
+table.rc td.notecell,table.rc td[colspan],table.rc td.btncell{grid-column:1/-1}
+table.rc td.nodata{display:none}
+table.rc td.btncell{display:flex;gap:6px;flex-wrap:wrap}
+table.rc td .note{white-space:normal}
+table:not(.rc) th,table:not(.rc) td{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:600px){table:not(.rc) th,table:not(.rc) td{padding:5px 4px;font-size:.72rem}}
 .pill{padding:2px 7px;border-radius:5px;font-size:.7rem;font-family:'IBM Plex Mono',monospace}
 .pill.co{background:#3a2a1a;color:var(--amber)} .pill.cwu{background:#173038;color:var(--cyan)}
 .chip{display:flex;gap:6px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;margin:0 0 5px 0;font-size:.76rem;width:fit-content}
@@ -73,6 +88,13 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
 .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .toolbar button,.toolbar select,.toolbar input{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:7px 11px;border-radius:6px;font-size:.8rem;cursor:pointer;font-family:inherit;width:auto}
 .toolbar label{font-size:.72rem;color:var(--muted);margin:0}
+.toolbar .rng{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;flex:0 0 auto}
+.toolbar .rng input[type=date]{width:128px;padding:7px 6px}
+@media(max-width:480px){.toolbar .rng input[type=date]{width:112px}}
+.toolbar label{white-space:nowrap}
+#granWrap{display:inline-flex;align-items:center;gap:8px}
+.toolbar{column-gap:8px;row-gap:8px}
+@media(min-width:900px){.toolbar{flex-wrap:nowrap}.toolbar select,.toolbar input{min-width:0;padding:7px 6px}.toolbar label{font-size:.68rem}.toolbar .rng{gap:4px}.toolbar .rng input[type=date]{width:118px}}
 .legend{display:flex;gap:14px;font-size:.75rem;color:var(--muted);margin-top:6px;flex-wrap:wrap}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .legend b{color:var(--text)}
@@ -84,6 +106,19 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
 .legend2{font-size:.78rem;margin-top:8px}
 .legend2 div{margin:2px 0}
 .dotc{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.dashKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;margin-bottom:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.kpi .v{font-size:1.1rem;font-weight:700;font-family:'IBM Plex Mono',monospace;overflow-wrap:anywhere}
+.kpi .l{font-size:.64rem;color:var(--muted);margin-top:1px;line-height:1.25}
+.dashGrid{display:grid;grid-template-columns:1fr;gap:12px}
+.dashGrid .dc{min-width:0;margin-bottom:0;padding:12px 14px}
+.dashGrid h2{font-size:.9rem;margin:0 0 8px}.dashGrid h3{font-size:.85rem;margin:0 0 6px}
+@media(min-width:900px){.dashGrid{grid-template-columns:repeat(12,1fr)}.dc.w4{grid-column:span 4}.dc.w6{grid-column:span 6}}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line);font-size:.78rem}
+.kv span{color:var(--muted);min-width:0}.kv b{font-family:'IBM Plex Mono',monospace;text-align:right;white-space:nowrap}
+.kv.sub{border-bottom:0;padding:1px 0 1px 10px;font-size:.72rem}
+.sharebar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:4px 0 8px;background:var(--line)}
+.dashGrid table{font-size:.74rem}.dashGrid th,.dashGrid td{padding:4px 6px}
 .panelGrid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
 @media(min-width:760px){.panelGrid{grid-template-columns:1fr 1fr}}
 .panel{border-radius:10px;padding:16px;background:var(--panel);border:1px solid var(--line)}
@@ -92,12 +127,51 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
 .miniStats{display:flex;gap:20px;margin-bottom:10px;flex-wrap:wrap}
 .miniStats .big{font-size:1.35rem;font-weight:700;font-family:'IBM Plex Mono',monospace}
 .miniStats .lbl{font-size:.68rem;color:var(--muted);margin-top:1px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.fld{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.fhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.code{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:.78rem;color:#12100c;background:var(--amber);border-radius:4px;padding:1px 6px}
+.code.nocode{background:var(--line);color:var(--text)}
+.fname{font-weight:600;font-size:.84rem}
+.src{font-size:.64rem;border-radius:10px;padding:1px 7px;border:1px solid var(--line);color:var(--muted);margin-left:auto;white-space:nowrap}
+.src.app{color:var(--cyan);border-color:var(--cyan)}
+.src.man{color:var(--amber);border-color:var(--amber)}
+.src.set{color:var(--ok);border-color:var(--ok)}
+.src.lic{color:var(--pv);border-color:var(--pv)}
+.warnline.info{background:var(--panel2);border-color:var(--line);color:var(--muted)}
+.fdesc{font-size:.74rem;color:var(--muted);margin-bottom:7px;line-height:1.4}
+.fdesc b{color:var(--text);font-weight:600}
+.finp{display:flex;align-items:center;gap:6px}
+.finp .unit{font-size:.78rem;color:var(--muted);min-width:38px}
+.sech{font-size:.84rem;font-weight:700;margin:18px 0 8px;padding-top:12px;border-top:1px dashed var(--line)}
+.chk{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text);margin:5px 0;cursor:pointer}
+.chk input{width:auto}
+.formula{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--muted);margin-top:5px;word-break:break-word}
+.warnline{font-size:.8rem;margin-top:8px;padding:7px 10px;border-radius:6px;background:#2a1f1b;border:1px solid #4a3329;color:var(--amber)}
+.warnline.bad{background:#2a1a1a;border-color:#4a2a2a;color:var(--danger)}
+.warnline.good{background:#16241b;border-color:#24402e;color:var(--ok)}
+.legendsrc{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px;font-size:.72rem;color:var(--muted);align-items:center}
+.legendsrc .src{margin-left:0}
+
+textarea{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:8px 9px;border-radius:6px;font-size:.86rem;font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.4;resize:vertical;min-height:58px;white-space:pre-wrap;overflow-wrap:anywhere}
+td.notecell{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-width:170px;max-width:340px}
+@media(max-width:600px){td.notecell{min-width:150px;max-width:230px}}
+.notecell2{font-size:.72rem;color:var(--amber);line-height:1.35;overflow-wrap:anywhere}
+.wrap,.note,.fdesc,.warnline,.formula,.empty,.storebar .inner span{overflow-wrap:anywhere}
+.wrap{white-space:normal}
+.daynote{font-size:.8rem;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 10px;margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45}
+.daynote b{color:var(--muted);font-family:'IBM Plex Mono',monospace;font-weight:500;margin-right:6px}
+.rdrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px}
+.rdcell label{font-size:.68rem;color:var(--muted);margin-bottom:3px}
+.rdcell .chk{margin:3px 0;font-size:.74rem;color:var(--text)}
+.rdcell .mono{font-size:.8rem;padding:8px 0}
+.rdcell .finp input{min-width:0}
 </style>
 </head>
 <body>
 <header>
   <h1>Monitor pompy ciepła</h1>
-  <p>Rejestr cykli CO i CWU, produkcja PV, faktury, koszty i statystyki — dane zapisywane automatycznie na tym urządzeniu, z opcją zapisu na dysku.</p>
+  <p>Rejestr cykli CO i CWU, PV, faktury, COP i koszty — dane zapisują się automatycznie na tym urządzeniu, z synchronizacją między urządzeniami.</p>
 </header>
 <div class="storebar"><div class="inner" id="storebar">
   <span class="stat-dot" id="storeDot"></span>
@@ -115,28 +189,27 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
   <button data-tab="raporty">Raporty</button>
   <button data-tab="pv">☀️ PV</button>
   <button data-tab="faktury">🧾 Faktury</button>
+  <button data-tab="cop">⚡ COP — okres pracy</button>
+  <button data-tab="cophist">📈 COP — historia</button>
+  <button data-tab="copimp">📥 COP — import</button>
   <button data-tab="ustawienia">Ustawienia</button>
 </nav>
 <main>
 
 <div class="tab on" id="dashboard">
-  <div class="card">
-    <h2>Udział CO / CWU — cały zebrany okres</h2>
-    <div id="dashDonut"></div>
-    <div class="miniStats" id="dashTotals" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)"></div>
+  <div class="dashKpis" id="dashKpis"></div>
+  <div class="dashGrid">
+    <div class="card dc w4"><h2>⚡ Pompa — cykle CO / CWU</h2><div id="dashPump"></div></div>
+    <div class="card dc w4"><h2>🌡️ COP — okresy pracy</h2><div id="dashCop"></div></div>
+    <div class="card dc w4 panel-pv" style="border-left:4px solid var(--pv)"><h2>☀️ PV, bilans i faktury</h2><div id="dashBalance"></div></div>
+    <div class="card dc w6"><h2>Miesięcznie — wszystkie dane</h2>
+      <div class="toolbar" style="margin:0 0 8px"><label>Zakres</label><select id="dashRange" onchange="renderDashboard()"><option value="3">3 mies.</option><option value="6" selected>6 mies.</option><option value="12">12 mies.</option></select></div>
+      <div class="tbl-wrap" id="dashMonths"></div></div>
+    <div class="card dc w6"><h2>Ostatnie okresy pracy (COP)</h2><div class="tbl-wrap" id="dashPeriods"></div>
+      <h2 style="margin-top:14px">Ostatnie dni</h2><div class="tbl-wrap" id="dashDays"></div></div>
+    <div class="card dc w6"><h3>🔥 Pompa — kWh miesięcznie (CO + CWU)</h3><div id="dashCoWrap"></div></div>
+    <div class="card dc w6"><h3>☀️ PV — kWh miesięcznie</h3><div id="dashCwuWrap"></div></div>
   </div>
-  <div class="toolbar"><label>Zakres trendu miesięcznego</label>
-    <select id="dashRange" onchange="renderDashboard()"><option value="3">Ostatnie 3 mies.</option><option value="6" selected>Ostatnie 6 mies.</option><option value="12">Ostatnie 12 mies.</option></select>
-  </div>
-  <div class="panelGrid">
-    <div class="panel panel-co"><h3>🔥 CO — ogrzewanie domu</h3><div id="dashCoWrap"></div></div>
-    <div class="panel panel-cwu"><h3>💧 CWU — ciepła woda</h3><div id="dashCwuWrap"></div></div>
-  </div>
-  <div class="card panel-pv" style="border-left:4px solid var(--pv)">
-    <h2><span class="dot pv"></span>☀️ Bilans energetyczny: PV a pompa ciepła</h2>
-    <div id="dashBalance"></div>
-  </div>
-  <div id="dashLatestDay"></div>
 </div>
 
 <div class="tab" id="dodaj">
@@ -161,7 +234,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
       <div><label>Przesunięcie krzywej (°C)</label><input type="number" id="co_offset" step="0.1"></div>
       <div><label>Zużycie z licznika (kWh)</label><input type="number" id="co_kwh" step="0.01"></div>
       <div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="co_price" step="0.01" min="0"></div>
-      <div class="full"><label>Notatka</label><input type="text" id="co_note"></div>
+      <div class="full"><label>Notatka</label><textarea id="co_note" rows="3"></textarea></div>
     </div>
     <div class="calcrow">
       <div class="calcbox"><div class="calcval" id="co_target1">—</div><div class="calclbl">Cel przy temp. startu</div></div>
@@ -181,7 +254,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
       <div><label>Temp. zewnętrzna (°C)</label><input type="number" id="w_out" step="0.1"></div>
       <div><label>Zużycie z licznika (kWh)</label><input type="number" id="w_kwh" step="0.01"></div>
       <div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="w_price" step="0.01" min="0"></div>
-      <div class="full"><label>Notatka</label><input type="text" id="w_note"></div>
+      <div class="full"><label>Notatka</label><textarea id="w_note" rows="3"></textarea></div>
     </div>
     <div class="calcrow">
       <div class="calcbox"><div class="calcval" id="w_delta">—</div><div class="calclbl">Przyrost temperatury wody</div></div>
@@ -194,8 +267,8 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
 <div class="tab" id="dzien">
   <div class="toolbar">
     <label>Typ</label><select id="dzienType" onchange="renderDaily()"><option value="all">CO + CWU</option><option value="CO">Tylko CO</option><option value="CWU">Tylko CWU</option></select>
-    <label>Od</label><input type="date" id="dzienFrom" onchange="renderDaily()">
-    <label>Do</label><input type="date" id="dzienTo" onchange="renderDaily()">
+    <span class="rng"><label>Od</label><input type="date" id="dzienFrom" onchange="renderDaily()">
+    <label>Do</label><input type="date" id="dzienTo" onchange="renderDaily()"></span>
   </div>
   <div id="dailyList"></div>
 </div>
@@ -205,12 +278,12 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
     <label>Typ</label><select id="filterType" onchange="renderTable()">
       <option value="all">Wszystkie wpisy</option><option value="CO">Tylko CO</option><option value="CWU">Tylko CWU</option>
     </select>
-    <label>Od</label><input type="date" id="danFrom" onchange="renderTable()">
-    <label>Do</label><input type="date" id="danTo" onchange="renderTable()">
+    <span class="rng"><label>Od</label><input type="date" id="danFrom" onchange="renderTable()">
+    <label>Do</label><input type="date" id="danTo" onchange="renderTable()"></span>
     <button onclick="exportXLSX()">Eksportuj XLS</button>
   </div>
   <div class="card tbl-wrap">
-    <table><thead><tr><th>Data</th><th>Typ</th><th>Start → Koniec</th><th>Czas</th><th>kWh</th><th>Koszt</th><th>Cel (°C)</th><th>Zewn. (°C)</th><th>Woda (°C)</th><th>Grzej.</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc"><thead><tr><th>Data</th><th>Typ</th><th>Start → Koniec</th><th>Czas</th><th>kWh</th><th>Koszt</th><th>Cel (°C)</th><th>Zewn. (°C)</th><th>Woda (°C)</th><th>Grzej.</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="tbody"></tbody><tfoot id="tblFoot"></tfoot></table>
     <div id="emptyMsg" class="empty" style="display:none">Brak wpisów.</div>
   </div>
@@ -237,14 +310,16 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
     <label>Wykres</label><select id="repChartType" onchange="renderReports()">
       <option value="bar">Słupkowy</option><option value="line">Liniowy</option>
     </select>
+    <span class="rng"><label>Od</label><input type="date" id="repFrom" onchange="renderReports()">
+    <label>Do</label><input type="date" id="repTo" onchange="renderReports()"></span>
   </div>
-  <div class="card"><h2>Udział CO / CWU — cały zebrany okres (kWh)</h2><div id="splitChartWrap"></div></div>
+  <div class="card"><h2>Udział CO / CWU — w wybranym zakresie dat (kWh)</h2><div id="splitChartWrap"></div></div>
   <div class="panelGrid">
     <div class="panel panel-co"><h3>🔥 CO — ogrzewanie domu</h3><div id="panelCoWrap"></div></div>
     <div class="panel panel-cwu"><h3>💧 CWU — ciepła woda</h3><div id="panelCwuWrap"></div></div>
   </div>
   <div class="card" style="border-left:4px solid var(--pv)"><h3 style="margin:0 0 12px;font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px"><span class="dot pv"></span>☀️ PV — produkcja (ta sama granulacja co powyżej)</h3><div id="panelPvWrap"></div></div>
-  <div class="card tbl-wrap"><h2 style="margin-bottom:8px">Zestawienie szczegółowe</h2><table><thead><tr id="repThead"></tr></thead><tbody id="repTbody"></tbody></table>
+  <div class="card tbl-wrap"><h2 style="margin-bottom:8px">Zestawienie szczegółowe</h2><table class="rc"><thead><tr id="repThead"></tr></thead><tbody id="repTbody"></tbody></table>
     <p class="note" id="repPvNote" style="margin-top:8px;display:none">Kolumna PV pojawia się tylko przy grupowaniu „wg okresu czasu” i metryce kWh/koszt (zł) — produkcja PV nie jest powiązana z temperaturą zewnętrzną ani z „cyklami”/„czasem trwania” pompy.</p>
   </div>
 </div>
@@ -296,7 +371,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
       <div><label>Data</label><input type="date" id="pv_date"></div>
       <div><label>Produkcja (kWh)</label><input type="number" id="pv_kwh" step="0.01" min="0"></div>
       <div><label>Cena zastosowana w tym wpisie (zł/kWh)</label><input type="number" id="pv_price" step="0.001" min="0"></div>
-      <div class="full"><label>Notatka</label><input type="text" id="pv_note"></div>
+      <div class="full"><label>Notatka</label><textarea id="pv_note" rows="3"></textarea></div>
     </div>
     <p class="note" style="margin-top:6px">Pole ceny podpowiada domyślną stawkę z ustawień powyżej — zmień ją tutaj, jeśli akurat tego dnia cena była inna. Zapisuje się wraz z wpisem (razem ze sposobem rozliczania obowiązującym w tym momencie), więc historia zachowuje prawdziwe dane z danego dnia, nawet gdy później zmienisz ustawienia.</p>
     <button class="submit" id="pvSubmitBtn" style="background:var(--pv);color:#231d05" onclick="addPv()">Zapisz wpis PV</button>
@@ -304,7 +379,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
 
   <div class="card tbl-wrap">
     <h2 style="margin-bottom:8px">Historia produkcji PV</h2>
-    <table><thead><tr><th>Data</th><th>kWh</th><th>kWh do rozliczenia</th><th>Cena (zł/kWh)</th><th>Wartość</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc"><thead><tr><th>Data</th><th>kWh</th><th>kWh do rozliczenia</th><th>Cena (zł/kWh)</th><th>Wartość</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="pvTbody"></tbody><tfoot id="pvTblFoot"></tfoot></table>
     <div id="pvEmptyMsg" class="empty" style="display:none">Brak wpisów.</div>
   </div>
@@ -326,7 +401,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
       <div><label>Kwota do zapłaty — całość (zł)</label><input type="number" id="inv_amount" step="0.01" min="0"></div>
       <div><label>Energia pobrana z sieci (kWh)</label><input type="number" id="inv_kwhpob" step="0.01" min="0"></div>
       <div><label>Energia rozliczona z depozytu / oddana (kWh) — opcjonalnie</label><input type="number" id="inv_kwhodd" step="0.01" min="0"></div>
-      <div class="full"><label>Notatka</label><input type="text" id="inv_note"></div>
+      <div class="full"><label>Notatka</label><textarea id="inv_note" rows="3"></textarea></div>
     </div>
     <p class="note" style="margin-top:6px">Pole „energia rozliczona z depozytu” to opcjonalna informacja z faktury (np. przy rozliczeniu rocznym prosumenta na starych zasadach) — nie jest wymagana do obliczeń, ale warto ją zapisać dla własnej historii.</p>
     <button class="submit" id="invSubmitBtn" style="background:var(--ok);color:#0c1f13" onclick="addInv()">Zapisz fakturę</button>
@@ -336,7 +411,7 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
 
   <div class="card tbl-wrap">
     <h2 style="margin-bottom:8px">Historia faktur</h2>
-    <table><thead><tr><th>Wystawiona</th><th>Okres</th><th>Sprzedawca</th><th>Nr faktury</th><th>Pobrana (kWh)</th><th>Oddana/depozyt (kWh)</th><th>Kwota</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc"><thead><tr><th>Wystawiona</th><th>Okres</th><th>Sprzedawca</th><th>Nr faktury</th><th>Pobrana (kWh)</th><th>Oddana/depozyt (kWh)</th><th>Kwota</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="invTbody"></tbody><tfoot id="invTblFoot"></tfoot></table>
     <div id="invEmptyMsg" class="empty" style="display:none">Brak faktur.</div>
   </div>
@@ -344,11 +419,232 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
   <div class="card" style="border-left:4px solid var(--ok)">
     <h2>💡 Hipotetyczny koszt zużycia, gdyby nie było PV</h2>
     <div class="toolbar">
-      <label>Od</label><input type="date" id="hipFrom" onchange="renderInv()">
-      <label>Do</label><input type="date" id="hipTo" onchange="renderInv()">
+      <span class="rng"><label>Od</label><input type="date" id="hipFrom" onchange="renderInv()">
+      <label>Do</label><input type="date" id="hipTo" onchange="renderInv()"></span>
     </div>
     <div id="hipWrap"></div>
     <p class="note" style="margin-top:10px">Sposób liczenia: Twoje <b>całkowite</b> zużycie prądu w domu to energia, którą realnie pobrałeś z sieci (wg faktur) <b>plus</b> cała energia, którą w tym czasie wyprodukowało PV (bo bez instalacji musiałbyś kupić tę samą ilość z sieci — niezależnie, czy dziś część zużywasz na miejscu, a część oddajesz i odbierasz z depozytu). Do wyceny używana jest <b>rzeczywista cena z Twoich faktur</b> (kwota ÷ kWh pobrane w tym okresie) — a dopiero gdy brak faktur w wybranym zakresie, domyślna cena z zakładki Ustawienia. To realistyczne przybliżenie, nie precyzyjne rozliczenie taryfowe (pomija opłaty stałe niezależne od zużycia, ewentualne różne stawki dzień/noc itp.).</p>
+  </div>
+</div>
+
+<div class="tab" id="cop">
+  <div id="copEditBar" style="display:none;margin-bottom:10px;align-items:center;gap:8px">
+    <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji okresu pracy</span>
+    <button onclick="cancelCopEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
+  </div>
+
+  <div class="card">
+    <h2>⚡ Okres pracy pompy: zużycie, ciepło i średnie COP od uruchomienia do zatrzymania</h2>
+    <p class="note"><b>Jak to działa.</b> Jeden <b>okres</b> = czas od uruchomienia do zatrzymania (zimą zwykle całe grzanie CO aż do podgrzewu CWU). Zużycie bierzesz z licznika pompy. Ciepło liczone jest z odczytów T01, T02 i T39 zrobionych na <b>starcie</b>, na <b>stopie</b> i — dla długich okresów — w <b>odczytach pośrednich</b>; aplikacja liczy z nich średnie ważone czasem (interpolacja liniowa między odczytami).</p>
+    <p class="note" style="margin-top:6px"><b>Odszranianie nie jest osobnym trybem.</b> Pompa robi je sama w trakcie pracy, więc licznik już je wlicza w zużycie. Nie rób odczytów T01/T02/T39 w trakcie odszraniania (jeśli się zdarzy — zaznacz to przy odczycie). Opcjonalnie możesz wpisać łączny czas odszraniania w okresie (pole w sekcji 1).</p>
+    <p class="note" style="margin-top:6px">Odczyty z Warmlinka: zakładka <b>„T”</b> (ostatnia litera w pasku u góry). Wynik jest <b>przybliżony</b> — przy wyniku jest zakres z dokładności wpisanych liczb oraz lista kontroli spójności danych.</p>
+    <div class="legendsrc">Znaczniki przy polach:
+      <span class="src app">z aplikacji Warmlink</span>
+      <span class="src lic">z licznika pompy</span>
+      <span class="src man">wpisz ręcznie</span>
+    </div>
+
+    <div class="sech" style="border-top:none;margin-top:10px">1. Okres pracy: od uruchomienia do zatrzymania</div>
+    <div class="fgrid">
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">od</span><span class="fname">Uruchomienie — data i godzina</span><span class="src man">wpisz ręcznie</span></div>
+        <div class="fdesc">Kiedy pompa zaczęła pracować w tym okresie (np. koniec poprzedniego podgrzewu CWU albo początek grzania CO).</div>
+        <div class="finp"><input type="datetime-local" id="cp_start"><button class="btn2" type="button" onclick="cpNow('cp_start')" style="margin:0;color:var(--text)">Teraz</button></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">do</span><span class="fname">Zatrzymanie — data i godzina</span><span class="src man">wpisz ręcznie</span></div>
+        <div class="fdesc">Kiedy okres się kończy (np. pompa przechodzi na podgrzew CWU albo się wyłącza). Okres może trwać wiele godzin lub dób.</div>
+        <div class="finp"><input type="datetime-local" id="cp_end"><button class="btn2" type="button" onclick="cpNow('cp_end')" style="margin:0;color:var(--text)">Teraz</button></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">godz.</span><span class="fname">Czas trwania okresu</span><span class="src set">liczone</span></div>
+        <div class="fdesc">Różnica między zatrzymaniem a uruchomieniem, w godzinach. Na tej podstawie liczone są średnia moc i zużycie na godzinę.</div>
+        <div class="calcval" id="cp_hours" style="font-size:1.1rem">—</div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">tryb</span><span class="fname">Tryb pracy w tym okresie</span><span class="src man">wpisz ręcznie</span></div>
+        <div class="fdesc"><b>CO</b> = ogrzewanie domu, <b>CWU</b> = podgrzew ciepłej wody. Dla CWU i CO zrób osobne okresy.</div>
+        <div class="finp"><select id="cp_mode"><option value="CO">CO — ogrzewanie domu</option><option value="CWU">CWU — ciepła woda</option></select></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">odszr.</span><span class="fname">Łączny czas odszraniania w okresie (opcjonalnie)</span><span class="src man">wpisz ręcznie</span></div>
+        <div class="fdesc">Jeśli znasz sumę minut odszraniania w tym okresie — wpisz. Wtedy ciepło oddane = średnia moc grzewcza × (czas okresu − czas odszraniania). Puste = bez korekty (zużycie z licznika i tak zawiera odszranianie).</div>
+        <div class="finp"><input type="number" id="cp_defmin" step="1" min="0" placeholder="0"><span class="unit">min</span></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">korekta</span><span class="fname">Odjąć korektę ΔT z Ustawień?</span><span class="src man">wpisz ręcznie</span></div>
+        <div class="fdesc">Domyślnie <b>NIE</b>. Korekta (kalibracja różnicy T01/T02 przy wyłączonej sprężarce) jest odejmowana od ΔT w każdym odczycie i potrafi mocno obniżyć Q i COP. Zaznacz tylko wtedy, gdy czujniki naprawdę pokazują różnicę przy postoju. Wynik z i bez korekty pokazują „Kontrole wiarygodności”.</div>
+        <label class="chk"><input type="checkbox" id="cp_useoff"> odejmij korektę (<span id="cp_offval">0</span> K)</label>
+      </div>
+    </div>
+
+    <div class="sech">Kiedy zrobiłeś odczyty (sekcje 2–5)</div>
+    <div id="cp_rdtimes"></div>
+
+    <div class="sech">2. Temperatury wody i powietrza (Warmlink → zakładka „T”)</div>
+    <div class="fgrid" id="cp_sec2"></div>
+
+    <div class="sech">3. Przepływ wody i otwarte obiegi</div>
+    <div class="fgrid" id="cp_sec3"></div>
+
+    <div class="sech">4. Zużycie energii — dedykowany licznik pompy (kWh i godziny)</div>
+    <div class="fgrid">
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">kWh</span><span class="fname">Zużycie w okresie — wpisane ręcznie (zamiast stanów licznika)</span><span class="src lic">z licznika pompy</span></div>
+        <div class="fdesc">Wypełnij <b>tylko</b>, jeśli nie masz stanów licznika na starcie i stopie (np. licznik pokazuje przyrost). Jeśli wpiszesz stany licznika poniżej, to one mają pierwszeństwo.</div>
+        <div class="finp"><input type="number" id="cp_kwh" step="0.01" min="0"><span class="unit">kWh</span></div>
+      </div>
+    </div>
+    <div class="fgrid" id="cp_sec4" style="margin-top:12px"></div>
+
+    <div class="sech">5. Odczyty kontrolne z aplikacji: T30, T34, T35 (start, stop, w trakcie)</div>
+    <div class="fgrid" id="cp_sec5"></div>
+
+    <div class="sech">6. Notatka</div>
+    <div class="fgrid"><div class="fld" style="grid-column:1/-1">
+      <div class="fhead"><span class="code nocode">notatka</span><span class="fname">Uwagi do okresu</span><span class="src man">wpisz ręcznie</span></div>
+      <div class="fdesc">Dowolny tekst, np. „mróz, bufor wychłodzony po CWU”.</div>
+      <div class="finp"><textarea id="cp_note" rows="3"></textarea></div>
+    </div></div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--ok)">
+    <h2>Wynik dla okresu (przybliżony)</h2>
+    <div class="calcrow" style="margin-top:0">
+      <div class="calcbox"><div class="calcval" id="cp_E" style="color:var(--cyan)">—</div><div class="calclbl">Zużycie energii w okresie (E)</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_P" style="color:var(--cyan)">—</div><div class="calclbl">Średnia moc pobierana Pel — szacunek: energia ÷ czas okresu (kWh na godzinę pracy), nie pomiar chwilowy</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_Eh" style="font-size:1.05rem">—</div><div class="calclbl">Zużycie na dobę pracy (tylko okresy ≥ 24 h; krótsze to nie dobowe zużycie)</div></div>
+    </div>
+    <div class="calcrow">
+      <div class="calcbox"><div class="calcval" id="cp_Q" style="color:var(--amber)">—</div><div class="calclbl">Średnia moc grzewcza Q (ważona czasem)</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_Qe" style="color:var(--amber)">—</div><div class="calclbl">Ciepło oddane w okresie</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_cop" style="color:var(--ok)">—</div><div class="calclbl">Średni COP w okresie (ciepło ÷ E)</div></div>
+    </div>
+    <div class="calcrow">
+      <div class="calcbox"><div class="calcval" id="cp_range" style="font-size:1.05rem">—</div><div class="calclbl">Zakres COP z dokładności wpisanych liczb</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_t04" style="font-size:1.05rem">—</div><div class="calclbl">T04 średnia ważona czasem (min–max z odczytów)</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_hz" style="font-size:1.05rem">—</div><div class="calclbl">T30 średnia ważona czasem (obciążenie)</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_pf" style="font-size:1.05rem">—</div><div class="calclbl">cos φ — kontrola licznika vs T34/T35 (rzetelny tylko z chwilową mocą z licznika)</div></div>
+    </div>
+
+    <div class="sech" style="margin-top:14px">Kontrole wiarygodności</div>
+    <div id="cp_warn"></div>
+
+    <div class="sech">Odczyty obok siebie — porównanie start / w trakcie / stop</div>
+    <div class="tbl-wrap"><table id="cp_rdtable"></table></div>
+
+    <div id="cp_segwrap" style="display:none">
+      <div class="sech">Segmenty między odczytami licznika (weryfikacja wewnątrz okresu)</div>
+      <div class="tbl-wrap"><table id="cp_segs"></table></div>
+    </div>
+
+    <div class="sech">Jak policzono (podstawienie liczb)</div>
+    <div class="formula" id="cp_f_win"></div>
+    <div class="formula" id="cp_f_E"></div>
+    <div class="formula" id="cp_f_P"></div>
+    <div class="formula" id="cp_f_Q"></div>
+    <div class="formula" id="cp_f_Qe"></div>
+    <div class="formula" id="cp_f_cop"></div>
+    <div class="formula" id="cp_f_pf"></div>
+    <p class="note" id="cp_consts" style="margin-top:8px"></p>
+    <p class="note">„Zakres COP” to najgorszy przypadek wynikający wyłącznie z tego, <b>ile miejsc po przecinku wpisałeś</b> (T01, T02, T39, licznik). Nie obejmuje błędu czujników ani zmian między odczytami (stąd odczyty pośrednie). Przy długich okresach średnia Q opiera się na interpolacji między odczytami — im więcej odczytów, tym bliżej rzeczywistości.</p>
+    <button class="submit" id="copSubmitBtn" style="background:var(--ok);color:#0c1f13" onclick="addCop()">Zapisz okres pracy</button>
+  </div>
+
+  <div class="card">
+    <h2>🔧 Kalibracja czujników T01 / T02 (opcjonalnie)</h2>
+    <p class="note">Przy <b>wyłączonej sprężarce</b>, gdy <b>pompa obiegowa instalacji krąży</b> (woda się miesza), T01 i T02 powinny pokazywać prawie to samo. Różnica to błąd czujników i można ją odjąć od ΔT. Jeśli woda w instalacji stoi, różnica może wynikać z różnych miejsc zabudowy czujników — wtedy korekta nie jest wiarygodna.</p>
+    <div class="fgrid" style="margin-top:10px">
+      <div class="fld">
+        <div class="fhead"><span class="code">T01</span><span class="fname">Inlet Water Temp — sprężarka wyłączona</span><span class="src app">z aplikacji Warmlink</span></div>
+        <div class="fdesc">Odczyt T01 przy wyłączonej sprężarce.</div>
+        <div class="finp"><input type="number" id="cal_t01" step="0.1" value="24.8"><span class="unit">°C</span></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code">T02</span><span class="fname">Outlet Water Temp — sprężarka wyłączona</span><span class="src app">z aplikacji Warmlink</span></div>
+        <div class="fdesc">Odczyt T02 przy wyłączonej sprężarce.</div>
+        <div class="finp"><input type="number" id="cal_t02" step="0.1" value="25.8"><span class="unit">°C</span></div>
+      </div>
+    </div>
+    <div class="calcrow">
+      <div class="calcbox"><div class="calcval" id="cal_diff" style="font-size:1.1rem">—</div><div class="calclbl">Różnica T02 − T01 przy wyłączonej pompie</div></div>
+      <div class="calcbox"><div class="calcval" id="cal_cur" style="font-size:1.1rem">—</div><div class="calclbl">Korekta ΔT aktualnie używana w obliczeniach</div></div>
+    </div>
+    <button class="submit" style="background:var(--cyan);color:#06222a" onclick="applyCal()">Zapisz tę różnicę jako korektę ΔT</button>
+    <button class="submit" style="background:var(--panel2);color:var(--text);border:1px solid var(--line);margin-left:6px" onclick="clearCal()">Wyzeruj korektę</button>
+  </div>
+</div>
+
+<div class="tab" id="cophist">
+  <div class="toolbar">
+    <label>Tryb</label><select id="ch_mode" onchange="renderCopHist()"><option value="all">CO + CWU</option><option value="CO">Tylko CO</option><option value="CWU">Tylko CWU</option></select>
+    <span class="rng"><label>Od</label><input type="date" id="ch_from" onchange="renderCopHist()">
+    <label>Do</label><input type="date" id="ch_to" onchange="renderCopHist()"></span>
+    <label>Zestawienie wg</label><select id="ch_gran" onchange="renderCopHist()"><option value="day">Dnia</option><option value="week">Tygodnia</option><option value="month" selected>Miesiąca</option><option value="year">Roku</option></select>
+    <label>Okres pracy liczyć do</label><select id="ch_alloc" onchange="renderCopHist()"><option value="start" selected>dnia uruchomienia (jak w „Dane”)</option><option value="split">dób kalendarzowych (dzielony o północy)</option></select>
+    <button onclick="exportCopCsv()">Eksport CSV</button>
+  </div>
+  <div class="stats" id="ch_stats"></div>
+  <div id="ch_recon" class="note" style="margin:-4px 0 12px"></div>
+  <p class="note" style="margin:-4px 0 12px">Każdy punkt na wykresach to <b>jeden okres pracy</b> (od uruchomienia do zatrzymania); jego wielkość zależy od czasu trwania. Wartości T04 i T30 to średnie ważone czasem z odczytów w okresie — bez sztucznych przedziałów.</p>
+  <div class="panelGrid">
+    <div class="card"><h2>COP okresów w czasie</h2><div id="ch_chartTime"></div></div>
+    <div class="card"><h2>COP okresu a średnia T04 (temp. zewnętrzna)</h2><div id="ch_chartTemp"></div></div>
+    <div class="card" style="grid-column:1/-1"><h2>Średnia moc grzewcza Q i moc pobierana Pel (szacunek E ÷ czas) a średnia T30 — częstotliwość sprężarki (Hz)</h2><div id="ch_chartHz"></div></div>
+  </div>
+  <div class="card tbl-wrap">
+    <h2 style="margin-bottom:8px">Zestawienie zużycia i COP</h2>
+    <table class="rc"><thead><tr><th>Okres</th><th>Dni z pracą</th><th>Czas pracy</th><th>Energia E (kWh)</th><th>Śr. moc pobierana podczas pracy (kW) — szacunek = E ÷ czas pracy</th><th>Ciepło Q (kWh)</th><th>COP</th><th>T04 temp. zewn. śr. (°C)</th></tr></thead><tbody id="ch_agg"></tbody></table>
+    <p class="note" style="margin-top:8px"><b>Jak czytać:</b> każdy wiersz sumuje okresy pracy przypisane do danego dnia/tygodnia/miesiąca. Przy ustawieniu „dnia uruchomienia” cały okres (np. praca od 21:14 do 7:24) liczy się do dnia, w którym się zaczął — tak jak w zakładce „Dane”. Ustawienie „dób kalendarzowych” dzieli taki okres o północy proporcjonalnie do czasu, więc sumy dnia różnią się od „Dane”. „Czas pracy” to tylko czas zapisanych okresów, nie doba. „Śr. moc podczas pracy” = energia ÷ czas pracy. COP liczony jest tylko z okresów, które mają odczyty T01, T02 i T39; jeśli pokrywają tylko część energii, pod COP widać ile procent.</p>
+  </div>
+  <div class="card tbl-wrap">
+    <h2 style="margin-bottom:8px">Okresy pracy</h2>
+    <p class="note" style="margin:0 0 8px"><b>Odczyty: wszystkie / do COP</b> — „wszystkie” to liczba odczytów wpisanych w okresie (Start, Stop i pośrednie), „do COP” to te, z których da się policzyć ciepło: mają T01, T02 i przepływ T39, ΔT &gt; 0, sprężarka pracuje i nie jest to odszranianie. Okres z „0” w drugiej liczbie nie ma COP — dopisz odczyty przyciskiem „Edytuj”.</p>
+    <table class="rc"><thead><tr><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas trwania</th><th>Tryb</th><th>Odczyty: wszystkie / do COP</th><th>T04 temp. zewn. śr. °C (min…max)</th><th>T30 sprężarka śr. (Hz)</th><th>E energia z licznika (kWh)</th><th>Pel śr. moc pobierana (kW) — szacunek = E ÷ czas</th><th>Q śr. moc grzewcza (kW)</th><th>Ciepło oddane (kWh)</th><th>COP</th><th>Zakres COP</th><th>cos φ (* = orient.)</th><th>Kontrole</th><th>Notatka</th><th></th></tr></thead>
+    <tbody id="ch_tbody"></tbody></table>
+    <div id="ch_empty" class="empty" style="display:none">Brak okresów — dodaj w zakładce „⚡ COP — okres pracy” albo zaimportuj dane w „📥 COP — import”.</div>
+  </div>
+</div>
+
+<div class="tab" id="copimp">
+  <div class="card">
+    <h2>📥 Import danych historycznych</h2>
+    <p class="note">Tu wczytasz dane, które już masz (z Excela, Arkuszy Google, pliku CSV). Każdy <b>wiersz = jeden okres pracy</b>. Importowane okresy trafiają do tej samej bazy co wpisane ręcznie i od razu są w historii i zestawieniach.</p>
+  </div>
+
+  <div class="card">
+    <h2>A. Z zapisanych już cykli CO / CWU</h2>
+    <p class="note">Aplikacja ma już Twoje cykle CO i CWU (zakładka „+ Dodaj”) z czasem startu i końca oraz zużyciem z licznika. Można z nich jednym kliknięciem utworzyć okresy COP — będą mieć czas i zużycie, a odczyty cieplne (T01, T02, T39) możesz dopisać później przyciskiem „Edytuj”.</p>
+    <div id="imp_cycInfo" class="note" style="margin:8px 0"></div>
+    <button class="submit" style="margin-top:0" onclick="importFromCycles()">Utwórz okresy COP z cykli CO/CWU</button>
+  </div>
+
+  <div class="card">
+    <h2>B. Z tabeli (wklej z Excela albo wczytaj plik CSV)</h2>
+    <p class="note">1) Skopiuj w Excelu zakres <b>razem z wierszem nagłówków</b> i wklej poniżej (albo wczytaj plik .csv / .txt). 2) Sprawdź, czy kolumny zostały dobrze rozpoznane — możesz je zmienić. 3) Kliknij „Podgląd”, a potem „Importuj”.</p>
+    <div class="toolbar" style="margin-top:10px">
+      <label style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:0">Wczytaj plik CSV / TXT<input type="file" accept=".csv,.txt,.tsv" style="display:none" onchange="impLoadFile(event)"></label>
+      <button onclick="downloadCopTemplate()">Pobierz szablon CSV</button>
+    </div>
+    <textarea id="imp_text" rows="7" placeholder="Wklej tutaj dane (pierwszy wiersz = nagłówki kolumn). Rozdzielacz: tabulator, średnik lub przecinek — rozpoznawany automatycznie." style="width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.78rem" oninput="impParse()"></textarea>
+    <div id="imp_info" class="note" style="margin:8px 0"></div>
+    <div id="imp_map"></div>
+    <div class="toolbar" style="margin-top:12px">
+      <label class="chk" style="margin:0"><input type="checkbox" id="imp_dedupe" checked> Pomiń wiersze, które już istnieją (ten sam start i tryb)</label>
+      <button onclick="impPreview()">Podgląd</button>
+      <button onclick="impRun()" style="background:var(--ok);color:#0c1f13;border:none;font-weight:700">Importuj</button>
+    </div>
+    <div id="imp_preview"></div>
+  </div>
+
+  <div class="card">
+    <h2>Jak zostaną odczytane kolumny</h2>
+    <p class="note">• Daty: <b>RRRR-MM-DD GG:MM</b> albo <b>DD.MM.RRRR GG:MM</b> (bez godziny = 00:00). Liczby mogą mieć przecinek lub kropkę.<br>
+    • Kolumny z końcówką <b>_start</b> to odczyt na uruchomieniu, <b>_stop</b> — na zatrzymaniu. Jeśli masz <b>tylko jedną wartość</b> (np. średnią), przypisz ją do „start” — zostanie użyta dla całego okresu.<br>
+    • Zużycie: wpisz albo „zużycie okresu (kWh)”, albo stany licznika na starcie i stopie.<br>
+    • Tryb: tekst zawierający „CWU” = CWU, inaczej CO.<br>
+    • Importowane okresy używają bieżącej korekty ΔT z Ustawień (domyślnie 0 K).<br>
+    • Wiersze bez poprawnej daty startu i stopu są pomijane (zobaczysz powód w podglądzie).</p>
   </div>
 </div>
 
@@ -359,46 +655,81 @@ tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:none}
     <p style="font-size:.8rem;color:var(--muted);margin-top:10px">To tylko podpowiedź, która wpisuje się automatycznie w pole „Cena zastosowana w tym cyklu” w nowym wpisie CO/CWU. Zmiana tej wartości <b>nie przelicza</b> już zapisanych cykli — każdy zapisany wpis zachowuje cenę z dnia, w którym został dodany (widoczną i edytowalną per wpis w formularzu „+ Dodaj”, tak samo jak przy PV). Dzięki temu historia kosztów zostaje poprawna nawet gdy cena zakupu energii się zmieni.</p>
   </div>
   <div class="card">
+    <h2>⚡ COP — stałe założenia obliczeń</h2>
+    <p class="note" style="margin-bottom:10px">Używane w zakładce „⚡ COP — pomiar”. Każdy zapisany pomiar zachowuje stałe, które obowiązywały w chwili zapisu — zmiana tutaj nie przelicza starych pomiarów.</p>
+    <div class="fgrid">
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">ρ</span><span class="fname">Gęstość medium w obiegu</span></div>
+        <div class="fdesc">Woda: 1000. Jeśli w instalacji jest glikol, wpisz wartość z karty producenta glikolu dla swojego stężenia.</div>
+        <div class="finp"><input type="number" id="set_rho" step="1" min="0" onchange="updateCopSettings()"><span class="unit">kg/m³</span></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">cp</span><span class="fname">Ciepło właściwe medium</span></div>
+        <div class="fdesc">Woda: 4,186. Dla glikolu — wartość z karty producenta dla swojego stężenia i temperatury.</div>
+        <div class="finp"><input type="number" id="set_cpw" step="0.001" min="0" onchange="updateCopSettings()"><span class="unit">kJ/(kg·K)</span></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code">T32</span><span class="fname">Max Frequency Allowed for Driver</span></div>
+        <div class="fdesc">Maksymalna częstotliwość sprężarki z aplikacji (zakładka „T”, pozycja T32). Do wyliczenia obciążenia T30 ÷ T32.</div>
+        <div class="finp"><input type="number" id="set_hzmax" step="1" min="1" onchange="updateCopSettings()"><span class="unit">Hz</span></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">obieg 1</span><span class="fname">Nazwa pierwszego obiegu (zawór Afriso)</span></div>
+        <div class="fdesc">Nazwa pokazywana przy zaznaczaniu otwartych zaworów, np. „Parter”.</div>
+        <div class="finp"><input type="text" id="set_c1" onchange="updateCopSettings()"></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">obieg 2</span><span class="fname">Nazwa drugiego obiegu (zawór Afriso)</span></div>
+        <div class="fdesc">Nazwa pokazywana przy zaznaczaniu otwartych zaworów, np. „Piętro”.</div>
+        <div class="finp"><input type="text" id="set_c2" onchange="updateCopSettings()"></div>
+      </div>
+      <div class="fld">
+        <div class="fhead"><span class="code nocode">korekta</span><span class="fname">Korekta ΔT (T02 − T01 przy wyłączonej pompie)</span></div>
+        <div class="fdesc">Odejmowana od ΔT w każdym nowym pomiarze. Wygodniej ustawić ją przyciskiem w zakładce „⚡ COP — pomiar” → Kalibracja. 0 = brak korekty.</div>
+        <div class="finp"><input type="number" id="set_dtoff" step="0.1" onchange="updateCopSettings()"><span class="unit">K</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
     <h2>Przechowywanie danych</h2>
-    <p style="font-size:.85rem;color:var(--muted)">Dane zapisują się <b>automatycznie w tej przeglądarce/na tym urządzeniu</b> (localStorage) — nic nie musisz klikać, działa też na iPhonie/iPadzie. Jeśli przeglądarka wspiera bezpośredni zapis do pliku na dysku (np. Chrome/Edge na komputerze), możesz dodatkowo połączyć plik .json u góry strony — wtedy dane zapisują się w obu miejscach naraz. Użyj „Pobierz plik danych”, by zrobić kopię zapasową lub przenieść dane na inne urządzenie/przeglądarkę.</p>
+    <p style="font-size:.85rem;color:var(--muted)">Dane zapisują się <b>automatycznie w tej przeglądarce/na tym urządzeniu</b> (działa też na iPhonie/iPadzie). Jeśli przeglądarka wspiera zapis do pliku (Chrome/Edge na komputerze), możesz dodatkowo połączyć plik .json u góry strony — wtedy dane zapisują się w obu miejscach. „Pobierz plik danych” = kopia zapasowa; „Wczytaj plik danych” scala się z danymi z synchronizacji.</p>
     <div class="toolbar"><button onclick="exportJSON()">Pobierz plik danych</button>
       <label style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:0">Wczytaj plik danych<input type="file" accept=".json" style="display:none" onchange="importJSONFile(event)"></label>
+    </div>
+  </div>
+  <div class="card" style="border-left:4px solid var(--cyan)">
+    <h2>☁️ Synchronizacja między urządzeniami (GitHub Gist)</h2>
+    <p class="note">Dane z tego i innych urządzeń (iPhone, komputer, inna przeglądarka) łączone są wpis po wpisie — jeśli coś edytujesz w dwóch miejscach zanim zdążysz zsynchronizować, wygrywa nowsza edycja tego konkretnego wpisu (reszta się nie gubi). Usunięcia też się synchronizują. Obejmuje cykle CO/CWU, PV, faktury, okresy COP i ustawienia. Token jest przechowywany tylko lokalnie i wysyłany wyłącznie do api.github.com.</p>
+    <div class="grid">
+      <div><label>GitHub Personal Access Token (uprawnienie: tylko „gist”)</label><input type="password" id="syncToken" placeholder="ghp_..."></div>
+      <div><label>ID Gista</label><input type="text" id="syncGistId" placeholder="uzupełni się automatycznie"></div>
+    </div>
+    <div class="toolbar" style="margin-top:10px">
+      <label style="display:inline-flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;margin:0;cursor:pointer"><input type="checkbox" id="syncAuto" style="width:auto"> Autosynchronizacja</label>
+      <button onclick="saveSyncSettings()">Zapisz</button>
+      <button onclick="createGist()">Utwórz nowy Gist</button>
+      <button onclick="syncNow(false)">Synchronizuj teraz</button>
+    </div>
+    <p class="note" id="syncStatus" style="margin-top:8px">Synchronizacja nieskonfigurowana.</p>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)">
+      <h3 style="margin:0 0 8px;font-size:.9rem">📱 Sparuj kolejne urządzenie</h3>
+      <p class="note">Na urządzeniu z zapisanym tokenem i Gistem kliknij „Pokaż kod parowania”. Na nowym urządzeniu zeskanuj kod aparatem (otworzy się Safari z gotową konfiguracją) albo wklej link poniżej.</p>
+      <div class="toolbar"><button onclick="showPairingQR()">Pokaż kod parowania (QR)</button></div>
+      <div id="pairingWrap" style="display:none;margin-top:10px">
+        <div id="pairingQR" style="background:#fff;padding:12px;border-radius:10px;display:inline-block;max-width:240px"></div>
+        <div class="grid" style="margin-top:10px"><div class="full"><label>Link parowania</label><input type="text" id="pairingLink" readonly onclick="this.select()"></div></div>
+        <div class="toolbar" style="margin-top:6px"><button onclick="copyPairingLink()">Kopiuj link</button></div>
+      </div>
+      <div class="grid" style="margin-top:12px"><div class="full"><label>Wklej kod / link parowania z innego urządzenia</label><input type="text" id="pairingPaste" placeholder="wklej tu kod lub cały link"></div></div>
+      <div class="toolbar" style="margin-top:6px"><button onclick="applyPastedPairingCode()">Zastosuj wklejony kod</button></div>
     </div>
   </div>
 </div>
 
 </main>
 <script>
-let R=[], PV=[], INV=[], SET={price:0,pvPower:10,pvPrice:0.25,pvMode:'netbilling',pvOpust:0.8}, fileHandle=null, editId=null, pvEditId=null, invEditId=null;
+let R=[], PV=[], INV=[], M=[], TOMB=[], EXTRA={}, SIG={}, copEditId=null, copCtx=null, SET={price:0,pvPower:10,pvPrice:0.25,pvMode:'netbilling',pvOpust:0.8}, fileHandle=null, editId=null, pvEditId=null, invEditId=null;
 const hasFS = 'showOpenFilePicker' in window;
-const LS_KEY = 'hp_pv_dane_v1';
-
-function normalizeSet(){
-  if(SET.pvPower==null) SET.pvPower=10; if(SET.pvPrice==null) SET.pvPrice=0.25;
-  if(SET.pvMode==null) SET.pvMode='netbilling'; if(SET.pvOpust==null) SET.pvOpust=SET.pvPower>10?0.7:0.8;
-  if(SET.price==null) SET.price=0;
-}
-function applySettingsToInputs(){
-  document.getElementById('priceInput').value = SET.price||'';
-  document.getElementById('pvPowerInput').value = SET.pvPower;
-  document.getElementById('pvModeInput').value = SET.pvMode;
-  document.getElementById('pvOpustInput').value = SET.pvOpust;
-  document.getElementById('pvPriceInput').value = SET.pvPrice;
-  document.getElementById('pv_price').value = SET.pvPrice;
-  document.getElementById('co_price').value = SET.price||'';
-  document.getElementById('w_price').value = SET.price||'';
-  updatePvModeUI();
-}
-function saveToLocalStorage(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify({settings:SET,records:R,pv:PV,inv:INV})); return true; }catch(e){ return false; }
-}
-function loadFromLocalStorage(){
-  try{
-    const txt=localStorage.getItem(LS_KEY); if(!txt) return false;
-    const d=JSON.parse(txt); R=d.records||[]; SET=d.settings||SET; PV=d.pv||[]; INV=d.inv||[];
-    normalizeSet(); return true;
-  }catch(e){ return false; }
-}
 
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
@@ -421,8 +752,9 @@ function idbOp(mode,k,v){return new Promise((res,rej)=>{const rq=indexedDB.open(
   rq.onerror=()=>rej(rq.error);});}
 function updateStoreBar(){
   const dot=document.getElementById('storeDot'), txt=document.getElementById('storeText');
-  if(fileHandle){ dot.classList.add('ok'); txt.textContent='Plik danych: '+(fileHandle.name||'połączony')+' ('+R.length+' wpisów) — kopia też zapisana lokalnie w przeglądarce'; }
-  else { dot.classList.add('ok'); txt.textContent = (hasFS ? 'Zapisano lokalnie w przeglądarce (' : 'Zapisano na tym urządzeniu (')+R.length+' wpisów) — '+(hasFS?'możesz też otworzyć plik .json':'użyj Ustawienia → Pobierz plik, by zrobić kopię'); }
+  dot.classList.add('ok');
+  if(fileHandle) txt.textContent='Plik danych: '+(fileHandle.name||'połączony')+' ('+R.length+' wpisów) — kopia też zapisana lokalnie w przeglądarce';
+  else txt.textContent=(hasFS?'Zapisano lokalnie w przeglądarce (':'Zapisano na tym urządzeniu (')+R.length+' wpisów) — '+(hasFS?'możesz też otworzyć plik .json':'użyj Ustawienia → Pobierz plik, by zrobić kopię');
 }
 async function connectFile(create){
   if(!hasFS){ alert('Ta przeglądarka nie wspiera bezpośredniego zapisu na dysk. Użyj zakładki Ustawienia (Pobierz/Wczytaj plik).'); return; }
@@ -433,39 +765,226 @@ async function connectFile(create){
     fileHandle=h; await idbOp('readwrite','handle',h); await loadFromFile();
   }catch(e){ if(e.name!=='AbortError') alert('Błąd: '+e.message); }
 }
+/* ===================== ZAPIS LOKALNY + SYNCHRONIZACJA ===================== */
+const LS_KEY='hp_pv_dane_v1';
+const KNOWN_KEYS=['settings','records','pv','inv','tomb','meas'];
+function normalizeSet(){
+  if(SET.pvPower==null) SET.pvPower=10; if(SET.pvPrice==null) SET.pvPrice=0.25;
+  if(SET.pvMode==null) SET.pvMode='netbilling'; if(SET.pvOpust==null) SET.pvOpust=SET.pvPower>10?0.7:0.8;
+  if(SET.price==null) SET.price=0;
+}
+function syncPayload(){ return {...EXTRA, settings:SET, records:R, pv:PV, inv:INV, meas:M, tomb:TOMB}; }
+function applyData(d){
+  R=d.records||[]; SET=d.settings||{price:0}; PV=d.pv||[]; INV=d.inv||[]; M=d.meas||[]; TOMB=d.tomb||[];
+  EXTRA={}; Object.keys(d).forEach(k=>{ if(!KNOWN_KEYS.includes(k)) EXTRA[k]=d[k]; });
+}
+function applySettingsToInputs(){
+  normalizeSet(); ensureCopDefaults(); syncCopSettingsUI();
+  document.getElementById('priceInput').value = SET.price||'';
+  document.getElementById('pvPowerInput').value = SET.pvPower;
+  document.getElementById('pvModeInput').value = SET.pvMode;
+  document.getElementById('pvOpustInput').value = SET.pvOpust;
+  document.getElementById('pvPriceInput').value = SET.pvPrice;
+  document.getElementById('pv_price').value = SET.pvPrice;
+  document.getElementById('co_price').value = SET.price||'';
+  document.getElementById('w_price').value = SET.price||'';
+  updatePvModeUI();
+}
+function saveToLocalStorage(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(syncPayload())); return true; }catch(e){ return false; } }
+function loadFromLocalStorage(){
+  try{ const txt=localStorage.getItem(LS_KEY); if(!txt) return false; applyData(JSON.parse(txt)); return true; }catch(e){ return false; }
+}
+
+/* Znaczniki zmian: zamiast ręcznie oznaczać każdy zapis, porównujemy stan z ostatnim "zdjęciem" (SIG).
+   Nowy/zmieniony wpis dostaje updatedAt, a usunięty — wpis w TOMB (żeby usunięcie dotarło na inne urządzenia). */
+const SYNC_ARRS=[['r',()=>R],['pv',()=>PV],['inv',()=>INV],['meas',()=>M]];
+function sigOf(o){ const {updatedAt,...rest}=o; return JSON.stringify(rest); }
+function snapshotSig(){
+  SIG={}; SYNC_ARRS.forEach(([t,g])=>g().forEach(r=>{ if(r&&r.id) SIG[t+'|'+r.id]=sigOf(r); })); SIG['set']=sigOf(SET);
+}
+function stampChanges(){
+  const now=Date.now(), seen=new Set();
+  SYNC_ARRS.forEach(([t,g])=>g().forEach(r=>{ if(!r||!r.id) return; const k=t+'|'+r.id; seen.add(k);
+    const sg=sigOf(r); if(SIG[k]!==sg){ r.updatedAt=now; SIG[k]=sg; } }));
+  Object.keys(SIG).forEach(k=>{ if(k==='set'||seen.has(k)) return; const x=k.indexOf('|');
+    TOMB.push({type:k.slice(0,x),id:k.slice(x+1),deletedAt:now}); delete SIG[k]; });
+  const ss=sigOf(SET); if(SIG['set']!==ss){ SET.updatedAt=now; SIG['set']=sigOf(SET); }
+}
+
 async function loadFromFile(){
-  try{ const f=await fileHandle.getFile(); const txt=await f.text();
-    const d = txt.trim()? JSON.parse(txt) : {}; R=d.records||[]; SET=d.settings||{price:0}; PV=d.pv||[]; INV=d.inv||[];
-  }catch(e){ R=[]; SET={price:0}; PV=[]; INV=[]; }
-  normalizeSet();
+  try{ const f=await fileHandle.getFile(); const txt=await f.text(); applyData(txt.trim()? JSON.parse(txt) : {}); }
+  catch(e){ applyData({}); }
   applySettingsToInputs();
   const migrated = migratePrices();
+  snapshotSig();
   saveToLocalStorage();
   updateStoreBar();
   if(migrated) persist(); else renderAll();
 }
 async function persist(){
+  stampChanges();
   if(fileHandle){
-    try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify({settings:SET,records:R,pv:PV,inv:INV},null,1)); await w.close(); }
+    try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(syncPayload(),null,1)); await w.close(); }
     catch(e){ alert('Błąd zapisu na dysk: '+e.message); }
   }
   saveToLocalStorage();
   updateStoreBar(); renderAll();
+  scheduleAutoSync();
 }
-document.getElementById('pv_date').value = ymd(new Date());
-document.getElementById('inv_issue').value = ymd(new Date());
-loadFromLocalStorage();
-applySettingsToInputs();
-updateStoreBar();
-renderAll();
-(async()=>{
-  if(!hasFS) return;
-  try{ const h=await idbOp('readonly','handle'); if(h){
-    const perm = await h.queryPermission({mode:'readwrite'});
-    if(perm==='granted'){ fileHandle=h; await loadFromFile(); }
-    else { document.getElementById('storeText').textContent+=' — poprzedni plik: '+h.name+' (kliknij „Otwórz plik .json”, aby wznowić bezpośredni zapis)'; }
-  } }catch(e){}
-})();
+
+/* ---------------- Synchronizacja (GitHub Gist) ---------------- */
+const SYNC_KEY='hp_pv_sync_cfg_v1';
+function loadSyncCfg(){ try{ return JSON.parse(localStorage.getItem(SYNC_KEY))||{}; }catch(e){ return {}; } }
+function saveSyncCfg(cfg){ try{ localStorage.setItem(SYNC_KEY, JSON.stringify(cfg)); }catch(e){} }
+function setSyncStatus(t){ const el=document.getElementById('syncStatus'); if(el) el.textContent=t; }
+async function ghFetch(url, opts={}){
+  const cfg=loadSyncCfg();
+  if(!cfg.token) throw new Error('Brak tokenu GitHub — wpisz go w Ustawieniach.');
+  const res = await fetch(url, {...opts, cache:'no-store', headers:{...(opts.headers||{}), 'Authorization':'token '+cfg.token, 'Accept':'application/vnd.github+json'}});
+  if(!res.ok){ const t=await res.text().catch(()=>''); throw new Error('GitHub API '+res.status+': '+t.slice(0,200)); }
+  return res.json();
+}
+async function createGist(){
+  try{
+    setSyncStatus('Tworzę Gist…');
+    const body={description:'Dane: Monitor pompy ciepła + PV',public:false,files:{'pompa-pv-dane.json':{content:JSON.stringify(syncPayload(),null,1)}}};
+    const data = await ghFetch('https://api.github.com/gists', {method:'POST', body:JSON.stringify(body)});
+    const cfg=loadSyncCfg(); cfg.gistId=data.id; saveSyncCfg(cfg);
+    document.getElementById('syncGistId').value=data.id;
+    setSyncStatus('Utworzono nowy Gist: '+data.id+' — od teraz można synchronizować.');
+  }catch(e){ setSyncStatus('Błąd tworzenia Gista: '+e.message); }
+}
+function saveSyncSettings(){
+  const cfg=Object.assign(loadSyncCfg(),{token:document.getElementById('syncToken').value.trim(), gistId:document.getElementById('syncGistId').value.trim(), auto:document.getElementById('syncAuto').checked});
+  saveSyncCfg(cfg);
+  setSyncStatus('Zapisano ustawienia synchronizacji.'+(cfg.auto?' Autosynchronizacja włączona.':''));
+}
+function mergeSets(localSet, remoteSet){
+  if(!remoteSet) return localSet;
+  if(!localSet) return remoteSet;
+  const lt=localSet.updatedAt||0, rt=remoteSet.updatedAt||0;
+  if(rt!==lt) return rt>lt ? remoteSet : localSet;
+  return (localSet.price||0)>0 ? localSet : remoteSet; // remis: puste (domyślne) ustawienia nowego urządzenia nie nadpisują zapisanych
+}
+function mergeList(localArr, remoteArr, allTomb, type){
+  const tmap=new Map();
+  allTomb.filter(t=>t.type===type).forEach(t=>{ const c=tmap.get(t.id); if(!c||t.deletedAt>c.deletedAt) tmap.set(t.id,t); });
+  const byId=new Map();
+  [...(localArr||[]),...(remoteArr||[])].forEach(r=>{ if(!r||!r.id) return; const c=byId.get(r.id); if(!c||(r.updatedAt||0)>=(c.updatedAt||0)) byId.set(r.id,r); });
+  const merged=[];
+  byId.forEach((r,id)=>{ const t=tmap.get(id); if(t && (r.updatedAt||0)<=t.deletedAt) return; merged.push(r); });
+  return merged;
+}
+let syncing=false, syncDebounce=null;
+async function syncNow(silent){
+  const cfg=loadSyncCfg();
+  if(!cfg.token || !cfg.gistId){ if(!silent) alert('Uzupełnij token i ID Gista (albo sparuj to urządzenie kodem z innego).'); return; }
+  if(syncing) return; syncing=true;
+  setSyncStatus('Synchronizuję…');
+  try{
+    const data = await ghFetch('https://api.github.com/gists/'+cfg.gistId);
+    const filenames=Object.keys(data.files||{});
+    if(!filenames.length) throw new Error('Gist jest pusty.');
+    const fname=filenames[0];
+    const remote = data.files[fname].content ? JSON.parse(data.files[fname].content) : {};
+    const allTomb=[...TOMB, ...(remote.tomb||[])];
+    const setBefore=sigOf(SET);
+    R = mergeList(R, remote.records, allTomb, 'r');
+    PV = mergeList(PV, remote.pv, allTomb, 'pv');
+    INV = mergeList(INV, remote.inv, allTomb, 'inv');
+    M = mergeList(M, remote.meas, allTomb, 'meas');
+    Object.keys(remote).forEach(k=>{ if(!KNOWN_KEYS.includes(k) && !(k in EXTRA)) EXTRA[k]=remote[k]; });
+    const tmap=new Map(); allTomb.forEach(t=>{ const k=t.type+'|'+t.id; const c=tmap.get(k); if(!c||t.deletedAt>c.deletedAt) tmap.set(k,t); });
+    TOMB=[...tmap.values()];
+    SET = mergeSets(SET, remote.settings);
+    if(sigOf(SET)!==setBefore) applySettingsToInputs(); else normalizeSet();
+    snapshotSig();
+    saveToLocalStorage();
+    if(fileHandle){ try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(syncPayload(),null,1)); await w.close(); }catch(e){} }
+    await ghFetch('https://api.github.com/gists/'+cfg.gistId, {method:'PATCH', body:JSON.stringify({files:{[fname]:{content:JSON.stringify(syncPayload(),null,1)}}})});
+    cfg.lastSync=Date.now(); saveSyncCfg(cfg);
+    setSyncStatus('Zsynchronizowano o '+new Date().toLocaleTimeString('pl-PL'));
+    renderAll();
+  }catch(e){
+    setSyncStatus('Błąd synchronizacji: '+e.message);
+  }finally{ syncing=false; }
+}
+function scheduleAutoSync(){
+  const cfg=loadSyncCfg();
+  if(!cfg.auto || !cfg.token || !cfg.gistId) return;
+  clearTimeout(syncDebounce);
+  syncDebounce=setTimeout(()=>syncNow(true), 2500);
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') scheduleAutoSync(); });
+
+/* ---- Parowanie urządzeń (QR / link) ---- */
+function pairingCode(){
+  const cfg=loadSyncCfg();
+  if(!cfg.token||!cfg.gistId){ alert('Najpierw zapisz token i ID Gista na tym urządzeniu.'); return null; }
+  return btoa(JSON.stringify({t:cfg.token,g:cfg.gistId}));
+}
+function pairingUrl(){ const c=pairingCode(); return c ? location.origin+location.pathname+'#sync='+c : null; }
+function showPairingQR(){
+  const url=pairingUrl(); if(!url) return;
+  document.getElementById('pairingLink').value=url;
+  const holder=document.getElementById('pairingQR');
+  try{ const qr=qrcode(0,'M'); qr.addData(url); qr.make(); holder.innerHTML=qr.createSvgTag({cellSize:4,margin:2}); }
+  catch(e){ holder.innerHTML='<div class="empty">Nie udało się wygenerować QR: '+e.message+'</div>'; }
+  document.getElementById('pairingWrap').style.display='block';
+}
+async function copyPairingLink(){
+  const inp=document.getElementById('pairingLink');
+  try{ await navigator.clipboard.writeText(inp.value); setSyncStatus('Skopiowano link parowania do schowka.'); }
+  catch(e){ inp.select(); document.execCommand('copy'); }
+}
+function applyPairingCode(code){
+  code=(code||'').trim();
+  const hi=code.indexOf('#sync='); if(hi>-1) code=code.slice(hi+6);
+  try{
+    const obj=JSON.parse(atob(code));
+    if(!obj.t||!obj.g) throw new Error('niekompletny kod');
+    saveSyncCfg({token:obj.t, gistId:obj.g, auto:true});
+    document.getElementById('syncToken').value=obj.t;
+    document.getElementById('syncGistId').value=obj.g;
+    document.getElementById('syncAuto').checked=true;
+    setSyncStatus('Zastosowano kod parowania — synchronizuję…');
+    syncNow(true);
+  }catch(e){ alert('Nieprawidłowy kod parowania.'); }
+}
+function applyPastedPairingCode(){ applyPairingCode(document.getElementById('pairingPaste').value); }
+function checkSyncHashOnLoad(){
+  if(location.hash.startsWith('#sync=')){
+    const h=location.hash;
+    history.replaceState(null,'',location.pathname+location.search);
+    if(confirm('Wykryto kod parowania synchronizacji z innego urządzenia. Zastosować go tutaj (zastąpi obecne ustawienia synchronizacji)?')) applyPairingCode(h);
+  }
+}
+
+/* ---- Start aplikacji (wywoływany na końcu skryptu, gdy wszystko jest już zadeklarowane) ---- */
+function startupInit(){
+  document.getElementById('pv_date').value = ymd(new Date());
+  document.getElementById('inv_issue').value = ymd(new Date());
+  if(loadFromLocalStorage()) migratePrices();
+  applySettingsToInputs();
+  snapshotSig();
+  updateStoreBar();
+  renderAll();
+  const cfg=loadSyncCfg();
+  document.getElementById('syncToken').value=cfg.token||'';
+  document.getElementById('syncGistId').value=cfg.gistId||'';
+  document.getElementById('syncAuto').checked=!!cfg.auto;
+  setSyncStatus(cfg.token&&cfg.gistId ? ('Skonfigurowano.'+(cfg.lastSync?(' Ostatnia synchronizacja: '+new Date(cfg.lastSync).toLocaleString('pl-PL')):' Jeszcze nie synchronizowano na tym urządzeniu.')) : 'Synchronizacja nieskonfigurowana.');
+  checkSyncHashOnLoad();
+  (async()=>{ const c=loadSyncCfg(); if(c.auto && c.token && c.gistId) await syncNow(true); })();
+  (async()=>{
+    if(!hasFS) return;
+    try{ const h=await idbOp('readonly','handle'); if(h){
+      const perm = await h.queryPermission({mode:'readwrite'});
+      if(perm==='granted'){ fileHandle=h; await loadFromFile(); }
+      else { document.getElementById('storeText').textContent+=' — poprzedni plik: '+h.name+' (kliknij „Otwórz plik .json”, aby wznowić bezpośredni zapis)'; }
+    } }catch(e){}
+  })();
+}
 async function saveBlob(blob,suggestedName,desc,accept){
   if('showSaveFilePicker' in window){
     try{ const h=await window.showSaveFilePicker({suggestedName,types:[{description:desc,accept}]});
@@ -475,18 +994,15 @@ async function saveBlob(blob,suggestedName,desc,accept){
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=suggestedName; a.click();
 }
 async function exportJSON(){
-  const data=JSON.stringify({settings:SET,records:R,pv:PV,inv:INV},null,1);
+  const data=JSON.stringify(syncPayload(),null,1);
   const blob=new Blob([data],{type:'application/json'});
   await saveBlob(blob,'pompa_dane.json','JSON',{'application/json':['.json']});
 }
 function importJSONFile(ev){
   const file=ev.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=e=>{ try{ const d=JSON.parse(e.target.result); R=d.records||[]; SET=d.settings||{price:0}; PV=d.pv||[]; INV=d.inv||[];
-    normalizeSet();
-    applySettingsToInputs();
-    migratePrices();
-    saveToLocalStorage();
+  reader.onload=e=>{ try{ applyData(JSON.parse(e.target.result));
+    applySettingsToInputs(); migratePrices(); snapshotSig(); saveToLocalStorage();
     renderAll(); alert('Wczytano.'); }catch(err){ alert('Błędny plik.'); } };
   reader.readAsText(file);
 }
@@ -542,9 +1058,9 @@ async function addPv(){
   await persist(); alert(wasEdit?'Zaktualizowano wpis PV.':'Zapisano wpis PV na dysku.');
 }
 async function delPv(id){ if(!confirm('Usunąć wpis PV?')) return; PV=PV.filter(r=>r.id!==id); await persist(); }
-function buildPvAgg(gran){
+function buildPvAgg(gran,rg){
   const map=new Map();
-  PV.forEach(r=>{ if(!r.date) return; const k=periodKey(r.date,gran); if(!map.has(k)) map.set(k,{kwh:0,creditKwh:0,value:0});
+  PV.forEach(r=>{ if(!r.date||!inRange(r.date,rg)) return; const k=periodKey(r.date,gran); if(!map.has(k)) map.set(k,{kwh:0,creditKwh:0,value:0});
     const o=map.get(k); o.kwh+=r.kwh||0; o.creditKwh+=(r.creditKwh??r.kwh)||0; o.value+=r.value||0; });
   return {keys:[...map.keys()].sort(), map};
 }
@@ -568,7 +1084,7 @@ function renderPv(){
   document.getElementById('pvEmptyMsg').style.display = rows.length?'none':'block';
   document.getElementById('pvTbody').innerHTML = rows.map(r=>`<tr>
       <td>${r.date}</td><td class="num">${r.kwh.toFixed(2)}</td><td class="num">${((r.creditKwh??r.kwh)||0).toFixed(2)}</td><td class="num">${r.price.toFixed(3)}</td>
-      <td class="num">${r.value.toFixed(2)} zł</td><td>${r.note||'—'}</td>
+      <td class="num">${r.value.toFixed(2)} zł</td><td class="notecell">${xmlEsc(r.note||'—')}</td>
       <td><button class="btn2 edit" onclick="editPv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delPv('${r.id}')">Usuń</button></td></tr>`).join('');
   document.getElementById('pvTblFoot').innerHTML = rows.length ? `<tr><td style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCredit.toFixed(2)}</td><td></td><td class="num">${totVal.toFixed(2)} zł</td><td colspan="2"></td></tr>` : '';
 }
@@ -624,7 +1140,7 @@ function renderInv(){
   document.getElementById('invTbody').innerHTML = rows.map(r=>`<tr>
       <td>${r.issue||'—'}</td><td>${r.from} → ${r.to}</td><td>${r.seller||'—'}</td><td>${r.no||'—'}</td>
       <td class="num">${(r.kwhPob||0).toFixed(2)}</td><td class="num">${r.kwhOdd!=null?r.kwhOdd.toFixed(2):'—'}</td>
-      <td class="num">${(r.amount||0).toFixed(2)} zł</td><td>${r.note||'—'}</td>
+      <td class="num">${(r.amount||0).toFixed(2)} zł</td><td class="notecell">${xmlEsc(r.note||'—')}</td>
       <td><button class="btn2 edit" onclick="editInv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delInv('${r.id}')">Usuń</button></td></tr>`).join('');
   document.getElementById('invTblFoot').innerHTML = rows.length ? `<tr><td colspan="4" style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwhPob.toFixed(2)}</td><td></td><td class="num">${totAmount.toFixed(2)} zł</td><td colspan="2"></td></tr>` : '';
 
@@ -660,7 +1176,7 @@ function renderInv(){
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function durMin(start,end){ if(!start||!end) return null; const s=new Date(start), e=new Date(end); const m=Math.round((e-s)/60000); return m>=0?m:null; }
 function fmtDT(s){ if(!s) return '—'; const[d,t]=s.split('T'); if(!d||!t) return s; const p=d.split('-'); return p[2]+'.'+p[1]+' '+t; }
-function fmtDur(m){ if(m==null) return '—'; const h=Math.floor(m/60),mm=m%60; return (h?h+'h ':'')+mm+'min'; }
+function fmtDur(m){ if(m==null) return '—'; return fmtHM(m/60); }
 function recCost(r){ if(!r.kwh) return 0; const p = (r.price!=null && !isNaN(r.price)) ? r.price : (SET.price||0); return r.kwh*p; }
 function parsedPrice(id){ const v=parseFloat(document.getElementById(id).value); return isNaN(v)?(SET.price||0):v; }
 function migratePrices(){
@@ -788,7 +1304,7 @@ function renderTable(){
       <td class="num">${r.kwh??'—'}</td>
       <td class="num">${r.kwh?recCost(r).toFixed(2)+' zł':'—'}</td>
       <td class="num">${cel}</td><td class="num">${zewn}</td><td class="num">${woda}</td><td class="num">${grzej}</td>
-      <td>${r.note||'—'}</td>
+      <td class="notecell">${xmlEsc(r.note||'—')}</td>
       <td><button class="btn2 edit" onclick="editRecord('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></td>`;
     tbody.appendChild(tr);
   });
@@ -828,10 +1344,11 @@ function dayCard(date, typeFilter){
   function section(rows,label,clr){
     if(!rows.length) return '';
     const kwh=rows.reduce((s,r)=>s+(r.kwh||0),0), rcost=rows.reduce((s,r)=>s+recCost(r),0);
-    const rowsHtml=rows.map(r=>`<tr><td class="num">${fmtDT(r.start)}→${fmtDT(r.end)}</td><td class="num">${fmtDur(durMin(r.start,r.end))}</td><td class="num">${r.kwh??'—'}</td><td class="num">${r.kwh?recCost(r).toFixed(2)+' zł':'—'}</td><td>${r.note||'—'}</td><td><button class="btn2 edit" onclick="editRecord('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></td></tr>`).join('');
+    const rowsHtml=rows.map(r=>`<tr><td class="num">${fmtDT(r.start)}→${fmtDT(r.end)}</td><td class="num">${fmtDur(durMin(r.start,r.end))}</td><td class="num">${r.kwh??'—'}</td><td class="num">${r.kwh?recCost(r).toFixed(2)+' zł':'—'}</td><td><button class="btn2 edit" onclick="editRecord('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></td></tr>`).join('');
+    const notesHtml=rows.filter(r=>r.note).map(r=>`<div class="daynote"><b>${fmtDT(r.start)}</b> ${xmlEsc(r.note)}</div>`).join('');
     return `<div style="margin-top:10px;border-left:3px solid ${clr};padding-left:10px">
       <div style="font-size:.82rem;font-weight:700;color:${clr}">${label} — ${kwh.toFixed(2)} kWh · ${rcost.toFixed(2)} zł (${rows.length} cykl.)</div>
-      <table style="margin-top:4px"><thead><tr><th>Godz.</th><th>Czas</th><th>kWh</th><th>Koszt</th><th>Notatka</th><th></th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+      <div class="tbl-wrap"><table style="margin-top:4px"><thead><tr><th>Godz.</th><th>Czas</th><th>kWh</th><th>Koszt</th><th></th></tr></thead><tbody>${rowsHtml}</tbody></table></div>${notesHtml}</div>`;
   }
   const secCo=section(startedCo,'CO — ogrzewanie domu','var(--amber)');
   const secCwu=section(startedCwu,'CWU — ciepła woda','var(--cyan)');
@@ -916,33 +1433,37 @@ function panelChart(color,categories,values,unitLbl,chartType){
 
 function tempKey(t){ return t.toFixed(1)+'°C'; }
 function outdoorTemp(r){ if(r.type==='CO'){ const vals=[r.out1,r.out2].filter(v=>v!=null); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null; } return r.out!=null?r.out:null; }
-function ensureAgg(map,k){ if(!map.has(k)) map.set(k,{coKwh:0,cwuKwh:0,coCost:0,cwuCost:0,coMin:0,cwuMin:0,coCount:0,cwuCount:0}); }
-function addAgg(o,r){ const min=durMin(r.start,r.end)||0, c=recCost(r); if(r.type==='CO'){o.coKwh+=r.kwh||0;o.coCost+=c;o.coMin+=min;o.coCount++;} else {o.cwuKwh+=r.kwh||0;o.cwuCost+=c;o.cwuMin+=min;o.cwuCount++;} }
-function buildAgg(groupBy,gran){
-  const map=new Map();
+function ensureAgg(map,k){ if(!map.has(k)) map.set(k,{dates:new Set(),coKwh:0,cwuKwh:0,coCost:0,cwuCost:0,coMin:0,cwuMin:0,coCount:0,cwuCount:0}); }
+function addAgg(o,r){ if(r.date) o.dates.add(r.date); const min=durMin(r.start,r.end)||0, c=recCost(r); if(r.type==='CO'){o.coKwh+=r.kwh||0;o.coCost+=c;o.coMin+=min;o.coCount++;} else {o.cwuKwh+=r.kwh||0;o.cwuCost+=c;o.cwuMin+=min;o.cwuCount++;} }
+function inRange(d,rg){ return !rg||((!rg.from||d>=rg.from)&&(!rg.to||d<=rg.to)); }
+function repRange(){ const g=id=>(document.getElementById(id)||{}).value||''; return {from:g('repFrom'),to:g('repTo')}; }
+function buildAgg(groupBy,gran,rg){
+  const map=new Map(); const RR=R.filter(r=>inRange(r.date,rg));
   if(groupBy==='temp'){
-    R.forEach(r=>{ const t=outdoorTemp(r); if(t==null) return; const k=tempKey(t); ensureAgg(map,k); addAgg(map.get(k),r); });
+    RR.forEach(r=>{ const t=outdoorTemp(r); if(t==null) return; const k=tempKey(t); ensureAgg(map,k); addAgg(map.get(k),r); });
     return {keys:[...map.keys()].sort((a,b)=>parseFloat(a)-parseFloat(b)), map};
   }
-  R.forEach(r=>{ if(!r.date) return; const k=periodKey(r.date,gran); ensureAgg(map,k); addAgg(map.get(k),r); });
+  RR.forEach(r=>{ if(!r.date) return; const k=periodKey(r.date,gran); ensureAgg(map,k); addAgg(map.get(k),r); });
   return {keys:[...map.keys()].sort(), map};
 }
 function metricVal(o,t,metric){ if(metric==='kwh') return t==='co'?o.coKwh:o.cwuKwh;
   if(metric==='koszt') return t==='co'?o.coCost:o.cwuCost;
   if(metric==='czas') return (t==='co'?o.coMin:o.cwuMin)/60;
   return t==='co'?o.coCount:o.cwuCount; }
-function buildTable(headId,bodyId,keys,map,metric,headLabel,pvMap){
+function dateList(set){ return [...set].sort().map(d=>d.slice(8,10)+'.'+d.slice(5,7)).join(', '); }
+function buildTable(headId,bodyId,keys,map,metric,headLabel,pvMap,withDates){
   const lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric];
   const showPv = !!pvMap && (metric==='kwh'||metric==='koszt');
   const cols=[headLabel,'CO '+lbl,'CWU '+lbl,'Razem '+lbl];
   if(showPv) cols.push('PV '+(metric==='koszt'?'zł (wartość)':lbl));
+  if(withDates) cols.push('Daty wpisów');
   document.getElementById(headId).innerHTML=cols.map(c=>`<th>${c}</th>`).join('');
   document.getElementById(bodyId).innerHTML = keys.length ? keys.map(k=>{ const o=map.get(k);
     const co=metricVal(o,'co',metric), cwu=metricVal(o,'cwu',metric);
     let pvCell='';
     if(showPv){ const p=pvMap.get(k); const pv = p ? (metric==='koszt'?p.value:p.kwh) : 0; pvCell=`<td class="num" style="color:var(--pv)">${pv.toFixed(2)}</td>`; }
-    return `<tr><td>${k}</td><td class="num">${co.toFixed(2)}</td><td class="num">${cwu.toFixed(2)}</td><td class="num">${(co+cwu).toFixed(2)}</td>${pvCell}</tr>`; }).join('')
-    : `<tr><td colspan="${showPv?5:4}" class="empty">Brak danych.</td></tr>`;
+    return `<tr><td>${k}</td><td class="num">${co.toFixed(2)}</td><td class="num">${cwu.toFixed(2)}</td><td class="num">${(co+cwu).toFixed(2)}</td>${pvCell}${withDates?`<td class="notecell">${dateList(o.dates)} <span class="note">(${o.coCount+o.cwuCount} wpis.)</span></td>`:''}</tr>`; }).join('')
+    : `<tr><td colspan="${cols.length}" class="empty">Brak danych.</td></tr>`;
 }
 function periodKey(date,g){
   const d=new Date(date+'T00:00:00'); const y=d.getFullYear(), m=d.getMonth();
@@ -957,7 +1478,7 @@ function renderReports(){
   const groupBy=document.getElementById('repGroupBy').value, gran=document.getElementById('gran').value;
   const metric=document.getElementById('repMetric').value, chartType=document.getElementById('repChartType').value;
   document.getElementById('granWrap').style.display = groupBy==='temp' ? 'none' : '';
-  const {keys, map} = buildAgg(groupBy,gran);
+  const rg=repRange(); const {keys, map} = buildAgg(groupBy,gran,rg);
   const show = groupBy==='temp' ? keys : keys.slice(-24);
   const totalCo=[...map.values()].reduce((s,o)=>s+o.coKwh,0), totalCwu=[...map.values()].reduce((s,o)=>s+o.cwuKwh,0);
   document.getElementById('splitChartWrap').innerHTML = (totalCo+totalCwu)>0 ? svgDonut([{label:'CO',value:totalCo,color:'#e0904f'},{label:'CWU',value:totalCwu,color:'#49b4cf'}],'kWh') : '<div class="empty">Brak danych.</div>';
@@ -967,7 +1488,7 @@ function renderReports(){
   document.getElementById('panelCoWrap').innerHTML = panelChart('#e0904f',show,coVals,lbl,chartType);
   document.getElementById('panelCwuWrap').innerHTML = panelChart('#49b4cf',show,cwuVals,lbl,chartType);
 
-  const {keys:pvKeysAll, map:pvMapAll} = buildPvAgg(gran);
+  const {keys:pvKeysAll, map:pvMapAll} = buildPvAgg(gran,rg);
   const pvShow = pvKeysAll.slice(-24);
   document.getElementById('panelPvWrap').innerHTML = pvShow.length
     ? panelChart('#e8c547', pvShow, pvShow.map(k=>+pvMapAll.get(k).kwh.toFixed(2)), 'kWh', chartType)
@@ -975,7 +1496,7 @@ function renderReports(){
 
   const pvMapForTable = groupBy==='period' ? pvMapAll : null;
   document.getElementById('repPvNote').style.display = (metric==='kwh'||metric==='koszt') && groupBy==='period' ? 'block' : 'none';
-  buildTable('repThead','repTbody',show,map,metric, groupBy==='temp'?'Temp. zewn. (°C)':'Okres', pvMapForTable);
+  buildTable('repThead','repTbody',show,map,metric, groupBy==='temp'?'Temp. zewn. (°C)':'Okres', pvMapForTable, groupBy==='temp');
 }
 
 function xmlEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -993,59 +1514,661 @@ async function exportXLSX(){
   const {keys:tk,map:tm}=buildAgg('temp');
   const tempRows=[['Temp. zewn. (°C)','CO kWh','CWU kWh','Razem kWh','Koszt'],
     ...tk.map(k=>{const o=tm.get(k); return [k,+o.coKwh.toFixed(2),+o.cwuKwh.toFixed(2),+(o.coKwh+o.cwuKwh).toFixed(2),+(o.coCost+o.cwuCost).toFixed(2)];})];
+  const per=M.slice().sort((a,b)=>a.start.localeCompare(b.start)).map(m=>({m,r:calcPeriod(m,{noCompare:true})}));
+  const copRows=[['Uruchomienie','Zatrzymanie','Godziny','Tryb','Odszranianie min','Zuzycie E kWh','Zrodlo zuzycia','Sr. moc pobierana kW','Sr. Q kW','Cieplo kWh','COP','COP min','COP max','Sr. T04 C','T04 min','T04 max','Sr. T30 Hz','cos fi wyliczony','Liczba odczytow','Odczyty z cieplem','Kontrole','Notatka'],
+    ...per.map(({m,r})=>[m.start,m.end,r.hours==null?'':+r.hours.toFixed(2),m.mode,m.defMin||0,r.E==null?'':+r.E.toFixed(3),r.Esrc||'',r.pel==null?'':+r.pel.toFixed(3),r.q==null?'':+r.q.toFixed(3),r.heat==null?'':+r.heat.toFixed(2),r.cop==null?'':+r.cop.toFixed(3),r.lo==null?'':+r.lo.toFixed(3),r.hi==null?'':+r.hi.toFixed(3),r.t04==null?'':+r.t04.toFixed(2),r.t04min??'',r.t04max??'',r.hz==null?'':+r.hz.toFixed(1),r.pf==null?'':+r.pf.toFixed(3),r.rows.length,r.nVal,r.flags.filter(f=>f.lvl==='bad'||f.lvl==='warn').map(f=>f.txt).join(' | '),m.note||''])];
+  const rdRows=[['Uruchomienie okresu','Czas odczytu','T01 wlot C','T02 wylot C','T04 zewn. C','T39 m3/h','T30 Hz','T34 V','T35 A','Stan licznika kWh','Obieg 1 otwarty','Obieg 2 otwarty','Odszranianie'],
+    ...M.flatMap(m=>m.rd.map(x=>[m.start,x.ts||'',x.t01??'',x.t02??'',x.t04??'',x.flow??'',x.hz??'',x.volt??'',x.amp??'',x.k??'',x.c1===false?'nie':'tak',x.c2===false?'nie':'tak',x.def?'tak':'nie']))];
   const xml='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>'
     +'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
-    +sheetXML('Dane',dataRows)+sheetXML('Raport okresowy',repRows)+sheetXML('Wg temperatury',tempRows)+'</Workbook>';
+    +sheetXML('Dane',dataRows)+sheetXML('Raport okresowy',repRows)+sheetXML('Wg temperatury',tempRows)+sheetXML('Okresy COP',copRows)+sheetXML('Odczyty COP',rdRows)+'</Workbook>';
   const blob=new Blob([xml],{type:'application/vnd.ms-excel'});
   await saveBlob(blob,'pompa_dane.xls','Excel',{'application/vnd.ms-excel':['.xls']});
 }
 
 function renderDashboard(){
-  const totalCo=R.filter(r=>r.type==='CO').reduce((s,r)=>s+(r.kwh||0),0);
-  const totalCwu=R.filter(r=>r.type==='CWU').reduce((s,r)=>s+(r.kwh||0),0);
-  const totalCost=R.reduce((s,r)=>s+recCost(r),0);
-  document.getElementById('dashTotals').innerHTML = `
-    <div><div class="big" style="color:var(--amber)">${totalCo.toFixed(1)} kWh</div><div class="lbl">Suma CO</div></div>
-    <div><div class="big" style="color:var(--cyan)">${totalCwu.toFixed(1)} kWh</div><div class="lbl">Suma CWU</div></div>
-    <div><div class="big">${totalCost.toFixed(2)} zł</div><div class="lbl">Łączny koszt</div></div>
-    <div><div class="big">${R.length}</div><div class="lbl">Liczba wpisów</div></div>`;
-  document.getElementById('dashDonut').innerHTML = (totalCo+totalCwu)>0 ? svgDonut([{label:'CO',value:totalCo,color:'#e0904f'},{label:'CWU',value:totalCwu,color:'#49b4cf'}],'kWh') : '<div class="empty">Brak danych.</div>';
-  const rangeN=parseInt(document.getElementById('dashRange').value);
-  const {map}=buildAgg('period','month');
-  const keys=[...map.keys()].sort().slice(-rangeN);
-  document.getElementById('dashCoWrap').innerHTML = panelChart('#e0904f',keys,keys.map(k=>+map.get(k).coKwh.toFixed(2)),'kWh','bar');
-  document.getElementById('dashCwuWrap').innerHTML = panelChart('#49b4cf',keys,keys.map(k=>+map.get(k).cwuKwh.toFixed(2)),'kWh','bar');
-  const dates=[...new Set(R.map(r=>r.date))].filter(Boolean).sort().reverse();
-  const recent=dates.slice(0,2);
-  document.getElementById('dashLatestDay').innerHTML = recent.length ? '<h2 style="margin:14px 0 10px;font-size:1rem">Ostatnie dni</h2>'+recent.map(d=>dayCard(d,'all')).join('') : '';
+  const $=id=>document.getElementById(id), sum=(a,f)=>a.reduce((t,x)=>t+(f(x)||0),0);
+  const kv=(l,v,sub)=>`<div class="kv${sub?' sub':''}"><span>${l}</span><b>${v}</b></div>`;
+  const kpi=(v,l,c)=>`<div class="kpi"><div class="v"${c?` style="color:${c}"`:''}>${v}</div><div class="l">${l}</div></div>`;
+  const coR=R.filter(r=>r.type==='CO'), cwuR=R.filter(r=>r.type==='CWU');
+  const totalCo=sum(coR,r=>r.kwh), totalCwu=sum(cwuR,r=>r.kwh), hpKwh=totalCo+totalCwu, hpCost=sum(R,recCost);
+  const coMin=sum(coR,r=>durMin(r.start,r.end)), cwuMin=sum(cwuR,r=>durMin(r.start,r.end));
+  const rDates=[...new Set(R.map(r=>r.date).filter(Boolean))].sort();
+  const items=M.filter(m=>m.start&&m.end).map(m=>({P:m,r:calcPeriod(m,{noCompare:true})})).filter(x=>x.r.hours!=null);
+  const withH=items.filter(x=>x.r.heat!=null&&x.r.E>0);
+  const wcop=l=>{ const e=sum(l,x=>x.r.E); return e>0?sum(l,x=>x.r.heat)/e:null; };
+  const copAll=wcop(withH), copCo=wcop(withH.filter(x=>x.P.mode==='CO')), copCwu=wcop(withH.filter(x=>x.P.mode==='CWU'));
+  const days=new Set(); items.forEach(x=>allocDays(x.P).forEach(a=>days.add(a.day))); const nDays=daySpan(days), dsorted=[...days].sort();
+  const pE=sum(items,x=>x.r.E), pH=sum(items,x=>x.r.hours);
+  const pvKwh=sum(PV,r=>r.kwh), pvCredit=sum(PV,r=>r.creditKwh??r.kwh), pvVal=sum(PV,r=>r.value);
+  const invAmt=sum(INV,r=>r.amount), invKwh=sum(INV,r=>r.kwhPob), net=pvVal-hpCost;
+  const f=(v,d)=>v==null?'—':v.toFixed(d);
+  $('dashKpis').innerHTML=[
+    kpi(f(hpKwh,1)+' kWh','Energia pompy (cykle CO+CWU)','var(--amber)'), kpi(f(hpCost,2)+' zł','Koszt energii pompy'),
+    kpi(f(totalCo,1)+' kWh','CO — ogrzewanie','var(--amber)'), kpi(f(totalCwu,1)+' kWh','CWU — ciepła woda','var(--cyan)'),
+    kpi(copAll==null?'—':'≈ '+copAll.toFixed(2),'COP ważony (okresy z odczytami)','var(--ok)'),
+    kpi(nDays?f(pE/nDays,2)+' kWh/d':'—','Zużycie na dobę kalend. (okresy COP, dolne oszac.)'),
+    kpi(fmtHM(pH),'Czas pracy w okresach COP'),
+    kpi(f(pvKwh,1)+' kWh','Produkcja PV','var(--pv)'), kpi((net>=0?'+':'')+f(net,2)+' zł','Saldo: wartość PV − koszt pompy',net>=0?'var(--ok)':'var(--danger)'),
+    kpi(invKwh>0?f(invAmt/invKwh,3)+' zł/kWh':'—','Cena z faktur')].join('');
+  const tot=hpKwh||1;
+  $('dashPump').innerHTML=`<div class="sharebar"><i style="width:${totalCo/tot*100}%;background:#e0904f"></i><i style="width:${totalCwu/tot*100}%;background:#49b4cf"></i></div>`
+    +kv('CO — energia / koszt',`${f(totalCo,1)} kWh · ${f(sum(coR,recCost),2)} zł`)+kv('CO — cykle / czas',`${coR.length} · ${fmtHM(coMin/60)}`,1)
+    +kv('CWU — energia / koszt',`${f(totalCwu,1)} kWh · ${f(sum(cwuR,recCost),2)} zł`)+kv('CWU — cykle / czas',`${cwuR.length} · ${fmtHM(cwuMin/60)}`,1)
+    +kv('Razem',`${f(hpKwh,1)} kWh · ${f(hpCost,2)} zł`)+kv('Udział CO / CWU',hpKwh?`${(totalCo/hpKwh*100).toFixed(0)}% / ${(totalCwu/hpKwh*100).toFixed(0)}%`:'—')
+    +kv('Zakres dat',rDates.length?`${rDates[0]} … ${rDates[rDates.length-1]}`:'—')+kv('Dni z wpisami / wpisy',`${rDates.length} / ${R.length}`);
+  $('dashCop').innerHTML=items.length?(kv('COP ważony — razem',copAll==null?'—':'≈ '+copAll.toFixed(2))+kv('COP — CO',copCo==null?'—':'≈ '+copCo.toFixed(2),1)+kv('COP — CWU',copCwu==null?'—':'≈ '+copCwu.toFixed(2),1)
+    +kv('Okresy pracy / z COP',`${items.length} / ${withH.length}`)+kv('Energia w okresach',f(pE,1)+' kWh')+kv('Czas pracy',fmtHM(pH)+(nDays?` (${(pH/(nDays*24)*100).toFixed(0)}% z ${nDays} dób)`:''))
+    +kv('Średnia moc podczas pracy',pH>0?f(pE/pH,2)+' kW':'—')+kv('Zużycie na dobę kalend.',nDays?f(pE/nDays,2)+' kWh/d':'—')+kv('Ciepło oddane (okresy z COP)',f(sum(withH,x=>x.r.heat),1)+' kWh')
+    +(dsorted.length?kv('Zakres dat',dsorted[0]+' … '+dsorted[dsorted.length-1]):'')):'<div class="empty">Brak okresów — dodaj w „⚡ COP — okres pracy” albo zaimportuj.</div>';
+  $('dashBalance').innerHTML=kv('Produkcja PV / wpisy',`${f(pvKwh,1)} kWh · ${PV.length}`)+kv('Do rozliczenia (opusty/net)',f(pvCredit,1)+' kWh')+kv('Wartość energii z PV',f(pvVal,2)+' zł')
+    +kv('Koszt pompy',f(hpCost,2)+' zł')+kv('Saldo (PV − pompa)',`<span style="color:${net>=0?'var(--ok)':'var(--danger)'}">${net>=0?'+':''}${f(net,2)} zł</span>`)+kv('PV vs zużycie pompy (kWh)',hpKwh?(pvKwh/hpKwh*100).toFixed(0)+'%':'—')
+    +kv('Faktury: liczba / suma',`${INV.length} · ${f(invAmt,2)} zł`)+kv('Energia z faktur / cena',invKwh>0?`${f(invKwh,1)} kWh · ${f(invAmt/invKwh,3)} zł/kWh`:'—')
+    +'<p class="note" style="margin:6px 0 0;font-size:.68rem">Saldo to porównanie sum z całego okresu, nie rozdział dzień po dniu.</p>';
+  /* miesięcznie */
+  const rangeN=parseInt($('dashRange').value), {map:am}=buildAgg('period','month'), {map:pm}=buildPvAgg('month');
+  const cm=new Map(); items.forEach(({r,P})=>allocDays(P).forEach(a=>{ const k=periodKey(a.day,'month'); let o=cm.get(k); if(!o){ o={E:0,Eh:0,heat:0,h:0}; cm.set(k,o); } o.h+=a.h; if(r.E!=null){ o.E+=r.E*a.f; if(r.heat!=null){ o.Eh+=r.E*a.f; o.heat+=r.heat*a.f; } } }));
+  const keys=[...new Set([...am.keys(),...pm.keys(),...cm.keys()])].sort().slice(-rangeN);
+  $('dashMonths').innerHTML=keys.length?'<table><thead><tr><th>Miesiąc</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th><th>Czas pracy</th><th>COP</th></tr></thead><tbody>'+keys.map(k=>{
+    const o=am.get(k)||{coKwh:0,cwuKwh:0,coCost:0,cwuCost:0}, p=pm.get(k), c=cm.get(k);
+    return `<tr><td class="num">${k}</td><td class="num">${o.coKwh.toFixed(1)}</td><td class="num">${o.cwuKwh.toFixed(1)}</td><td class="num">${(o.coCost+o.cwuCost).toFixed(2)}</td><td class="num">${p?p.kwh.toFixed(1):'—'}</td><td class="num">${c?fmtHM(c.h):'—'}</td><td class="num"><b>${c&&c.Eh>0?'≈ '+(c.heat/c.Eh).toFixed(2):'—'}</b></td></tr>`; }).join('')+'</tbody></table>':'<div class="empty">Brak danych.</div>';
+  $('dashCoWrap').innerHTML=keys.length?svgBars(keys,[{name:'CO',color:'#e0904f',values:keys.map(k=>+((am.get(k)||{coKwh:0}).coKwh).toFixed(2))},{name:'CWU',color:'#49b4cf',values:keys.map(k=>+((am.get(k)||{cwuKwh:0}).cwuKwh).toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
+  $('dashCwuWrap').innerHTML=keys.some(k=>pm.get(k))?svgBars(keys,[{name:'PV',color:'#e8c547',values:keys.map(k=>+(pm.get(k)?pm.get(k).kwh:0).toFixed(2))}],'kWh'):'<div class="empty">Brak wpisów PV.</div>';
+  const last=items.slice().sort((a,b)=>b.P.start.localeCompare(a.P.start)).slice(0,5);
+  $('dashPeriods').innerHTML=last.length?'<table><thead><tr><th>Start</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P,r})=>`<tr><td class="num">${fmtY(P.start)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${P.mode==='CWU'?'cwu':'co'}">${P.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP.</div>';
+  const dd=[...new Set([...rDates,...PV.map(r=>r.date).filter(Boolean)])].sort().reverse().slice(0,5);
+  $('dashDays').innerHTML=dd.length?'<table><thead><tr><th>Dzień</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th></tr></thead><tbody>'+dd.map(d=>{ const rr=R.filter(r=>r.date===d);
+    return `<tr><td class="num">${d}</td><td class="num">${sum(rr.filter(r=>r.type==='CO'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr.filter(r=>r.type==='CWU'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr,recCost).toFixed(2)}</td><td class="num">${PV.some(p=>p.date===d)?sum(PV.filter(p=>p.date===d),p=>p.kwh).toFixed(2):'—'}</td></tr>`; }).join('')+'</tbody></table>':'<div class="empty">Brak danych.</div>';
+}
 
-  const pvKwh=PV.reduce((s,r)=>s+(r.kwh||0),0), pvVal=PV.reduce((s,r)=>s+(r.value||0),0);
-  const hpKwh=totalCo+totalCwu, hpCost=totalCost;
-  if(!pvKwh && !hpKwh){
-    document.getElementById('dashBalance').innerHTML='<div class="empty">Dodaj wpisy PV (zakładka „☀️ PV”) i cykle pompy ciepła, aby zobaczyć bilans.</div>';
-  } else {
-    const coveragePct = hpKwh ? Math.min(999,(pvKwh/hpKwh*100)) : null;
-    const net = pvVal - hpCost;
-    document.getElementById('dashBalance').innerHTML = `
-      <div class="miniStats">
-        <div><div class="big" style="color:var(--pv)">${pvKwh.toFixed(1)} kWh</div><div class="lbl">Produkcja PV</div></div>
-        <div><div class="big" style="color:var(--amber)">${hpKwh.toFixed(1)} kWh</div><div class="lbl">Zużycie pompy (CO+CWU)</div></div>
-        <div><div class="big" style="color:var(--pv)">${pvVal.toFixed(2)} zł</div><div class="lbl">Wartość wyprodukowanej energii</div></div>
-        <div><div class="big" style="color:var(--amber)">${hpCost.toFixed(2)} zł</div><div class="lbl">Koszt zużycia pompy</div></div>
-      </div>
-      <div style="padding-top:10px;border-top:1px dashed var(--line);display:flex;gap:24px;flex-wrap:wrap">
-        <div><div class="big" style="font-size:1.3rem;color:${net>=0?'var(--ok)':'var(--danger)'}">${net>=0?'+':''}${net.toFixed(2)} zł</div><div class="lbl">Saldo (wartość PV − koszt pompy)</div></div>
-        ${coveragePct!=null ? `<div><div class="big" style="font-size:1.3rem">${coveragePct.toFixed(0)}%</div><div class="lbl">Produkcja PV vs zużycie pompy (wolumen)</div></div>` : ''}
-      </div>
-      <p class="note" style="margin-top:8px">Saldo to porównanie sumarycznych wartości w całym zebranym okresie (nie dzień po dniu) — traktuj je jako orientacyjny obraz opłacalności, nie dokładny autokonsumpcyjny rozdział energii.</p>`;
+/* ===================== COP: okresy pracy (od uruchomienia do zatrzymania) ===================== */
+const cpEl=id=>document.getElementById(id);
+const COPK=['t01','t02','t04','flow','hz','volt','amp','p'];
+const f2=(v,d)=>(v==null||isNaN(v))?'—':(+v).toFixed(d==null?2:d);
+function num(s){ if(s==null) return null; if(typeof s==='number') return isNaN(s)?null:s; let t=String(s).trim().replace(/ /g,' '); if(t==='') return null; t=t.replace(/(\d)\s+(?=\d)/g,'$1').replace(',','.'); const n=parseFloat(t); return isNaN(n)?null:n; }
+function decs(s,minD){ if(s==null) return minD; const t=String(s).trim().replace(',','.'); const m=t.match(/^-?\d*\.?(\d*)/); return Math.max(minD,(m&&m[1])?m[1].length:0); }
+function med(a){ const s=[...a].sort((x,y)=>x-y), n=s.length; return n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):null; }
+function toLocalStr(ms){ const d=new Date(ms), p=n=>String(n).padStart(2,'0'); return ymd(d)+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
+function nowLocal(){ return toLocalStr(Date.now()); }
+function fmtY(s){ if(!s) return '—'; const [d,t]=s.split('T'); const p=d.split('-'); return p[2]+'.'+p[1]+'.'+p[0]+' '+(t||''); }
+function fmtHM(h){ if(h==null||isNaN(h)) return '—'; let m=Math.round(h*60); if(m<60) return m+' min'; const d=Math.floor(m/1440); m-=d*1440; const hh=Math.floor(m/60), mm=m%60, a=[];
+  if(d) a.push(d+' d'); if(hh||(d&&mm)) a.push(hh+' h'); if(mm) a.push(String(mm).padStart(2,'0')+' min'); return a.join(' ')||'0 min'; }
+const fmtH=fmtHM;
+function hhd(h){ return fmtHM(h)+' ('+h.toFixed(2)+' h)'; }
+
+/* ---- średnia ważona czasem z odczytów (interpolacja liniowa, stałe poza skrajnymi odczytami) ---- */
+function interp(pts,t){ if(t<=pts[0].t) return pts[0].v; const L=pts[pts.length-1]; if(t>=L.t) return L.v;
+  for(let i=1;i<pts.length;i++){ if(t<=pts[i].t){ const a=pts[i-1], b=pts[i]; return b.t===a.t?b.v:a.v+(b.v-a.v)*(t-a.t)/(b.t-a.t); } } return L.v; }
+function twAvg(pts,t0,t1){
+  if(!pts.length) return null;
+  if(pts.length===1) return pts[0].v;
+  if(t1<=t0) return pts.reduce((s,p)=>s+p.v,0)/pts.length;
+  const ks=[t0,...pts.filter(p=>p.t>t0&&p.t<t1).map(p=>p.t),t1]; let sum=0;
+  for(let i=1;i<ks.length;i++) sum+=(interp(pts,ks[i-1])+interp(pts,ks[i]))/2*(ks[i]-ks[i-1]);
+  return sum/(t1-t0);
+}
+
+function ensureCopDefaults(){
+  const d={rho:1000,cpw:4.186,hzMax:100,c1Name:'Obieg 1',c2Name:'Obieg 2',dtOff:0};
+  Object.keys(d).forEach(k=>{ if(SET[k]==null||(typeof d[k]==='number'&&isNaN(SET[k]))) SET[k]=d[k]; });
+  migrateMeas();
+}
+/* Stare pomiary chwilowe (poprzednie wersje) -> okresy pracy z krótkim oknem. */
+function migrateMeas(){
+  M=(M||[]).map(m=>{
+    if(m.start&&m.end&&m.rd) return m;
+    if(!m.ts) return m;
+    const win=(m.pSrc==='kwh'&&m.min>0)?m.min:10, t0=Date.parse(m.ts); if(isNaN(t0)) return m;
+    const start=m.ts, end=toLocalStr(t0+win*60000);
+    const mk=(ts,o)=>Object.assign({ts,t01:null,t02:null,t04:null,flow:null,hz:null,volt:null,amp:null,c1:m.c1!==false,c2:m.c2!==false,def:false,k:null},o);
+    const rd=[mk(start,{t01:m.t01??null,t02:m.t02??null,t04:m.t04??null,flow:m.flow??null,hz:m.hz??null,volt:m.volt??null,amp:m.amp??null,def:m.mode==='DEFROST',k:m.pSrc==='kwh'?(m.k1??null):null}),
+              mk(end,{k:m.pSrc==='kwh'?(m.k2??null):null})];
+    const kwh=(m.pSrc==='kwh')?null:(m.pSrc==='kw'&&m.kw>0?+(m.kw*win/60).toFixed(4):(m.pel>0?+(m.pel*win/60).toFixed(4):null));
+    const extra='[Przeniesiono ze starego pomiaru chwilowego; okno '+(m.pSrc==='kwh'?'z pomiaru':'założone')+': '+win+' min'+(m.mode==='DEFROST'?'; pomiar był w trakcie odszraniania':'')+']';
+    return {id:m.id,start,end,date:start.slice(0,10),mode:m.mode==='CWU'?'CWU':'CO',defMin:0,kwh,rd,res:{T:0.1,F:0.1,E:0.01},
+      rho:m.rho||SET.rho,cpw:m.cpw||SET.cpw,dtOff:m.dtOff||0,hzMax:SET.hzMax,note:((m.note||'')+' '+extra).trim(),src:'migracja'};
+  });
+}
+
+/* ===================== OBLICZENIA OKRESU ===================== */
+function calcPeriod(P,opt){
+  opt=opt||{};
+  const r={hours:null,E:null,Esrc:'',pel:null,q:null,heat:null,cop:null,lo:null,hi:null,pf:null,t04:null,t04min:null,t04max:null,hz:null,load:null,Savg:null,rows:[],segs:[],avg:{},flags:[],nVal:0,hasHeat:false};
+  const add=(l,t)=>r.flags.push({lvl:l,txt:t});
+  const t0=P.start?Date.parse(P.start):NaN, t1=P.end?Date.parse(P.end):NaN;
+  if(isNaN(t0)||isNaN(t1)){ add('bad','Podaj datę i godzinę uruchomienia oraz zatrzymania.'); return r; }
+  if(t1<=t0){ add('bad','Zatrzymanie musi być późniejsze niż uruchomienie.'); return r; }
+  r.hours=(t1-t0)/36e5;
+  const c={rho:P.rho??SET.rho,cpw:P.cpw??SET.cpw,dtOff:P.dtOff??SET.dtOff,hzMax:P.hzMax??SET.hzMax,useOff:!!P.useOff}; c.off=c.useOff?(c.dtOff||0):0;
+  const res=P.res||{T:0.1,F:0.1,E:0.1};
+  const raw=(P.rd||[]);
+  const rds=[];
+  raw.forEach((x,i)=>{
+    const role=i===0?'S':(i===raw.length-1?'E':'M');
+    const t=role==='S'?t0:role==='E'?t1:(x.ts?Date.parse(x.ts):NaN);
+    if(role==='M'){ if(isNaN(t)){ add('warn','Odczyt pośredni nr '+i+' nie ma daty i godziny — pominięty.'); return; }
+      if(t<=t0||t>=t1){ add('bad','Odczyt pośredni nr '+i+' ('+fmtDT(x.ts)+') leży poza okresem pracy — pominięty.'); return; } }
+    rds.push({...x,role,t,idx:i});
+  });
+  rds.sort((a,b)=>a.t-b.t||a.idx-b.idx);
+  rds.forEach((x,n)=>{
+    x.label=x.role==='S'?'Start':x.role==='E'?'Stop':'Odczyt '+fmtDT(toLocalStr(x.t)).slice(-5)+(rds.filter(y=>y.role==='M').length>1?' (#'+x.idx+')':'');
+    x.dtRaw=(x.t01!=null&&x.t02!=null)?(x.t02-x.t01):null;
+    x.dt=x.dtRaw==null?null:x.dtRaw-c.off;
+    x.q=(x.dt!=null&&x.flow!=null)?x.flow*c.rho*c.cpw*x.dt/3600:null;
+    x.S=(x.volt!=null&&x.amp!=null)?Math.sqrt(3)*x.volt*x.amp/1000:null;
+    x.pf1=(x.p!=null&&x.p>0&&x.S>0)?x.p/x.S:null;
+    x.valid=x.q!=null&&x.dt>0&&!x.def&&x.hz!==0&&x.flow>0;
+    x.why='';
+    if(x.valid) x.why='użyty';
+    else if(x.def) x.why='pominięty: odszranianie';
+    else if(x.q==null) x.why=(x.t01==null&&x.t02==null&&x.flow==null)?'brak danych cieplnych':'pominięty: brak T01, T02 lub T39';
+    else if(x.hz===0) x.why='pominięty: T30 = 0 (sprężarka stoi)';
+    else if(!(x.flow>0)) x.why='pominięty: przepływ = 0';
+    else if(x.dt<=0) x.why=(c.off&&x.dtRaw>0)?'pominięty: po odjęciu korekty ΔT ≤ 0 (surowe '+x.dtRaw.toFixed(1)+' K)':'pominięty: ΔT ≤ 0 — woda jeszcze nie jest podgrzewana';
+  });
+  const excl=rds.filter(x=>!x.valid&&x.q!=null&&!x.def);
+  if(excl.length) add('info','Pominięte w obliczeniu ciepła: '+excl.map(x=>x.label+' ('+x.why.replace('pominięty: ','')+')').join('; ')+'. To normalne tuż po starcie lub tuż przed stopem, gdy sprężarka jeszcze/już nie oddaje ciepła. Średnia Q opiera się wtedy na pozostałych odczytach i obowiązuje w całym okresie (lekko zawyża COP) — poniżej podano dolne oszacowanie.');
+  rds.filter(x=>x.def).forEach(x=>add('info',x.label+': oznaczony jako odszranianie — pominięty w obliczeniu ciepła.'));
+  r.rows=rds;
+  const S=rds.find(x=>x.role==='S'), Z=rds.find(x=>x.role==='E');
+
+  /* --- zużycie energii --- */
+  let rE=res.E;
+  if(S&&Z&&S.k!=null&&Z.k!=null){
+    const dk=Z.k-S.k;
+    if(dk>0){ r.E=dk; r.Esrc='licznik (stop − start)'; }
+    else add('bad','Stan licznika na końcu musi być większy niż na początku okresu.');
+  } else if(P.kwh>0){ r.E=P.kwh; r.Esrc='wpisane ręcznie'; rE=res.E/2; }
+  if(r.E==null) add('warn','Brak zużycia energii: wpisz stany licznika (start i stop) albo zużycie okresu w kWh.');
+  else { r.pel=r.E/r.hours; if(r.pel<0.2) add('warn','Średnia moc pobierana wynosi tylko '+r.pel.toFixed(2)+' kW — pompa raczej nie pracowała w całym okresie (sprawdź daty).'); }
+
+  /* --- ciepło --- */
+  const vp=rds.filter(x=>x.valid).map(x=>({t:x.t,v:x.q}));
+  r.nVal=vp.length; r.hasHeat=vp.length>0;
+  const defH=(P.defMin||0)/60;
+  const heatFor=(off,zeroEx)=>{
+    const pts=[]; rds.forEach(x=>{ if(x.def||x.t01==null||x.t02==null||x.flow==null) return;
+      const dt=(x.t02-x.t01)-off, ok=dt>0&&x.hz!==0&&x.flow>0;
+      if(ok) pts.push({t:x.t,v:x.flow*c.rho*c.cpw*dt/3600}); else if(zeroEx) pts.push({t:x.t,v:0}); });
+    if(!pts.length||defH>=r.hours) return null;
+    const q=twAvg(pts,t0,t1), heat=q*(r.hours-defH); return {q,heat,cop:r.E>0?heat/r.E:null};
+  };
+  r.alt={};
+  if(vp.length){
+    r.q=twAvg(vp,t0,t1);
+    if(defH>=r.hours) add('bad','Czas odszraniania nie może być dłuższy niż okres pracy.');
+    else r.heat=r.q*(r.hours-defH);
+    if(r.E>0&&!(defH>=r.hours)){
+      if(c.dtOff){ const o=heatFor(c.useOff?0:c.dtOff,false); if(o&&o.cop!=null) r.alt.other={cop:o.cop,label:c.useOff?'bez korekty ΔT':'z korektą ΔT '+c.dtOff+' K'}; }
+      if(excl.length){ const z=heatFor(c.off,true); if(z&&z.cop!=null) r.alt.zero=z.cop; }
+      const qm=Math.max(...vp.map(p=>p.v)); if(vp.length>=2&&qm>0) r.alt.steady=qm*(r.hours-defH)/r.E;
+    }
+    if(r.heat!=null&&r.E>0){
+      r.cop=r.heat/r.E;
+      const rel=Math.max(...rds.filter(x=>x.valid).map(x=>res.T/x.dt+(res.F/2)/x.flow))+rE/r.E;
+      r.rel=rel; r.lo=r.cop*(1-rel); r.hi=r.cop*(1+rel);
+    }
+  } else add('info','Brak poprawnego odczytu cieplnego (T01, T02 i T39 w trakcie pracy) — okres policzy zużycie, ale nie COP.');
+
+  /* --- średnie pozostałych wielkości --- */
+  const ptsOf=(key,skipDef)=>rds.filter(x=>x[key]!=null&&!(skipDef&&x.def)).map(x=>({t:x.t,v:x[key]}));
+  [['t01',1],['t02',1],['dt',1],['flow',1],['q',1],['t04',0],['hz',0],['S',0],['p',0],['volt',0]].forEach(([k,sd])=>{ const p=ptsOf(k,sd); r.avg[k]=p.length?twAvg(p,t0,t1):null; });
+  r.t04=r.avg.t04; r.hz=r.avg.hz; r.Savg=r.avg.S;
+  const p4=ptsOf('t04',0); if(p4.length){ r.t04min=Math.min(...p4.map(p=>p.v)); r.t04max=Math.max(...p4.map(p=>p.v)); }
+  if(r.hz!=null&&c.hzMax>0) r.load=r.hz/c.hzMax*100;
+  { const both=rds.filter(x=>x.pf1!=null);
+    if(both.length){ r.pf=both.reduce((a,x)=>a+x.p,0)/both.reduce((a,x)=>a+x.S,0); r.pfSrc='chwilowy'; }
+    else if(r.pel>0&&r.Savg>0){ r.pf=r.pel/r.Savg; r.pfSrc='średni'; } }
+
+  /* --- segmenty między odczytami licznika --- */
+  const kr=rds.filter(x=>x.k!=null);
+  if(kr.length>2){
+    for(let i=1;i<kr.length;i++){
+      const a=kr[i-1], b=kr[i], h=(b.t-a.t)/36e5, E=b.k-a.k;
+      const qp=vp.length?twAvg(vp,a.t,b.t):null, t4=p4.length?twAvg(p4,a.t,b.t):null;
+      r.segs.push({a,b,h,E,pel:h>0?E/h:null,q:qp,cop:(qp!=null&&E>0)?qp*h/E:null,t04:t4});
+      if(E<0) add('bad','Segment '+a.label+' → '+b.label+': stan licznika maleje — sprawdź odczyty licznika.');
+    }
   }
+
+  /* --- kontrole wiarygodności --- */
+  if(r.cop!=null){
+    const al=[]; if(r.alt.other) al.push('COP '+r.alt.other.label+': '+r.alt.other.cop.toFixed(2)); if(r.alt.zero!=null) al.push('COP gdy pominięte odczyty liczyć jako 0 kW: '+r.alt.zero.toFixed(2)); if(r.alt.steady!=null) al.push('COP przy stałej mocy równej najwyższemu odczytowi Q (stan ustalony): '+r.alt.steady.toFixed(2));
+    { const qs2=vp.map(p=>p.v), qx=Math.max(...qs2), low=rds.filter(x=>x.valid&&x.q<0.6*qx&&(x.role!=='M'));
+      if(vp.length>=2&&low.length&&(P.mode==='CWU'||r.hours<3)) add('warn',low.map(x=>x.label).join(', ')+': Q = '+low.map(x=>x.q.toFixed(1)).join(', ')+' kW wobec '+qx.toFixed(1)+' kW w innym odczycie — to wygląda na odczyt z rozruchu/końcówki cyklu. Interpolacja liniowa rozciąga taką niską wartość na część okresu i ZANIŻA średnie Q oraz COP. Dla krótkiego okresu (np. CWU) dodaj odczyt pośredni kilka minut po starcie albo porównaj z „COP przy stanie ustalonym” poniżej.'); }
+    if(al.length) add('info','Czułość wyniku — przyjęty COP '+r.cop.toFixed(2)+'; '+al.join('; ')+'.');
+    if(c.dtOff&&!c.useOff) add('info','Korekta ΔT ('+c.dtOff+' K z Ustawień) NIE jest stosowana w tym okresie. Zaznacz ją w sekcji „Ustawienia okresu”, tylko jeśli T01 i T02 realnie różnią się o tyle przy wyłączonej sprężarce.');
+    if(c.useOff) add('warn','Stosowana korekta ΔT = −'+c.dtOff+' K. Zmniejsza ona ΔT w każdym odczycie, więc obniża moc grzewczą i COP (przy ΔT rzędu 3–5 K nawet o 20–30%). Sprawdź w tabeli odczytów kolumny „ΔT surowe” i „ΔT po korekcie”.');
+    if(r.cop>6) add('warn','COP powyżej 6 jest podejrzanie wysoki. Sprawdź ΔT (T01/T02), przepływ T39 i zużycie z licznika (daty!).');
+    else if(r.cop<1.5) add('warn','Bardzo niskie COP — sprawdź daty okresu, odczyty cieplne i czy w okresie nie było długiego postoju.');
+    else add('good','COP w realistycznym zakresie dla pompy ciepła.');
+    if(r.rel>0.35) add('warn','Zakres niepewności wpisanych liczb to ±'+(r.rel*100).toFixed(0)+'% — wynik bardzo przybliżony (mała ΔT albo mało miejsc po przecinku w odczytach).');
+  }
+  const dtv=rds.filter(x=>x.valid&&x.dt<1.5); if(dtv.length) add('warn','ΔT poniżej 1,5 K w odczycie: '+dtv.map(x=>x.label).join(', ')+' — wynik jest bardzo wrażliwy na dokładność T01/T02.');
+  if(r.pf!=null){
+    const alt=r.pf/Math.sqrt(3), vAvg=r.avg.volt, phaseV=(vAvg!=null&&vAvg<300);
+    if(r.pfSrc==='chwilowy'){
+      if(r.pf>1.02) add('warn','cos φ z odczytów chwilowych = '+r.pf.toFixed(2)+' (> 1, niemożliwe). Moc z licznika i T34/T35 muszą być z tej samej chwili. '+(phaseV?'T34 ≈ '+vAvg.toFixed(0)+' V wygląda na napięcie fazowe: wtedy S = 3·T34·T35 i cos φ = '+alt.toFixed(2)+'.':'Jeśli T34 jest napięciem fazowym (~230 V), poprawny wzór to S = 3·T34·T35 (cos φ = '+alt.toFixed(2)+').'));
+      else if(r.pf<0.6) add('info','cos φ z odczytów chwilowych = '+r.pf.toFixed(2)+' — niski; T35 może nie obejmować całego poboru (np. grzałki, pompa obiegowa).');
+      else add('good','Kontrola licznika: cos φ z odczytów chwilowych = '+r.pf.toFixed(2)+' — wartość możliwa.');
+    } else {
+      if(r.pf>1.02) add('warn','Orientacyjny cos φ = '+r.pf.toFixed(2)+' (> 1) — to porównanie średniej mocy z licznika (E ÷ czas) z jednym chwilowym S z T34/T35, więc nie jest to prawdziwy cos φ. '+(phaseV?'T34 ≈ '+vAvg.toFixed(0)+' V wygląda na napięcie fazowe (wtedy S = 3·T34·T35, cos φ ≈ '+alt.toFixed(2)+'). ':'')+'Aby kontrola była rzetelna, wpisz w sekcji 4 „Chwilową moc z licznika” (kW) w tej samej chwili co T34/T35.');
+      else add('info','Orientacyjny cos φ = '+r.pf.toFixed(2)+' (średnia moc z licznika ÷ chwilowe S z T34/T35). Średnia zawiera rozruch, postój i odszranianie, więc nie musi pasować do cos φ z aplikacji. Dla rzetelnej kontroli wpisz chwilową moc z licznika (sekcja 4).');
+    }
+  } else if(r.pel>0) add('info','Podaj T34 i T35 (oraz chwilową moc z licznika), aby sprawdzić spójność licznika z aplikacją.');
+  if(r.hours>12&&r.nVal>0&&r.nVal<3) add('info','Okres trwa '+fmtHM(r.hours)+', a poprawnych odczytów cieplnych jest '+r.nVal+' — średnia opiera się na interpolacji między nimi. Dodaj odczyty pośrednie (np. przy zmianie pogody lub modulacji).');
+  if(r.nVal>=2){ const qs=vp.map(p=>p.v), qm=qs.reduce((a,b)=>a+b,0)/qs.length, spr=(Math.max(...qs)-Math.min(...qs))/qm;
+    if(spr>0.4) add((r.hours>=2&&P.mode==='CO')?'warn':'info','Moc grzewcza Q w odczytach: '+Math.min(...qs).toFixed(1)+' … '+Math.max(...qs).toFixed(1)+' kW (rozrzut '+(spr*100).toFixed(0)+'%). Przy rozruchu i zmianach modulacji to normalne.'+(r.hours>=2?' Przy tak długim okresie ('+fmtHM(r.hours)+') dodaj odczyty pośrednie, aby średnia lepiej oddawała przebieg.':'')); }
+  if(r.t04max!=null&&r.t04max-r.t04min>5) add('info','Temperatura zewnętrzna T04 zmieniła się w okresie o '+(r.t04max-r.t04min).toFixed(1)+' K ('+r.t04min.toFixed(1)+' … '+r.t04max.toFixed(1)+' °C) — podana średnia jest ważona czasem.');
+  const vs=new Set(rds.map(x=>(x.c1===false?0:1)+''+(x.c2===false?0:1))); if(vs.size>1) add('info','Zmieniała się konfiguracja otwartych obiegów między odczytami — przepływ T39 mógł się zmieniać; średnia Q uwzględnia to tylko przez odczyty.');
+  r.segs.forEach(sg=>{ if(sg.cop!=null&&(sg.cop>6||sg.cop<1.5)) add('warn','Segment '+sg.a.label+' → '+sg.b.label+': COP '+sg.cop.toFixed(2)+' jest poza typowym zakresem 1,5–6.'); });
+  if(!opt.noCompare && r.pel>0 && r.hz!=null){
+    const nb=M.filter(m=>m.start&&m.end&&m.id!==P.id&&m.mode===P.mode).map(m=>({m,c:calcPeriod(m,{noCompare:true})})).filter(x=>x.c.pel>0&&x.c.hz!=null&&Math.abs(x.c.hz-r.hz)<=5);
+    if(nb.length>=2){
+      const mp=med(nb.map(x=>x.c.pel)), dp=(r.pel-mp)/mp*100; let txt='Porównanie z '+nb.length+' wcześniejszymi okresami '+P.mode+' przy średnim T30 ≈ '+r.hz.toFixed(0)+' Hz (±5): średnia moc pobierana '+(dp>=0?'+':'')+dp.toFixed(0)+'%';
+      const nq=nb.filter(x=>x.c.q!=null); if(nq.length>=2&&r.q!=null){ const mq=med(nq.map(x=>x.c.q)), dq=(r.q-mq)/mq*100; txt+=', moc grzewcza '+(dq>=0?'+':'')+dq.toFixed(0)+'%'; }
+      txt+=' względem mediany.';
+      add(Math.abs(dp)>30?'warn':'info',txt+(Math.abs(dp)>30?' Duże odchylenie — sprawdź odczyty albo zmieniły się warunki (T04, ΔT, obiegi).':''));
+    } else add('info','Za mało wcześniejszych okresów '+P.mode+' przy podobnym T30 (±5 Hz), aby porównać (potrzeba min. 2).');
+  } else if(!opt.noCompare && r.pel>0 && r.hz==null) add('info','Podaj T30, aby porównać okres z wcześniejszymi przy podobnej modulacji.');
+  return r;
 }
 
-function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDashboard(); updateStoreBar(); }
-renderAll();
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
+/* ===================== FORMULARZ: odczyty start / stop / pośrednie ===================== */
+function newRds(){ return [0,1].map(()=>({ts:'',v:{},k:'',c1:true,c2:true,def:false})); }
+let RDS=newRds();
+const PARAMS={
+ 2:[
+  {key:'t01',code:'T01',name:'Inlet Water Temp',src:'app',unit:'°C',step:0.1,desc:'Temperatura wody <b>wchodzącej DO pompy</b> z instalacji (angielskie „inlet” = wlot do pompy). Przy ogrzewaniu zwykle woda chłodniejsza (powrót). Wpisz odczyt z chwili <b>uruchomienia (Start)</b>, <b>zatrzymania (Stop)</b> i — przy długim okresie — odczyty w trakcie.'},
+  {key:'t02',code:'T02',name:'Outlet Water Temp',src:'app',unit:'°C',step:0.1,desc:'Temperatura wody <b>wychodzącej Z pompy</b> do instalacji (angielskie „outlet” = wylot z pompy). Przy ogrzewaniu zwykle woda cieplejsza (zasilanie). Różnica T02 − T01 to ΔT, z której liczone jest ciepło.'},
+  {key:'t04',code:'T04',name:'Ambient Temp',src:'app',unit:'°C',step:0.1,desc:'Temperatura zewnętrzna mierzona przez pompę. <b>Nie wpływa na COP</b> — służy do analizy. W wynikach pojawia się jako średnia ważona czasem z odczytów w okresie.'}],
+ 3:[
+  {key:'flow',code:'T39',name:'Water Flow',src:'app',unit:'m³/h',step:0.1,min:0,desc:'Przepływ wody w obiegu grzewczym. Odczytuj <b>gdy sprężarka pracuje</b>, nie w trakcie odszraniania (zaznacz wtedy „odszranianie” poniżej). Przepływ zależy od liczby otwartych obiegów (zawory Afriso) — dlatego poniżej zaznaczasz, które były otwarte.'}],
+ 4:[
+  {key:'k',code:'',short:'licznik',name:'Stan licznika energii pompy',src:'lic',unit:'kWh',step:0.01,min:0,desc:'Stan <b>dedykowanego licznika pompy</b> (kWh) w chwili odczytu. <b>Start i Stop są potrzebne</b> do obliczenia zużycia w okresie (Stop − Start). Odczyt pośredni jest opcjonalny — pozwala sprawdzić zużycie i COP w segmentach okresu (tabela „Segmenty”).'},
+  {key:'p',code:'',short:'moc chwil.',name:'Chwilowa moc pobierana — wskazanie licznika',src:'lic',unit:'kW',step:0.01,min:0,desc:'<b>Opcjonalne.</b> Moc chwilowa, którą pokazuje licznik pompy w momencie odczytu (kW). Wpisuj ją <b>w tej samej chwili</b>, co T34 i T35 — wtedy system liczy rzetelny cos φ = moc z licznika ÷ (√3·T34·T35) osobno dla każdego odczytu. Bez tego cos φ jest tylko orientacyjny.'}],
+ 5:[
+  {key:'hz',code:'T30',name:'Compressor Frequency',src:'app',unit:'Hz',step:1,min:0,desc:'Częstotliwość sprężarki (modulacja). <b>Nie wpływa na COP</b> — pokazuje średnie obciążenie (T30 ÷ T32) i służy do porównań z innymi okresami. Pompa dobiera ją sama, dlatego liczy się średnia z odczytów, a nie przedziały.'},
+  {key:'volt',code:'T34',name:'AC Input Voltage Value',src:'app',unit:'V',step:1,min:0,desc:'Napięcie zasilania. Około 400 V to napięcie <b>międzyfazowe</b> (3 fazy) — tak ma być. Razem z T35 służy do <b>kontroli</b>: wyliczony cos φ = średnia moc z licznika ÷ średnia moc pozorna (√3·T34·T35).'},
+  {key:'amp',code:'T35',name:'AC Input Current Value',src:'app',unit:'A',step:0.1,min:0,desc:'Prąd pobierany z zasilania. Razem z T34 służy do kontroli spójności z licznikiem (wyliczony cos φ).'}]
+};
+const SRC={app:['app','z aplikacji Warmlink'],lic:['lic','z licznika pompy'],man:['man','wpisz ręcznie']};
+function rdLabel(i){ const n=RDS.length; return i===0?'Start':(i===n-1?'Stop':'Odczyt '+i); }
+function fldHtml(p){
+  const cells=RDS.map((x,i)=>{ const val=p.key==='k'?x.k:x.v[p.key];
+    return `<div class="rdcell"><label>${rdLabel(i)}</label><div class="finp"><input type="number" id="rd${i}_${p.key}" step="${p.step}" ${p.min!=null?`min="${p.min}"`:''} value="${val==null?'':xmlEsc(val)}"><span class="unit">${p.unit}</span></div></div>`; }).join('');
+  const s=SRC[p.src];
+  return `<div class="fld" style="grid-column:1/-1"><div class="fhead"><span class="code${p.code?'':' nocode'}">${p.code||p.short}</span><span class="fname">${p.name}</span><span class="src ${s[0]}">${s[1]}</span></div><div class="fdesc">${p.desc}</div><div class="rdrow">${cells}</div></div>`;
 }
+function buildRdUi(){
+  const n=RDS.length;
+  let t='<div class="rdrow">';
+  RDS.forEach((x,i)=>{
+    if(i===0) t+=`<div class="rdcell"><label>Start (= uruchomienie)</label><div class="mono" id="rdtxt0">—</div></div>`;
+    else if(i===n-1) t+=`<div class="rdcell"><label>Stop (= zatrzymanie)</label><div class="mono" id="rdtxt${i}">—</div></div>`;
+    else t+=`<div class="rdcell"><label>Odczyt ${i} — data i godzina</label><input type="datetime-local" id="rd${i}_ts" value="${xmlEsc(x.ts||'')}"><button class="btn2 del" type="button" onclick="rdDel(${i})" style="margin:4px 0 0">Usuń ten odczyt</button></div>`;
+  });
+  t+='</div><div style="margin-top:8px"><button class="btn2" type="button" onclick="rdAdd()" style="color:var(--text);padding:6px 12px">+ Dodaj odczyt pośredni (w trakcie pracy)</button></div><p class="note" style="margin-top:6px">Odczyt pośredni jest zalecany dla długich okresów (np. co kilka godzin albo przy zmianie pogody). Im więcej odczytów, tym dokładniejsza średnia Q.</p>';
+  cpEl('cp_rdtimes').innerHTML=t;
+  cpEl('cp_sec2').innerHTML=PARAMS[2].map(fldHtml).join('');
+  const valves=RDS.map((x,i)=>`<div class="rdcell"><label>${rdLabel(i)}</label><label class="chk"><input type="checkbox" id="rd${i}_c1" ${x.c1?'checked':''}> ${xmlEsc(SET.c1Name)} — zawór otwarty</label><label class="chk"><input type="checkbox" id="rd${i}_c2" ${x.c2?'checked':''}> ${xmlEsc(SET.c2Name)} — zawór otwarty</label></div>`).join('');
+  const defs=RDS.map((x,i)=>`<div class="rdcell"><label>${rdLabel(i)}</label><label class="chk"><input type="checkbox" id="rd${i}_def" ${x.def?'checked':''}> odczyt w trakcie odszraniania</label></div>`).join('');
+  cpEl('cp_sec3').innerHTML=PARAMS[3].map(fldHtml).join('')
+    +`<div class="fld" style="grid-column:1/-1"><div class="fhead"><span class="code nocode">zawory</span><span class="fname">Otwarte zawory elektryczne Afriso (2-drogowe)</span><span class="src man">wpisz ręcznie</span></div><div class="fdesc">Zaznacz obiegi, których zawór był <b>w chwili odczytu otwarty</b>. Nazwy obiegów zmienisz w Ustawieniach.</div><div class="rdrow">${valves}</div></div>`
+    +`<div class="fld" style="grid-column:1/-1"><div class="fhead"><span class="code nocode">odszr.</span><span class="fname">Czy odczyt zrobiono w trakcie odszraniania?</span><span class="src man">wpisz ręcznie</span></div><div class="fdesc">Odszranianie pompa robi sama w trakcie pracy. Odczyty T01/T02/T39 z tego momentu są niemiarodajne, więc zaznaczony odczyt jest <b>pominięty w obliczeniu ciepła</b> (zużycie z licznika i tak je zawiera).</div><div class="rdrow">${defs}</div></div>`;
+  cpEl('cp_sec4').innerHTML=PARAMS[4].map(fldHtml).join('');
+  cpEl('cp_sec5').innerHTML=PARAMS[5].map(fldHtml).join('');
+}
+function collectRd(){
+  RDS.forEach((x,i)=>{
+    COPK.forEach(k=>{ const e=cpEl(`rd${i}_${k}`); if(e) x.v[k]=e.value; });
+    let e=cpEl(`rd${i}_k`); if(e) x.k=e.value;
+    e=cpEl(`rd${i}_ts`); if(e) x.ts=e.value;
+    ['c1','c2','def'].forEach(k=>{ const c=cpEl(`rd${i}_${k}`); if(c) x[k]=c.checked; });
+  });
+}
+function rdAdd(){
+  collectRd(); const last=RDS[RDS.length-1], s=cpEl('cp_start').value, e=cpEl('cp_end').value;
+  let ts=''; if(s&&e&&Date.parse(e)>Date.parse(s)) ts=toLocalStr((Date.parse(s)+Date.parse(e))/2);
+  RDS.splice(RDS.length-1,0,{ts,v:{},k:'',c1:last.c1,c2:last.c2,def:false}); buildRdUi(); liveCop();
+}
+function rdDel(i){ collectRd(); RDS.splice(i,1); buildRdUi(); liveCop(); }
+function cpNow(id){ cpEl(id).value=nowLocal(); liveCop(); }
+
+function readCopForm(){
+  collectRd();
+  const c=copCtx||{rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff}, uo=!!(cpEl('cp_useoff')&&cpEl('cp_useoff').checked);
+  const start=cpEl('cp_start').value, end=cpEl('cp_end').value, last=RDS.length-1;
+  const rd=RDS.map((x,i)=>{ const o={ts:i===0?start:(i===last?end:x.ts),c1:x.c1,c2:x.c2,def:x.def,k:num(x.k)}; COPK.forEach(k=>o[k]=num(x.v[k])); return o; });
+  const mx=(keys,minD)=>Math.max(minD,...RDS.flatMap(x=>keys.map(k=>decs(x.v[k],minD))));
+  const kd=Math.max(1,...RDS.map(x=>decs(x.k,1)), decs(cpEl('cp_kwh').value,1));
+  return {id:copEditId,start,end,mode:cpEl('cp_mode').value,defMin:num(cpEl('cp_defmin').value)||0,kwh:num(cpEl('cp_kwh').value),rd,
+    res:{T:Math.pow(10,-mx(['t01','t02'],1)),F:Math.pow(10,-mx(['flow'],1)),E:Math.pow(10,-kd)},
+    rho:c.rho,cpw:c.cpw,dtOff:c.dtOff,useOff:uo,hzMax:SET.hzMax,note:cpEl('cp_note').value.trim()};
+}
+function rdTableHtml(r){
+  const cols=r.rows; if(!cols.length) return '';
+  const S=cols[0], Z=cols[cols.length-1];
+  const defs=[['Czas',null,0],['T01 wlot (°C)','t01',1],['T02 wylot (°C)','t02',1],['ΔT surowe T02 − T01 (K)','dtRaw',2],['ΔT użyte w obliczeniu (K)','dt',2],['T39 przepływ (m³/h)','flow',2],['Q moc grzewcza (kW)','q',2],['T04 zewn. (°C)','t04',1],['T30 sprężarka (Hz)','hz',0],['S = √3·T34·T35 (kVA)','S',2],['Stan licznika (kWh)','k',2],['Moc chwilowa z licznika (kW)','p',2],['cos φ chwilowy = moc ÷ S','pf1',2],['Status odczytu w obliczeniu Q','why',0],['Otwarte obiegi',null,0],['Odszranianie',null,0]];
+  let h='<thead><tr><th>Parametr</th>'+cols.map(x=>`<th>${xmlEsc(x.label)}</th>`).join('')+'<th>Zmiana (Stop − Start)</th><th>Średnia ważona czasem</th></tr></thead><tbody>';
+  defs.forEach(([lab,k,d])=>{
+    h+=`<tr><td>${lab}</td>`;
+    if(lab==='Czas') h+=cols.map(x=>`<td class="num">${fmtDT(toLocalStr(x.t))}</td>`).join('')+'<td class="num">'+fmtHM(r.hours)+'</td><td>—</td>';
+    else if(k==='why') h+=cols.map(x=>`<td class="notecell2" style="font-size:.74rem">${xmlEsc(x.why||'')}</td>`).join('')+'<td>—</td><td>—</td>';
+    else if(lab==='Otwarte obiegi') h+=cols.map(x=>`<td class="num">${[x.c1===false?null:SET.c1Name,x.c2===false?null:SET.c2Name].filter(Boolean).map(xmlEsc).join(' + ')||'—'}</td>`).join('')+'<td>—</td><td>—</td>';
+    else if(lab==='Odszranianie') h+=cols.map(x=>`<td class="num">${x.def?'tak':'nie'}</td>`).join('')+'<td>—</td><td>—</td>';
+    else { const dv=(S[k]!=null&&Z[k]!=null&&S!==Z)?Z[k]-S[k]:null;
+      h+=cols.map(x=>`<td class="num">${f2(x[k],d)}</td>`).join('')+`<td class="num">${dv==null?'—':(dv>=0?'+':'')+dv.toFixed(d)}</td><td class="num">${(k==='k'||k==='pf1')?(k==='pf1'&&r.pfSrc==='chwilowy'?f2(r.pf,2):'—'):f2(r.avg[k],d)}</td>`; }
+    h+='</tr>';
+  });
+  return h+'</tbody>';
+}
+function segTableHtml(r){
+  return '<thead><tr><th>Od → do</th><th>Czas</th><th>E (kWh)</th><th>Śr. moc pobierana Pel (kW) = E ÷ czas</th><th>Śr. moc grzewcza Q (kW)</th><th>COP</th><th>T04 temp. zewn. śr. (°C)</th></tr></thead><tbody>'
+   +r.segs.map(s=>`<tr><td class="num">${xmlEsc(s.a.label)} → ${xmlEsc(s.b.label)} (${fmtDT(toLocalStr(s.a.t))} → ${fmtDT(toLocalStr(s.b.t))})</td><td class="num">${fmtHM(s.h)}</td><td class="num">${f2(s.E,2)}</td><td class="num">${f2(s.pel,2)}</td><td class="num">${f2(s.q,2)}</td><td class="num"><b>${s.cop==null?'—':'≈ '+s.cop.toFixed(2)}</b></td><td class="num">${f2(s.t04,1)}</td></tr>`).join('')+'</tbody>';
+}
+function flagsHtml(r){
+  const ic={bad:'⚠',warn:'⚠',good:'✓',info:'ℹ'}, cl={bad:'bad',warn:'',good:'good',info:'info'};
+  return r.flags.length?r.flags.map(w=>`<div class="warnline ${cl[w.lvl]}">${ic[w.lvl]} ${xmlEsc(w.txt)}</div>`).join(''):'<div class="note">Wpisz dane, aby zobaczyć kontrole.</div>';
+}
+function liveCop(){
+  if(!cpEl('cp_E')) return;
+  const P=readCopForm(), r=calcPeriod(P,{}), c={rho:P.rho,cpw:P.cpw,dtOff:P.dtOff};
+  cpEl('cp_hours').textContent=r.hours==null?'—':hhd(r.hours);
+  const t0=cpEl('rdtxt0'); if(t0) t0.textContent=P.start?fmtY(P.start):'(wpisz uruchomienie)';
+  const tl=cpEl('rdtxt'+(RDS.length-1)); if(tl) tl.textContent=P.end?fmtY(P.end):'(wpisz zatrzymanie)';
+  cpEl('cp_E').textContent=r.E==null?'—':r.E.toFixed(2)+' kWh';
+  cpEl('cp_P').textContent=r.pel==null?'—':r.pel.toFixed(2)+' kW';
+  cpEl('cp_Eh').textContent=(r.pel==null||r.hours<24)?'—':(r.pel*24).toFixed(1)+' kWh/dobę';
+  cpEl('cp_Q').textContent=r.q==null?'—':r.q.toFixed(2)+' kW';
+  cpEl('cp_Qe').textContent=r.heat==null?'—':r.heat.toFixed(1)+' kWh';
+  cpEl('cp_cop').textContent=r.cop==null?'≈ —':'≈ '+r.cop.toFixed(2);
+  cpEl('cp_range').textContent=r.lo==null?'—':r.lo.toFixed(2)+' – '+r.hi.toFixed(2);
+  cpEl('cp_t04').textContent=r.t04==null?'—':r.t04.toFixed(1)+' °C ('+r.t04min.toFixed(1)+' … '+r.t04max.toFixed(1)+')';
+  cpEl('cp_hz').textContent=r.hz==null?'—':r.hz.toFixed(0)+' Hz'+(r.load!=null?' ('+r.load.toFixed(0)+'%)':'');
+  cpEl('cp_pf').textContent=r.pf==null?'—':r.pf.toFixed(2)+(r.pfSrc==='chwilowy'?'':' (orient.)');
+  cpEl('cp_warn').innerHTML=flagsHtml(r);
+  cpEl('cp_rdtable').innerHTML=rdTableHtml(r);
+  cpEl('cp_segwrap').style.display=r.segs.length?'':'none';
+  if(r.segs.length) cpEl('cp_segs').innerHTML=segTableHtml(r);
+  const qs=r.rows.filter(x=>x.valid).map(x=>x.label+' = '+x.q.toFixed(2)+' kW').join(', ');
+  cpEl('cp_f_win').textContent=r.hours==null?'':`Czas = zatrzymanie − uruchomienie = ${fmtY(P.end)} − ${fmtY(P.start)} = ${hhd(r.hours)}`;
+  cpEl('cp_f_E').textContent=r.E==null?'':(r.Esrc.startsWith('licznik')?`E = stan licznika Stop − Start = ${f2(r.rows[r.rows.length-1].k,2)} − ${f2(r.rows[0].k,2)} = ${r.E.toFixed(2)} kWh`:`E = zużycie wpisane ręcznie = ${r.E.toFixed(2)} kWh`);
+  cpEl('cp_f_P').textContent=r.pel==null?'':`Pel śr. (szacunek średniej mocy pobieranej, nie pomiar chwilowy) = E ÷ czas = ${r.E.toFixed(2)} kWh ÷ ${r.hours.toFixed(2)} h (${fmtHM(r.hours)}) = ${r.pel.toFixed(2)} kW`;
+  cpEl('cp_f_Q').textContent=r.q==null?'':`Q w odczytach: q = T39 × ρ × cp × ΔT ÷ 3600 → ${qs}. Średnia ważona czasem (interpolacja liniowa między odczytami) = ${r.q.toFixed(2)} kW`;
+  cpEl('cp_f_Qe').textContent=r.heat==null?'':`Ciepło = Q śr. × (czas − odszranianie) = ${r.q.toFixed(2)} × (${r.hours.toFixed(2)} h − ${((P.defMin||0)/60).toFixed(2)} h) = ${r.heat.toFixed(2)} kWh`;
+  cpEl('cp_f_cop').textContent=r.cop==null?'':`COP = ciepło ÷ E = ${r.heat.toFixed(1)} ÷ ${r.E.toFixed(2)} = ${r.cop.toFixed(2)}`;
+  cpEl('cp_f_pf').textContent=r.pf==null?'':(r.pfSrc==='chwilowy'?`cos φ (z odczytów chwilowych) = Σ moc z licznika ÷ Σ S = ${r.pf.toFixed(2)}, gdzie S = √3 × T34 × T35 ÷ 1000`:`cos φ orientacyjny = Pel śr. ÷ S śr. = ${r.pel.toFixed(2)} ÷ ${r.Savg.toFixed(2)} = ${r.pf.toFixed(2)} (S = √3 × T34 × T35 ÷ 1000)`);
+  cpEl('cp_consts').textContent=`Użyte stałe: ρ = ${c.rho} kg/m³, cp = ${c.cpw} kJ/(kg·K), korekta ΔT: ${P.useOff?'STOSOWANA −'+c.dtOff+' K':'nie stosowana'+(c.dtOff?' (w Ustawieniach: '+c.dtOff+' K)':'')}, T32 = ${P.hzMax} Hz.`;
+  const a=num(cpEl('cal_t01').value), b=num(cpEl('cal_t02').value);
+  cpEl('cal_diff').textContent=(a!=null&&b!=null)?((b-a)>=0?'+':'')+(b-a).toFixed(1)+' K':'—';
+  cpEl('cp_offval').textContent=(+SET.dtOff).toFixed(1); cpEl('cal_cur').textContent=(SET.dtOff>=0?'+':'')+(+SET.dtOff).toFixed(1)+' K';
+}
+document.getElementById('cop').addEventListener('input',liveCop);
+function syncCopSettingsUI(){
+  ensureCopDefaults();
+  cpEl('set_rho').value=SET.rho; cpEl('set_cpw').value=SET.cpw; cpEl('set_hzmax').value=SET.hzMax;
+  cpEl('set_c1').value=SET.c1Name; cpEl('set_c2').value=SET.c2Name; cpEl('set_dtoff').value=SET.dtOff;
+  collectRd(); buildRdUi(); liveCop();
+}
+async function updateCopSettings(){
+  const f=id=>parseFloat(cpEl(id).value), n=(v,d)=>isNaN(v)?d:v;
+  SET.rho=n(f('set_rho'),1000); SET.cpw=n(f('set_cpw'),4.186); SET.hzMax=n(f('set_hzmax'),100)||100;
+  SET.c1Name=cpEl('set_c1').value.trim()||'Obieg 1'; SET.c2Name=cpEl('set_c2').value.trim()||'Obieg 2'; SET.dtOff=n(f('set_dtoff'),0);
+  await persist(); syncCopSettingsUI();
+}
+async function applyCal(){
+  const a=num(cpEl('cal_t01').value), b=num(cpEl('cal_t02').value);
+  if(a==null||b==null){ alert('Podaj odczyty T01 i T02 przy wyłączonej sprężarce.'); return; }
+  SET.dtOff=+(b-a).toFixed(2); await persist(); syncCopSettingsUI();
+  alert('Zapisano korektę ΔT = '+SET.dtOff+' K. Nie jest stosowana automatycznie — zaznacz ją w danym okresie (pole „Odjąć korektę ΔT”), jeśli chcesz ją użyć.');
+}
+async function clearCal(){ SET.dtOff=0; await persist(); syncCopSettingsUI(); }
+function resetCopForm(){
+  RDS=newRds();
+  ['cp_start','cp_defmin','cp_kwh','cp_note'].forEach(id=>cpEl(id).value='');
+  cpEl('cp_end').value=nowLocal(); cpEl('cp_mode').value='CO'; cpEl('cp_useoff').checked=false;
+  buildRdUi(); liveCop();
+}
+function cancelCopEdit(){ copEditId=null; copCtx=null; cpEl('copSubmitBtn').textContent='Zapisz okres pracy'; cpEl('copEditBar').style.display='none'; resetCopForm(); }
+function editCop(id){
+  const m=M.find(x=>x.id===id); if(!m) return;
+  document.querySelector('nav button[data-tab="cop"]').click();
+  copEditId=id; copCtx={rho:m.rho,cpw:m.cpw,dtOff:m.dtOff||0}; cpEl('cp_useoff').checked=!!m.useOff;
+  cpEl('copEditBar').style.display='flex'; cpEl('copSubmitBtn').textContent='Zapisz zmiany okresu';
+  cpEl('cp_start').value=m.start; cpEl('cp_end').value=m.end; cpEl('cp_mode').value=m.mode;
+  cpEl('cp_defmin').value=m.defMin||''; cpEl('cp_kwh').value=m.kwh==null?'':m.kwh; cpEl('cp_note').value=m.note||'';
+  const s=v=>v==null?'':String(v);
+  RDS=m.rd.map(x=>({ts:x.ts||'',v:Object.fromEntries(COPK.map(k=>[k,s(x[k])])),k:s(x.k),c1:x.c1!==false,c2:x.c2!==false,def:!!x.def}));
+  if(RDS.length<2) RDS=newRds();
+  buildRdUi(); liveCop();
+}
+async function addCop(){
+  const P=readCopForm(), r=calcPeriod(P,{});
+  const bad=r.flags.filter(f=>f.lvl==='bad');
+  if(bad.length){ alert('Nie zapisuję — popraw dane:\n• '+bad.map(f=>f.txt).join('\n• ')); return; }
+  if(!(r.E>0)){ alert('Podaj zużycie energii: stany licznika (Start i Stop) albo zużycie okresu w kWh.'); return; }
+  if(!r.hasHeat && !confirm('Brak poprawnego odczytu cieplnego (T01, T02, T39) — zapisać sam okres bez COP? Możesz dopisać odczyty później przyciskiem „Edytuj”.')) return;
+  const rec={start:P.start,end:P.end,date:P.start.slice(0,10),mode:P.mode,defMin:P.defMin,kwh:P.kwh,rd:P.rd,res:P.res,rho:P.rho,cpw:P.cpw,dtOff:P.dtOff,useOff:P.useOff,hzMax:P.hzMax,note:P.note,src:'ręcznie'};
+  const wasEdit=!!copEditId;
+  if(wasEdit){ const i=M.findIndex(x=>x.id===copEditId); if(i>-1) M[i]={...M[i],...rec}; }
+  else M.push({id:uid(),...rec});
+  copEditId=null; copCtx=null; cpEl('copSubmitBtn').textContent='Zapisz okres pracy'; cpEl('copEditBar').style.display='none';
+  resetCopForm(); await persist(); alert(wasEdit?'Zaktualizowano okres pracy.':'Zapisano okres pracy.');
+}
+async function delCop(id){ if(!confirm('Usunąć okres pracy?')) return; M=M.filter(m=>m.id!==id); await persist(); }
+
+/* ===================== HISTORIA ===================== */
+function svgXY(pts,o){
+  if(!pts.length) return '<div class="empty">Brak danych.</div>';
+  const w=560,h=240,pl=40,pr=14,pt=14,pb=44,cw=w-pl-pr,ch=h-pt-pb;
+  let x0=Math.min(...pts.map(p=>p.x)), x1=Math.max(...pts.map(p=>p.x)); if(x0===x1){x0-=1;x1+=1;}
+  let y1=Math.max(...pts.map(p=>p.y)); y1=Math.max(1,Math.ceil(y1*1.1*2)/2);
+  const X=v=>pl+(v-x0)/(x1-x0)*cw, Y=v=>pt+ch-(v/y1*ch);
+  const gy=[0,.25,.5,.75,1].map(f=>{const y=Y(y1*f); return `<line x1="${pl}" y1="${y.toFixed(1)}" x2="${w-pr}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="${pl-5}" y="${(y+3).toFixed(1)}" font-size="9.5" fill="#8b98a5" text-anchor="end">${(y1*f).toFixed(1)}</text>`;}).join('');
+  const gx=[0,.25,.5,.75,1].map(f=>{const v=x0+(x1-x0)*f; return `<text x="${X(v).toFixed(1)}" y="${h-pb+15}" font-size="9.5" fill="#8b98a5" text-anchor="middle">${o.xFmt(v)}</text>`;}).join('');
+  const sorted=[...pts].sort((a,b)=>a.x-b.x);
+  const line=o.line?`<polyline points="${sorted.map(p=>X(p.x).toFixed(1)+','+Y(p.y).toFixed(1)).join(' ')}" fill="none" stroke="#3a4652" stroke-width="1.5"/>`:'';
+  const dots=pts.map(p=>`<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${p.r||4}" fill="${p.color}" fill-opacity=".85"><title>${p.t}</title></circle>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${gy}${gx}<line x1="${pl}" y1="${pt+ch}" x2="${w-pr}" y2="${pt+ch}" stroke="#3a4652"/>${line}${dots}<text x="${(pl+cw/2).toFixed(0)}" y="${h-4}" font-size="10" fill="#8b98a5" text-anchor="middle">${o.xLabel}</text><text x="${pl}" y="9" font-size="10" fill="#8b98a5">${o.yLabel||'COP'}</text></svg>`;
+}
+function allocDays(P){
+  const t0=Date.parse(P.start), t1=Date.parse(P.end), out=[]; let d=new Date(t0); d.setHours(0,0,0,0); let g=0;
+  while(d.getTime()<t1&&g<2000){ const ds=d.getTime(), de=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1).getTime(); const a=Math.max(ds,t0), b=Math.min(de,t1);
+    if(b>a) out.push({day:ymd(d),h:(b-a)/36e5,f:(b-a)/(t1-t0)}); d=new Date(de); g++; }
+  return out;
+}
+function daySpan(days){ const a=[...days].sort(); if(!a.length) return 0; return Math.round((Date.parse(a[a.length-1]+'T00:00:00Z')-Date.parse(a[0]+'T00:00:00Z'))/864e5)+1; }
+function copFiltered(){
+  migrateMeas();
+  const mode=cpEl('ch_mode').value, from=cpEl('ch_from').value, to=cpEl('ch_to').value;
+  return M.filter(m=>m.start&&m.end&&(mode==='all'||m.mode===mode)&&(!from||m.end.slice(0,10)>=from)&&(!to||m.start.slice(0,10)<=to))
+    .sort((a,b)=>b.start.localeCompare(a.start)).map(m=>({P:m,r:calcPeriod(m,{noCompare:true})})).filter(x=>x.r.hours!=null);
+}
+function renderCopHist(){
+  if(!cpEl('ch_stats')) return;
+  const items=copFiltered(), gran=cpEl('ch_gran').value;
+  const hrs=items.reduce((s,x)=>s+x.r.hours,0), E=items.reduce((s,x)=>s+(x.r.E||0),0);
+  const withH=items.filter(x=>x.r.heat!=null&&x.r.E>0), Eh=withH.reduce((s,x)=>s+x.r.E,0), heat=withH.reduce((s,x)=>s+x.r.heat,0);
+  const allDays=new Set(); items.forEach(x=>allocDays(x.P).forEach(a=>allDays.add(a.day)));
+  const nDays=daySpan(allDays), dsorted=[...allDays].sort();
+  const nWith=withH.length, pokr=E>0?Math.round(Eh/E*100):0;
+  cpEl('ch_stats').innerHTML=items.length?`
+    <div class="stat stat-co"><div class="v">${nWith?'≈ '+(heat/Eh).toFixed(2):'—'}</div><div class="l">COP średni (ciepło ÷ energia). Liczony z ${nWith} z ${items.length} okresów, które mają odczyty T01/T02/T39 — to ${pokr}% energii.</div></div>
+    <div class="stat stat-cwu"><div class="v">${E.toFixed(1)} kWh</div><div class="l">Energia w ${items.length} okresach pracy (z licznika lub wpisana)</div></div>
+    <div class="stat"><div class="v">${fmtHM(hrs)}</div><div class="l">Łączny czas pracy${nDays?' = '+(hrs/(nDays*24)*100).toFixed(0)+'% z '+nDays+' dób ('+dsorted[0]+' … '+dsorted[dsorted.length-1]+')':''}</div></div>
+    <div class="stat"><div class="v">${hrs>0?(E/hrs).toFixed(2):'—'} kW</div><div class="l">Średnia moc pobierana podczas pracy (energia ÷ czas pracy)</div></div>
+    <div class="stat"><div class="v">${nDays?(E/nDays).toFixed(2):'—'} kWh/d</div><div class="l">Średnio na dobę kalendarzową (energia ÷ ${nDays} dób zakresu). Dolne oszacowanie: nie wszystkie cykle musiały zostać zapisane.</div></div>`
+    :'<div class="empty">Brak okresów w wybranym zakresie.</div>';
+  { const ids=new Set(R.map(r=>r.id)), used=new Set(M.map(m=>m.srcId).filter(Boolean));
+    const onlyCop=items.filter(x=>!x.P.srcId||!ids.has(x.P.srcId)).filter(x=>!R.some(r=>r.start===x.P.start&&r.type===x.P.mode));
+    const onlyDane=R.filter(r=>r.start&&r.end&&r.kwh>0&&!used.has(r.id)&&!M.some(m=>m.start===r.start&&m.mode===r.type));
+    const Rk=R.filter(r=>r.kwh>0).reduce((a,r)=>a+r.kwh,0);
+    let t='Porównanie z zakładką „Dane”: tam cykle CO+CWU mają razem <b>'+Rk.toFixed(2)+' kWh</b>, tutaj okresy pracy <b>'+E.toFixed(2)+' kWh</b> (w wybranym zakresie dat/trybu).';
+    if(onlyCop.length) t+=' Tylko w COP (brak w „Dane”): '+onlyCop.map(x=>fmtY(x.P.start)+' '+x.P.mode+' '+f2(x.r.E,2)+' kWh').join('; ')+'.';
+    if(onlyDane.length) t+=' Tylko w „Dane” (nie zaimportowane do COP): '+onlyDane.map(r=>fmtDT(r.start)+' '+r.type+' '+r.kwh+' kWh').join('; ')+'.';
+    cpEl('ch_recon').innerHTML=items.length?t:''; }
+  const colorOf=m=>m.mode==='CWU'?'#49b4cf':'#e0904f', rad=h=>Math.max(3,Math.min(11,2.5+Math.sqrt(h)*0.7));
+  const cp=withH.filter(x=>x.r.cop!=null);
+  const pT=cp.map(x=>({x:(Date.parse(x.P.start)+Date.parse(x.P.end))/2,y:x.r.cop,color:colorOf(x.P),r:rad(x.r.hours),t:`${fmtY(x.P.start)} → ${fmtY(x.P.end)} (${fmtHM(x.r.hours)}) ${x.P.mode}: COP ${x.r.cop.toFixed(2)}`}));
+  cpEl('ch_chartTime').innerHTML=svgXY(pT,{line:true,xLabel:'środek okresu pracy',xFmt:v=>{const d=new Date(v),p=n=>String(n).padStart(2,'0'); const sp=pT.length?Math.max(...pT.map(a=>a.x))-Math.min(...pT.map(a=>a.x)):0; return p(d.getDate())+'.'+p(d.getMonth()+1)+(sp<2*864e5?' '+p(d.getHours())+':'+p(d.getMinutes()):'');}})+'<div class="legend"><span><i class="dotc" style="background:#e0904f"></i>CO</span><span><i class="dotc" style="background:#49b4cf"></i>CWU</span><span>wielkość punktu = czas trwania okresu</span></div>';
+  const pX=cp.filter(x=>x.r.t04!=null).map(x=>({x:x.r.t04,y:x.r.cop,color:colorOf(x.P),r:rad(x.r.hours),t:`T04 śr. ${x.r.t04.toFixed(1)} °C, ${fmtHM(x.r.hours)} ${x.P.mode}: COP ${x.r.cop.toFixed(2)}`}));
+  cpEl('ch_chartTemp').innerHTML=svgXY(pX,{line:false,xLabel:'T04 — średnia ważona czasem w okresie (°C)',xFmt:v=>v.toFixed(1)});
+  const hx=withH.filter(x=>x.r.hz!=null&&x.r.pel>0);
+  const pH=[...hx.map(x=>({x:x.r.hz,y:x.r.q,color:'#e0904f',r:rad(x.r.hours),t:`T30 śr. ${x.r.hz.toFixed(0)} Hz: Q ${x.r.q.toFixed(2)} kW (${fmtHM(x.r.hours)})`})),...hx.map(x=>({x:x.r.hz,y:x.r.pel,color:'#49b4cf',r:rad(x.r.hours),t:`T30 śr. ${x.r.hz.toFixed(0)} Hz: Pel ${x.r.pel.toFixed(2)} kW (${fmtHM(x.r.hours)})`}))];
+  cpEl('ch_chartHz').innerHTML=svgXY(pH,{line:false,yLabel:'kW',xLabel:'T30 — średnia ważona czasem w okresie (Hz)',xFmt:v=>v.toFixed(0)})+'<div class="legend"><span><i class="dotc" style="background:#e0904f"></i>Q — moc grzewcza</span><span><i class="dotc" style="background:#49b4cf"></i>Pel — średnia moc pobierana = E ÷ czas (szacunek)</span></div>';
+  /* zestawienie: okresy dzielone na doby proporcjonalnie do czasu */
+  const map=new Map(), split=cpEl('ch_alloc').value==='split';
+  const allocOf=(P,r)=>split?allocDays(P):[{day:P.start.slice(0,10),h:r.hours,f:1}];
+  items.forEach(({P,r})=>allocOf(P,r).forEach(a=>{ const k=periodKey(a.day,gran); let o=map.get(k); if(!o){ o={first:a.day,days:new Set(),h:0,E:0,Eh:0,heat:0,t4w:0,t4h:0}; map.set(k,o); }
+    o.days.add(a.day);
+    if(a.day<o.first) o.first=a.day; o.h+=a.h;
+    if(r.E!=null){ o.E+=r.E*a.f; if(r.heat!=null){ o.Eh+=r.E*a.f; o.heat+=r.heat*a.f; } }
+    if(r.t04!=null){ o.t4w+=r.t04*a.h; o.t4h+=a.h; } }));
+  cpEl('ch_agg').innerHTML=[...map.entries()].sort((a,b)=>b[1].first.localeCompare(a[1].first)).map(([k,o])=>{ const nd=daySpan(o.days), nds=o.days.size;
+    return `<tr><td class="num">${xmlEsc(k)}</td><td class="num">${nds}</td><td class="num">${fmtHM(o.h)}</td><td class="num">${o.E.toFixed(2)} kWh</td><td class="num">${o.h>0?'≈ '+(o.E/o.h).toFixed(2)+' kW':'—'}</td><td class="num">${o.Eh>0?o.heat.toFixed(1)+' kWh':'—'}</td><td class="num"><b>${o.Eh>0?'≈ '+(o.heat/o.Eh).toFixed(2):'—'}</b>${o.Eh>0&&o.E>0&&o.Eh<o.E*0.98?`<div class="note">z ${Math.round(o.Eh/o.E*100)}% energii</div>`:''}</td><td class="num">${o.t4h>0?(o.t4w/o.t4h).toFixed(1)+' °C':'—'}</td></tr>`; }).join('')||'<tr><td colspan="8" class="empty">Brak danych.</td></tr>';
+    cpEl('ch_empty').style.display=items.length?'none':'block';
+  cpEl('ch_tbody').innerHTML=items.map(({P,r})=>{
+    const fl=r.flags.filter(f=>f.lvl==='bad'||f.lvl==='warn');
+    const flags=fl.length?`<div class="notecell2">${fl.map(f=>'⚠ '+xmlEsc(f.txt)).join('<br>')}</div>`:'<span style="color:var(--ok)">✓</span>';
+    const rng=(r.lo!=null)?r.lo.toFixed(2)+' – '+r.hi.toFixed(2):'—';
+    return `<tr><td class="num">${fmtY(P.start)}</td><td class="num">${fmtY(P.end)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${P.mode==='CWU'?'cwu':'co'}">${P.mode}</span></td><td class="num">${r.rows.length} / ${r.nVal}</td>
+      <td class="num">${r.t04!=null?r.t04.toFixed(1)+' ('+r.t04min.toFixed(1)+'…'+r.t04max.toFixed(1)+') °C':'—'}</td><td class="num">${r.hz!=null?r.hz.toFixed(0)+' Hz':'—'}</td>
+      <td class="num">${r.E!=null?r.E.toFixed(2)+' kWh':'—'}<div class="note">${xmlEsc(r.Esrc||'')}</div></td><td class="num">${r.pel!=null?'≈ '+r.pel.toFixed(2)+' kW':'—'}</td><td class="num">${r.q!=null?r.q.toFixed(2)+' kW':'—'}</td><td class="num">${r.heat!=null?r.heat.toFixed(1)+' kWh':'—'}</td>
+      <td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${rng}</td><td class="num">${r.pf!=null?r.pf.toFixed(2)+(r.pfSrc==='chwilowy'?'':'*'):'—'}</td><td class="notecell">${flags}</td>
+      <td class="notecell">${P.note?xmlEsc(P.note):'—'}</td>
+      <td><button class="btn2 edit" onclick="editCop('${P.id}')">Edytuj</button><button class="btn2 del" onclick="delCop('${P.id}')">Usuń</button></td></tr>`; }).join('');
+}
+
+/* ===================== IMPORT / EKSPORT ===================== */
+const IMP_T=[['','— pomiń tę kolumnę —'],['start','Uruchomienie (data i godz.)'],['end','Zatrzymanie (data i godz.)'],['mode','Tryb (CO / CWU)'],['kwh','Zużycie okresu (kWh)'],['k1','Stan licznika — start (kWh)'],['k2','Stan licznika — stop (kWh)'],['defmin','Odszranianie łącznie (min)'],['note','Notatka']];
+[['t01','T01 wlot (°C)'],['t02','T02 wylot (°C)'],['t04','T04 zewn. (°C)'],['flow','T39 przepływ (m³/h)'],['hz','T30 (Hz)'],['volt','T34 (V)'],['amp','T35 (A)']].forEach(([k,l])=>{ IMP_T.push([k+'_s',l+' — start']); IMP_T.push([k+'_e',l+' — stop']); });
+let impHdr=[], impRows=[], impMap=[], impPrev=null;
+function normH(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ł/g,'l').replace(/[^a-z0-9]+/g,' ').trim(); }
+function impGuess(h){
+  const n=normH(h), stop=/stop|koniec|zatrzym|\bend\b|konc/.test(n), sfx=stop?'_e':'_s';
+  let m=n.match(/\bt(01|02|04|39|30|34|35)\b/);
+  if(m){ const k={'01':'t01','02':'t02','04':'t04','39':'flow','30':'hz','34':'volt','35':'amp'}[m[1]]; return k+sfx; }
+  if(/wlot|inlet|powrot/.test(n)) return 't01'+sfx; if(/wylot|outlet|zasilanie/.test(n)) return 't02'+sfx;
+  if(/ambient|zewn/.test(n)) return 't04'+sfx; if(/przeplyw|flow/.test(n)) return 'flow'+sfx;
+  if(/czestotl|freq|\bhz\b/.test(n)) return 'hz'+sfx; if(/napiec|volt/.test(n)) return 'volt'+sfx; if(/prad|amp|current/.test(n)) return 'amp'+sfx;
+  if(/licznik|stan/.test(n)) return stop?'k2':'k1';
+  if(/kwh|zuzyc|energia/.test(n)) return 'kwh';
+  if(/odszr|defrost/.test(n)) return 'defmin';
+  if(/notat|uwagi|opis|komentarz/.test(n)) return 'note';
+  if(/tryb|mode|typ/.test(n)) return 'mode';
+  if(stop||/\bdo\b/.test(n)) return 'end';
+  if(/uruchom|start|poczat|\bod\b|data|czas/.test(n)) return 'start';
+  return '';
+}
+function parseDelim(text,d){
+  const rows=[]; let row=[],cell='',q=false;
+  for(let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=ch; }
+    else if(ch==='"') q=true; else if(ch===d){ row.push(cell); cell=''; }
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n') i++; row.push(cell); cell=''; if(row.some(c=>c.trim()!=='')) rows.push(row); row=[]; }
+    else cell+=ch; }
+  row.push(cell); if(row.some(c=>c.trim()!=='')) rows.push(row); return rows;
+}
+function impParse(){
+  const text=cpEl('imp_text').value.replace(/^﻿/,''); impPrev=null; cpEl('imp_preview').innerHTML='';
+  if(!text.trim()){ impHdr=[];impRows=[];impMap=[]; cpEl('imp_info').textContent=''; cpEl('imp_map').innerHTML=''; return; }
+  const first=text.split(/\r?\n/)[0], cnt=c=>(first.split(c).length-1);
+  const d=cnt('\t')>0?'\t':(cnt(';')>=cnt(',')?';':',');
+  const all=parseDelim(text,d); impHdr=all[0]||[]; impRows=all.slice(1);
+  impMap=impHdr.map(impGuess); const seen=new Set(); impMap=impMap.map(k=>{ if(!k) return ''; if(seen.has(k)) return ''; seen.add(k); return k; });
+  cpEl('imp_info').textContent='Rozpoznano '+impHdr.length+' kolumn i '+impRows.length+' wierszy (rozdzielacz: '+(d==='\t'?'tabulator':d)+').';
+  cpEl('imp_map').innerHTML='<div class="fgrid">'+impHdr.map((h,i)=>`<div class="fld"><div class="fhead"><span class="fname wrap">${xmlEsc(h||'(bez nazwy)')}</span></div><div class="fdesc wrap">np. ${xmlEsc((impRows[0]&&impRows[0][i])||'—')}</div><select onchange="impMap[${i}]=this.value;impPrev=null">${IMP_T.map(([k,l])=>`<option value="${k}" ${impMap[i]===k?'selected':''}>${l}</option>`).join('')}</select></div>`).join('')+'</div>';
+}
+function impLoadFile(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const rd=new FileReader(); rd.onload=e=>{ let t=e.target.result;
+    if(t.includes('�')){ const r2=new FileReader(); r2.onload=e2=>{ cpEl('imp_text').value=e2.target.result; impParse(); }; r2.readAsText(f,'windows-1250'); }
+    else { cpEl('imp_text').value=t; impParse(); } };
+  rd.readAsText(f,'utf-8'); ev.target.value='';
+}
+function impDate(s){
+  if(s==null) return null; s=String(s).trim(); if(!s) return null; let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/), y,mo,d,h=0,mi=0;
+  if(m){ y=+m[1];mo=+m[2];d=+m[3];h=+(m[4]||0);mi=+(m[5]||0); }
+  else { m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})(?:[ T,]+(\d{1,2}):(\d{2}))?/); if(!m) return null; d=+m[1];mo=+m[2];y=+m[3];h=+(m[4]||0);mi=+(m[5]||0); }
+  if(mo<1||mo>12||d<1||d>31||h>23||mi>59) return null; const p=n=>String(n).padStart(2,'0'); return y+'-'+p(mo)+'-'+p(d)+'T'+p(h)+':'+p(mi);
+}
+function impBuild(row,useCorr){
+  const g=k=>{ const i=impMap.indexOf(k); return i<0?'':(row[i]==null?'':row[i]); };
+  const start=impDate(g('start')), end=impDate(g('end'));
+  if(!start) return {err:'brak lub błędna data uruchomienia'}; if(!end) return {err:'brak lub błędna data zatrzymania'};
+  if(Date.parse(end)<=Date.parse(start)) return {err:'zatrzymanie nie jest późniejsze niż uruchomienie'};
+  const mk=(ts,sfx,kv)=>{ const o={ts,c1:true,c2:true,def:false,k:kv}; COPK.forEach(k=>o[k]=num(g(k+sfx))); return o; };
+  const k1=num(g('k1')), k2=num(g('k2')), kwh=num(g('kwh'));
+  if(!(kwh>0) && !(k1!=null&&k2!=null&&k2>k1)) return {err:'brak zużycia (kWh okresu albo stany licznika start/stop)'};
+  const rd=[mk(start,'_s',k1),mk(end,'_e',k2)];
+  const strs=(ks,sf)=>ks.flatMap(k=>sf.map(s=>g(k+s)));
+  const res={T:Math.pow(10,-Math.max(1,...strs(['t01','t02'],['_s','_e']).map(s=>decs(s,1)))),F:Math.pow(10,-Math.max(1,...strs(['flow'],['_s','_e']).map(s=>decs(s,1)))),E:Math.pow(10,-Math.max(1,decs(g('kwh'),1),decs(g('k1'),1),decs(g('k2'),1)))};
+  const nVals=rd.reduce((s,x)=>s+COPK.filter(k=>x[k]!=null).length,0);
+  return {rec:{id:uid(),start,end,date:start.slice(0,10),mode:/cwu/i.test(g('mode'))?'CWU':'CO',defMin:num(g('defmin'))||0,kwh:(k1!=null&&k2!=null&&k2>k1)?null:kwh,rd,res,rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:String(g('note')||'').trim(),src:'import'},nVals};
+}
+function impPreview(){
+  if(!impRows.length){ cpEl('imp_preview').innerHTML='<div class="warnline">Najpierw wklej dane albo wczytaj plik.</div>'; return; }
+  const useCorr=true, exist=new Set(M.map(m=>m.start+'|'+m.mode)), dd=cpEl('imp_dedupe').checked;
+  const out=impRows.map((row,i)=>{ const b=impBuild(row,useCorr); if(b.err) return {i,st:'bład: '+b.err,ok:false}; const dup=dd&&exist.has(b.rec.start+'|'+b.rec.mode); if(!dup) exist.add(b.rec.start+'|'+b.rec.mode);
+    return {i,b,ok:!dup,st:dup?'pominięty — już istnieje':'OK'}; });
+  impPrev=out; const ok=out.filter(x=>x.ok).length;
+  cpEl('imp_preview').innerHTML=`<div class="warnline ${ok?'good':'bad'}" style="margin-top:12px">Do zaimportowania: <b>${ok}</b> z ${out.length} wierszy.</div><div class="tbl-wrap"><table class="rc"><thead><tr><th>#</th><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas</th><th>Tryb</th><th>Zużycie (kWh)</th><th>Wartości T</th><th>Status</th></tr></thead><tbody>`
+   +out.slice(0,60).map(x=>{ if(!x.b) return `<tr><td>${x.i+1}</td><td colspan="6">—</td><td class="notecell" style="color:var(--danger)">${xmlEsc(x.st)}</td></tr>`; const r=x.b.rec, E=(r.kwh!=null?r.kwh:(r.rd[1].k-r.rd[0].k));
+     return `<tr><td>${x.i+1}</td><td class="num">${fmtY(r.start)}</td><td class="num">${fmtY(r.end)}</td><td class="num">${fmtHM((Date.parse(r.end)-Date.parse(r.start))/36e5)}</td><td>${r.mode}</td><td class="num">${E.toFixed(2)}</td><td class="num">${x.b.nVals}</td><td class="notecell" style="color:${x.ok?'var(--ok)':'var(--amber)'}">${xmlEsc(x.st)}</td></tr>`; }).join('')
+   +'</tbody></table></div>'+(out.length>60?`<p class="note">Pokazano 60 z ${out.length} wierszy.</p>`:'');
+}
+async function impRun(){
+  impPreview(); const ok=impPrev.filter(x=>x.ok);
+  if(!ok.length){ alert('Brak poprawnych wierszy do zaimportowania — zobacz podgląd.'); return; }
+  ok.forEach(x=>M.push(x.b.rec)); const bad=impPrev.filter(x=>!x.b).length, dup=impPrev.filter(x=>x.b&&!x.ok).length;
+  cpEl('imp_text').value=''; impParse(); await persist();
+  alert('Zaimportowano '+ok.length+' okresów. Pominięto: '+dup+' (duplikaty), '+bad+' (błędy).');
+}
+function cycleInfo(){
+  const el=cpEl('imp_cycInfo'); if(!el) return;
+  const done=new Set(M.map(m=>m.srcId).filter(Boolean)), c=R.filter(r=>r.start&&r.end&&r.kwh>0);
+  el.textContent='Cykle z zużyciem i czasem: '+c.length+' (CO: '+c.filter(r=>r.type==='CO').length+', CWU: '+c.filter(r=>r.type==='CWU').length+'). Już utworzone okresy COP: '+c.filter(r=>done.has(r.id)).length+'. Cykle bez zużycia (kWh) są pomijane.';
+}
+async function importFromCycles(){
+  const done=new Set(M.map(m=>m.srcId).filter(Boolean)); let n=0;
+  const noKwh=R.filter(r=>r.start&&r.end&&!(r.kwh>0)&&!done.has(r.id)).map(r=>r.type+' '+fmtDT(r.start)+'→'+fmtDT(r.end).slice(-5));
+  R.forEach(r=>{ if(!r.start||!r.end||!(r.kwh>0)||done.has(r.id)) return;
+    const mk=(ts,t04)=>({ts,t01:null,t02:null,t04:t04??null,flow:null,hz:null,volt:null,amp:null,c1:true,c2:true,def:false,k:null});
+    M.push({id:uid(),srcId:r.id,start:r.start,end:r.end,date:r.start.slice(0,10),mode:r.type==='CWU'?'CWU':'CO',defMin:0,kwh:r.kwh,
+      rd:[mk(r.start,r.type==='CO'?r.out1:r.out),mk(r.end,r.type==='CO'?r.out2:null)],res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,hzMax:SET.hzMax,note:r.note||'',src:'cykl'}); n++; });
+  await persist(); alert((n?('Utworzono '+n+' okresów COP z cykli CO/CWU. Mają czas, zużycie i temperaturę zewnętrzną; odczyty T01/T02/T39 dopisz przyciskiem „Edytuj”, aby policzyć COP.'):'Brak nowych cykli do przeniesienia.')+(noKwh.length?('\n\nPominięto cykle bez zużycia (kWh): '+noKwh.join('; ')+'. Uzupełnij kWh w „+ Dodaj” → Dane → Edytuj i zaimportuj ponownie — inaczej ich energia i czas nie wchodzą do zestawień.'):''));
+}
+const CSV_COLS=['start','end','tryb','kwh_okresu','licznik_start_kwh','licznik_stop_kwh','odszranianie_min','t01_start','t01_stop','t02_start','t02_stop','t04_start','t04_stop','t39_start','t39_stop','t30_start','t30_stop','t34_start','t34_stop','t35_start','t35_stop','notatka'];
+function csvEsc(v){ v=v==null?'':String(v); return /[;"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function csvNum(v){ return v==null?'':String(v).replace('.',','); }
+function csvRow(m){ const a=m.rd[0]||{}, z=m.rd[m.rd.length-1]||{}, S=(m.kwh!=null&&a.k==null)?'':'';
+  return [m.start.replace('T',' '),m.end.replace('T',' '),m.mode,csvNum(m.kwh),csvNum(a.k),csvNum(z.k),csvNum(m.defMin||''),csvNum(a.t01),csvNum(z.t01),csvNum(a.t02),csvNum(z.t02),csvNum(a.t04),csvNum(z.t04),csvNum(a.flow),csvNum(z.flow),csvNum(a.hz),csvNum(z.hz),csvNum(a.volt),csvNum(z.volt),csvNum(a.amp),csvNum(z.amp),m.note||''].map(csvEsc).join(';'); }
+async function exportCopCsv(){
+  const t='﻿'+CSV_COLS.join(';')+'\n'+M.slice().sort((a,b)=>a.start.localeCompare(b.start)).map(csvRow).join('\n');
+  await saveBlob(new Blob([t],{type:'text/csv'}),'okresy_cop.csv','CSV',{'text/csv':['.csv']});
+}
+async function downloadCopTemplate(){
+  const ex=[{start:'2026-10-01T06:00',end:'2026-10-03T06:00',mode:'CO',kwh:null,defMin:0,note:'przykład: CO, 2 doby',rd:[{k:100.0,t01:29,t02:32,t04:8.5,flow:2.5,hz:45,volt:405,amp:3.1},{k:190.0,t01:29.5,t02:32.1,t04:6.0,flow:2.5,hz:50,volt:407,amp:3.4}]},
+            {start:'2026-10-03T06:00',end:'2026-10-03T07:30',mode:'CWU',kwh:3.2,defMin:0,note:'przykład: CWU, tylko zużycie',rd:[{},{}]}];
+  const t='﻿'+CSV_COLS.join(';')+'\n'+ex.map(m=>csvRow(m)).join('\n');
+  await saveBlob(new Blob([t],{type:'text/csv'}),'szablon_okresy_cop.csv','CSV',{'text/csv':['.csv']});
+}
+ensureCopDefaults(); resetCopForm(); syncCopSettingsUI();
+
+function labelRc(){
+  document.querySelectorAll('table.rc').forEach(t=>{
+    const hs=[...t.querySelectorAll('thead th')].map(h=>h.textContent.trim());
+    t.querySelectorAll('tbody tr,tfoot tr').forEach(tr=>{ let i=0;
+      [...tr.children].forEach(td=>{ const cs=td.colSpan||1; if(cs===1){ td.setAttribute('data-l',hs[i]||''); td.classList.toggle('nodata',/^[—\s]*$/.test(td.textContent)&&!td.querySelector('button')); if(!(hs[i]||'')&&td.querySelector('button')) td.classList.add('btncell'); } i+=cs; }); });
+  });
+}
+function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); labelRc(); }
+renderAll();
+startupInit();
+{ let lt=null; new MutationObserver(()=>{ clearTimeout(lt); lt=setTimeout(labelRc,0); }).observe(document.querySelector('main'),{childList:true,subtree:true}); }
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 </script>
 </body>
 </html>
