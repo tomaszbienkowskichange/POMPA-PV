@@ -692,7 +692,7 @@ td.notecell{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-
   </div>
   <div class="card">
     <h2>Przechowywanie danych</h2>
-    <p style="font-size:.85rem;color:var(--muted)">Dane zapisują się <b>automatycznie w tej przeglądarce/na tym urządzeniu</b> (działa też na iPhonie/iPadzie). Jeśli przeglądarka wspiera zapis do pliku (Chrome/Edge na komputerze), możesz dodatkowo połączyć plik .json u góry strony — wtedy dane zapisują się w obu miejscach. „Pobierz plik danych” = kopia zapasowa; „Wczytaj plik danych” scala się z danymi z synchronizacji.</p>
+    <p style="font-size:.85rem;color:var(--muted)">Dane zapisują się <b>automatycznie w tej przeglądarce/na tym urządzeniu</b>. <b>Na komputerze</b> (Chrome/Edge) połącz plik .json z folderu iCloud przyciskiem u góry strony — wtedy każdy zapis i każda synchronizacja aktualizuje też ten plik, a zmiany z innych urządzeń trafiają do niego same. <b>Na iPhonie/iPadzie</b> przeglądarka nie pozwala stronie pisać do pliku w iCloud, więc tam wystarczy synchronizacja (poniżej); „Pobierz plik danych” otwiera arkusz udostępniania → „Zapisz w Plikach” (kopia zapasowa). „Wczytaj plik danych” <b>scala</b> plik z danymi w aplikacji, niczego nie nadpisując na ślepo.</p>
     <div class="toolbar"><button onclick="exportJSON()">Pobierz plik danych</button>
       <label style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:0">Wczytaj plik danych<input type="file" accept=".json" style="display:none" onchange="importJSONFile(event)"></label>
     </div>
@@ -811,20 +811,33 @@ function stampChanges(){
   const ss=sigOf(SET); if(SIG['set']!==ss){ SET.updatedAt=now; SIG['set']=sigOf(SET); }
 }
 
+function mergeIncoming(d){
+  const allTomb=[...TOMB,...(d.tomb||[])];
+  R=mergeList(R,d.records,allTomb,'r'); PV=mergeList(PV,d.pv,allTomb,'pv'); INV=mergeList(INV,d.inv,allTomb,'inv'); M=mergeList(M,d.meas,allTomb,'meas');
+  const tmap=new Map(); allTomb.forEach(t=>{ const k=t.type+'|'+t.id; const c=tmap.get(k); if(!c||t.deletedAt>c.deletedAt) tmap.set(k,t); });
+  TOMB=[...tmap.values()];
+  Object.keys(d).forEach(k=>{ if(!KNOWN_KEYS.includes(k)&&!(k in EXTRA)) EXTRA[k]=d[k]; });
+  if(d.settings) SET=mergeSets(SET,d.settings);
+}
+let lastFileMod=0;
+/* Plik .json (np. w iCloud) jest repliką: wczytanie = SCALENIE z tym, co już jest w aplikacji (nic nie jest nadpisywane na ślepo). */
 async function loadFromFile(){
-  try{ const f=await fileHandle.getFile(); const txt=await f.text(); applyData(txt.trim()? JSON.parse(txt) : {}); }
-  catch(e){ applyData({}); }
+  let d={};
+  try{ const f=await fileHandle.getFile(); lastFileMod=f.lastModified; const txt=await f.text(); d=txt.trim()?JSON.parse(txt):{}; }catch(e){}
+  mergeIncoming(d);
   applySettingsToInputs();
-  const migrated = migratePrices();
+  migratePrices();
   snapshotSig();
-  saveToLocalStorage();
-  updateStoreBar();
-  if(migrated) persist(); else renderAll();
+  await persist();
+}
+async function refreshFromFile(){
+  if(!fileHandle) return;
+  try{ const f=await fileHandle.getFile(); if(f.lastModified!==lastFileMod) await loadFromFile(); }catch(e){}
 }
 async function persist(){
   stampChanges();
   if(fileHandle){
-    try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(syncPayload(),null,1)); await w.close(); }
+    try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(syncPayload(),null,1)); await w.close(); lastFileMod=(await fileHandle.getFile()).lastModified; }
     catch(e){ alert('Błąd zapisu na dysk: '+e.message); }
   }
   saveToLocalStorage();
@@ -875,6 +888,12 @@ function mergeList(localArr, remoteArr, allTomb, type){
   byId.forEach((r,id)=>{ const t=tmap.get(id); if(t && (r.updatedAt||0)<=t.deletedAt) return; merged.push(r); });
   return merged;
 }
+function canonPayload(p){
+  const c={...p}, byId=(a,b)=>String(a.id).localeCompare(String(b.id));
+  ['records','pv','inv','meas'].forEach(k=>{ c[k]=[...(c[k]||[])].sort(byId); });
+  c.tomb=[...(c.tomb||[])].sort((a,b)=>(a.type+a.id).localeCompare(b.type+b.id));
+  return JSON.stringify(c);
+}
 let syncing=false, syncDebounce=null;
 async function syncNow(silent){
   const cfg=loadSyncCfg();
@@ -887,21 +906,14 @@ async function syncNow(silent){
     if(!filenames.length) throw new Error('Gist jest pusty.');
     const fname=filenames[0];
     const remote = data.files[fname].content ? JSON.parse(data.files[fname].content) : {};
-    const allTomb=[...TOMB, ...(remote.tomb||[])];
     const setBefore=sigOf(SET);
-    R = mergeList(R, remote.records, allTomb, 'r');
-    PV = mergeList(PV, remote.pv, allTomb, 'pv');
-    INV = mergeList(INV, remote.inv, allTomb, 'inv');
-    M = mergeList(M, remote.meas, allTomb, 'meas');
-    Object.keys(remote).forEach(k=>{ if(!KNOWN_KEYS.includes(k) && !(k in EXTRA)) EXTRA[k]=remote[k]; });
-    const tmap=new Map(); allTomb.forEach(t=>{ const k=t.type+'|'+t.id; const c=tmap.get(k); if(!c||t.deletedAt>c.deletedAt) tmap.set(k,t); });
-    TOMB=[...tmap.values()];
-    SET = mergeSets(SET, remote.settings);
+    mergeIncoming(remote);
     if(sigOf(SET)!==setBefore) applySettingsToInputs(); else normalizeSet();
     snapshotSig();
     saveToLocalStorage();
-    if(fileHandle){ try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(syncPayload(),null,1)); await w.close(); }catch(e){} }
-    await ghFetch('https://api.github.com/gists/'+cfg.gistId, {method:'PATCH', body:JSON.stringify({files:{[fname]:{content:JSON.stringify(syncPayload(),null,1)}}})});
+    if(fileHandle){ try{ const w=await fileHandle.createWritable(); await w.write(JSON.stringify(syncPayload(),null,1)); await w.close(); lastFileMod=(await fileHandle.getFile()).lastModified; }catch(e){} }
+    if(canonPayload(remote)!==canonPayload(syncPayload()))
+      await ghFetch('https://api.github.com/gists/'+cfg.gistId, {method:'PATCH', body:JSON.stringify({files:{[fname]:{content:JSON.stringify(syncPayload(),null,1)}}})});
     cfg.lastSync=Date.now(); saveSyncCfg(cfg);
     setSyncStatus('Zsynchronizowano o '+new Date().toLocaleTimeString('pl-PL'));
     renderAll();
@@ -915,7 +927,8 @@ function scheduleAutoSync(){
   clearTimeout(syncDebounce);
   syncDebounce=setTimeout(()=>syncNow(true), 2500);
 }
-document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') scheduleAutoSync(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible'){ refreshFromFile(); scheduleAutoSync(); } });
+setInterval(()=>{ if(document.visibilityState==='visible'){ refreshFromFile(); scheduleAutoSync(); } }, 120000);
 
 /* ---- Parowanie urządzeń (QR / link) ---- */
 function pairingCode(){
@@ -975,20 +988,27 @@ function startupInit(){
   document.getElementById('syncAuto').checked=!!cfg.auto;
   setSyncStatus(cfg.token&&cfg.gistId ? ('Skonfigurowano.'+(cfg.lastSync?(' Ostatnia synchronizacja: '+new Date(cfg.lastSync).toLocaleString('pl-PL')):' Jeszcze nie synchronizowano na tym urządzeniu.')) : 'Synchronizacja nieskonfigurowana.');
   checkSyncHashOnLoad();
-  (async()=>{ const c=loadSyncCfg(); if(c.auto && c.token && c.gistId) await syncNow(true); })();
   (async()=>{
-    if(!hasFS) return;
-    try{ const h=await idbOp('readonly','handle'); if(h){
-      const perm = await h.queryPermission({mode:'readwrite'});
-      if(perm==='granted'){ fileHandle=h; await loadFromFile(); }
-      else { document.getElementById('storeText').textContent+=' — poprzedni plik: '+h.name+' (kliknij „Otwórz plik .json”, aby wznowić bezpośredni zapis)'; }
-    } }catch(e){}
+    if(hasFS){
+      try{ const h=await idbOp('readonly','handle'); if(h){
+        const perm = await h.queryPermission({mode:'readwrite'});
+        if(perm==='granted'){ fileHandle=h; await loadFromFile(); }
+        else { document.getElementById('storeText').textContent+=' — poprzedni plik: '+h.name+' (kliknij „Otwórz plik .json”, aby wznowić zapis do pliku w iCloud)'; }
+      } }catch(e){}
+    }
+    const c=loadSyncCfg(); if(c.auto && c.token && c.gistId) await syncNow(true);
   })();
 }
 async function saveBlob(blob,suggestedName,desc,accept){
   if('showSaveFilePicker' in window){
     try{ const h=await window.showSaveFilePicker({suggestedName,types:[{description:desc,accept}]});
       const w=await h.createWritable(); await w.write(blob); await w.close(); return; }
+    catch(e){ if(e.name==='AbortError') return; }
+  }
+  const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isIOS && navigator.canShare){
+    try{ const file=new File([blob],suggestedName,{type:blob.type||'application/octet-stream'});
+      if(navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:suggestedName}); return; } }
     catch(e){ if(e.name==='AbortError') return; }
   }
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=suggestedName; a.click();
@@ -1001,9 +1021,8 @@ async function exportJSON(){
 function importJSONFile(ev){
   const file=ev.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=e=>{ try{ applyData(JSON.parse(e.target.result));
-    applySettingsToInputs(); migratePrices(); snapshotSig(); saveToLocalStorage();
-    renderAll(); alert('Wczytano.'); }catch(err){ alert('Błędny plik.'); } };
+  reader.onload=async e=>{ try{ mergeIncoming(JSON.parse(e.target.result));
+    applySettingsToInputs(); migratePrices(); snapshotSig(); await persist(); alert('Wczytano i scalono z obecnymi danymi.'); }catch(err){ alert('Błędny plik.'); } };
   reader.readAsText(file);
 }
 function updatePrice(){ SET.price=parseFloat(document.getElementById('priceInput').value)||0; persist(); }
