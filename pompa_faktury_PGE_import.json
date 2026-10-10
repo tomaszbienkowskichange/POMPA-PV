@@ -1,0 +1,1560 @@
+{
+ "inv": [
+  {
+   "id": "pge_38746097_227R_2020",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "38746097/227R/2020",
+   "issue": "2020-12-16",
+   "due": "2020-12-30",
+   "from": "2020-04-22",
+   "to": "2020-05-12",
+   "gross": 223.18,
+   "net": 181.45,
+   "vat": 41.73,
+   "payable": 223.18,
+   "draw": 336,
+   "fed": 0,
+   "opust": 0.8,
+   "cred": 0,
+   "rest": 336,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 336,
+     "price": 0.2906,
+     "net": 97.64
+    },
+    {
+     "k": "zm",
+     "qty": 336,
+     "price": 0.2139,
+     "net": 71.87
+    },
+    {
+     "k": "jak",
+     "qty": 336,
+     "price": 0.0133,
+     "net": 4.47
+    },
+    {
+     "k": "oze",
+     "qty": 336,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 336,
+     "price": 0.00139,
+     "net": 0.47
+    },
+    {
+     "k": "stala",
+     "qty": 0.39,
+     "price": 6.08,
+     "net": 2.37
+    },
+    {
+     "k": "przej",
+     "qty": 0.39,
+     "price": 0.33,
+     "net": 0.13
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "Rozliczenie końcowe — stary licznik 10350950 (do zmiany licznika 2020-05-12). Zużycie w 2019: 6662 kWh. Moc umowna 13 kW.",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2012_00012481",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2012/00012481",
+   "issue": "2020-12-30",
+   "due": "2021-01-13",
+   "from": "2020-05-12",
+   "to": "2020-05-31",
+   "gross": 178.35,
+   "net": 144.99,
+   "vat": 33.36,
+   "payable": 178.35,
+   "draw": 274,
+   "fed": 14,
+   "opust": 0.8,
+   "cred": 11,
+   "rest": 263,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 263,
+     "price": 0.2906,
+     "net": 76.43
+    },
+    {
+     "k": "zm",
+     "qty": 263,
+     "price": 0.2139,
+     "net": 56.26
+    },
+    {
+     "k": "jak",
+     "qty": 263,
+     "price": 0.0133,
+     "net": 3.5
+    },
+    {
+     "k": "oze",
+     "qty": 263,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 263,
+     "price": 0.00139,
+     "net": 0.37
+    },
+    {
+     "k": "stala",
+     "qty": 0.6452,
+     "price": 6.08,
+     "net": 3.92
+    },
+    {
+     "k": "przej",
+     "qty": 0.6452,
+     "price": 0.02,
+     "net": 0.01
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "Pierwsze faktury po zmianie licznika na dwukierunkowy (2020-05-12), wystawione zbiorczo 2020-12-30.",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2012_00012506",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2012/00012506",
+   "issue": "2020-12-30",
+   "due": "2021-01-13",
+   "from": "2020-06-01",
+   "to": "2020-06-30",
+   "gross": 282.0,
+   "net": 229.26,
+   "vat": 52.74,
+   "payable": 282.0,
+   "draw": 433,
+   "fed": 15,
+   "opust": 0.8,
+   "cred": 12,
+   "rest": 421,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 421,
+     "price": 0.2906,
+     "net": 122.34
+    },
+    {
+     "k": "zm",
+     "qty": 421,
+     "price": 0.2139,
+     "net": 90.05
+    },
+    {
+     "k": "jak",
+     "qty": 421,
+     "price": 0.0133,
+     "net": 5.6
+    },
+    {
+     "k": "oze",
+     "qty": 421,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 421,
+     "price": 0.00139,
+     "net": 0.59
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.1,
+     "net": 0.1
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2012_00012566",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2012/00012566",
+   "issue": "2020-12-30",
+   "due": "2021-01-13",
+   "from": "2020-07-01",
+   "to": "2020-07-31",
+   "gross": 269.87,
+   "net": 219.4,
+   "vat": 50.47,
+   "payable": 269.87,
+   "draw": 417,
+   "fed": 19,
+   "opust": 0.8,
+   "cred": 15,
+   "rest": 402,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 402,
+     "price": 0.2906,
+     "net": 116.82
+    },
+    {
+     "k": "zm",
+     "qty": 402,
+     "price": 0.2139,
+     "net": 85.99
+    },
+    {
+     "k": "jak",
+     "qty": 402,
+     "price": 0.0133,
+     "net": 5.35
+    },
+    {
+     "k": "oze",
+     "qty": 402,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 402,
+     "price": 0.00139,
+     "net": 0.56
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.1,
+     "net": 0.1
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2012_00012616",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2012/00012616",
+   "issue": "2020-12-30",
+   "due": "2021-01-13",
+   "from": "2020-08-01",
+   "to": "2020-08-31",
+   "gross": 273.98,
+   "net": 222.74,
+   "vat": 51.24,
+   "payable": 273.98,
+   "draw": 421,
+   "fed": 16,
+   "opust": 0.8,
+   "cred": 13,
+   "rest": 408,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 408,
+     "price": 0.2906,
+     "net": 118.56
+    },
+    {
+     "k": "zm",
+     "qty": 408,
+     "price": 0.2139,
+     "net": 87.27
+    },
+    {
+     "k": "jak",
+     "qty": 408,
+     "price": 0.0133,
+     "net": 5.43
+    },
+    {
+     "k": "oze",
+     "qty": 408,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 408,
+     "price": 0.00139,
+     "net": 0.57
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2012_00012660",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2012/00012660",
+   "issue": "2020-12-30",
+   "due": "2021-01-13",
+   "from": "2020-09-01",
+   "to": "2020-09-30",
+   "gross": 288.67,
+   "net": 234.68,
+   "vat": 53.99,
+   "payable": 288.67,
+   "draw": 436,
+   "fed": 6,
+   "opust": 0.8,
+   "cred": 5,
+   "rest": 431,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 431,
+     "price": 0.2906,
+     "net": 125.25
+    },
+    {
+     "k": "zm",
+     "qty": 431,
+     "price": 0.2139,
+     "net": 92.19
+    },
+    {
+     "k": "jak",
+     "qty": 431,
+     "price": 0.0133,
+     "net": 5.73
+    },
+    {
+     "k": "oze",
+     "qty": 431,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 431,
+     "price": 0.00139,
+     "net": 0.6
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2012_00012689",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2012/00012689",
+   "issue": "2020-12-30",
+   "due": "2021-01-13",
+   "from": "2020-10-01",
+   "to": "2020-10-31",
+   "gross": 330.82,
+   "net": 268.95,
+   "vat": 61.87,
+   "payable": 330.82,
+   "draw": 497,
+   "fed": 0,
+   "opust": 0.8,
+   "cred": 0,
+   "rest": 497,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 497,
+     "price": 0.2906,
+     "net": 144.43
+    },
+    {
+     "k": "zm",
+     "qty": 497,
+     "price": 0.2139,
+     "net": 106.31
+    },
+    {
+     "k": "jak",
+     "qty": 497,
+     "price": 0.0133,
+     "net": 6.61
+    },
+    {
+     "k": "oze",
+     "qty": 497,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 497,
+     "price": 0.00139,
+     "net": 0.69
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2012_00012709",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2012/00012709",
+   "issue": "2020-12-30",
+   "due": "2021-01-13",
+   "from": "2020-11-01",
+   "to": "2020-11-30",
+   "gross": 362.74,
+   "net": 294.91,
+   "vat": 67.83,
+   "payable": 362.74,
+   "draw": 547,
+   "fed": 0,
+   "opust": 0.8,
+   "cred": 0,
+   "rest": 547,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 547,
+     "price": 0.2906,
+     "net": 158.96
+    },
+    {
+     "k": "zm",
+     "qty": 547,
+     "price": 0.2139,
+     "net": 117.0
+    },
+    {
+     "k": "jak",
+     "qty": 547,
+     "price": 0.0133,
+     "net": 7.28
+    },
+    {
+     "k": "oze",
+     "qty": 547,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 547,
+     "price": 0.00139,
+     "net": 0.76
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2101_00035892",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2101/00035892",
+   "issue": "2021-01-14",
+   "due": "2021-01-28",
+   "from": "2020-12-01",
+   "to": "2020-12-31",
+   "gross": 372.32,
+   "net": 302.69,
+   "vat": 69.63,
+   "payable": 372.32,
+   "draw": 562,
+   "fed": 0,
+   "opust": 0.8,
+   "cred": 0,
+   "rest": 562,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 562,
+     "price": 0.2906,
+     "net": 163.32
+    },
+    {
+     "k": "zm",
+     "qty": 562,
+     "price": 0.2139,
+     "net": 120.21
+    },
+    {
+     "k": "jak",
+     "qty": 562,
+     "price": 0.0133,
+     "net": 7.47
+    },
+    {
+     "k": "oze",
+     "qty": 562,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "kog",
+     "qty": 562,
+     "price": 0.00139,
+     "net": 0.78
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2101_00139312",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2101/00139312",
+   "issue": "2021-02-10",
+   "due": "2021-02-24",
+   "from": "2021-01-01",
+   "to": "2021-01-31",
+   "gross": 386.49,
+   "net": 314.2,
+   "vat": 72.29,
+   "payable": 386.49,
+   "draw": 552,
+   "fed": 0,
+   "opust": 0.8,
+   "cred": 0,
+   "rest": 552,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 552,
+     "price": 0.3011,
+     "net": 166.21
+    },
+    {
+     "k": "zm",
+     "qty": 552,
+     "price": 0.2139,
+     "net": 118.07
+    },
+    {
+     "k": "jak",
+     "qty": 552,
+     "price": 0.0133,
+     "net": 7.34
+    },
+    {
+     "k": "oze",
+     "qty": 552,
+     "price": 0.0022,
+     "net": 1.21
+    },
+    {
+     "k": "kog",
+     "qty": 552,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "moc",
+     "qty": 1,
+     "price": 10.46,
+     "net": 10.46
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "Zużycie w 2020: 3587 kWh.",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2103_00023582",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2103/00023582",
+   "issue": "2021-04-09",
+   "due": "2021-04-23",
+   "from": "2021-03-01",
+   "to": "2021-03-31",
+   "gross": 337.78,
+   "net": 274.61,
+   "vat": 63.17,
+   "payable": 337.78,
+   "draw": 486,
+   "fed": 4,
+   "opust": 0.8,
+   "cred": 3,
+   "rest": 483,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 483,
+     "price": 0.3011,
+     "net": 145.43
+    },
+    {
+     "k": "zm",
+     "qty": 483,
+     "price": 0.2108,
+     "net": 101.82
+    },
+    {
+     "k": "jak",
+     "qty": 483,
+     "price": 0.0102,
+     "net": 4.93
+    },
+    {
+     "k": "oze",
+     "qty": 483,
+     "price": 0.0022,
+     "net": 1.06
+    },
+    {
+     "k": "kog",
+     "qty": 483,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "moc",
+     "qty": 1,
+     "price": 10.46,
+     "net": 10.46
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2105_00010833",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2105/00010833",
+   "issue": "2021-05-11",
+   "due": "2021-05-25",
+   "from": "2021-04-01",
+   "to": "2021-04-30",
+   "gross": 272.65,
+   "net": 221.66,
+   "vat": 50.99,
+   "payable": 272.65,
+   "draw": 395,
+   "fed": 16,
+   "opust": 0.8,
+   "cred": 13,
+   "rest": 382,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 382,
+     "price": 0.3011,
+     "net": 115.02
+    },
+    {
+     "k": "zm",
+     "qty": 382,
+     "price": 0.2108,
+     "net": 80.53
+    },
+    {
+     "k": "jak",
+     "qty": 382,
+     "price": 0.0102,
+     "net": 3.9
+    },
+    {
+     "k": "oze",
+     "qty": 382,
+     "price": 0.0022,
+     "net": 0.84
+    },
+    {
+     "k": "kog",
+     "qty": 382,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "moc",
+     "qty": 1,
+     "price": 10.46,
+     "net": 10.46
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2105_00029247",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2105/00029247",
+   "issue": "2021-06-04",
+   "due": "2021-06-18",
+   "from": "2021-05-01",
+   "to": "2021-05-31",
+   "gross": 244.27,
+   "net": 198.58,
+   "vat": 45.69,
+   "payable": 244.27,
+   "draw": 360,
+   "fed": 27,
+   "opust": 0.8,
+   "cred": 22,
+   "rest": 338,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 338,
+     "price": 0.3011,
+     "net": 101.77
+    },
+    {
+     "k": "zm",
+     "qty": 338,
+     "price": 0.2108,
+     "net": 71.25
+    },
+    {
+     "k": "jak",
+     "qty": 338,
+     "price": 0.0102,
+     "net": 3.45
+    },
+    {
+     "k": "oze",
+     "qty": 338,
+     "price": 0.0022,
+     "net": 0.74
+    },
+    {
+     "k": "kog",
+     "qty": 338,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "moc",
+     "qty": 1,
+     "price": 10.46,
+     "net": 10.46
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2106_00012226",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2106/00012226",
+   "issue": "2021-07-05",
+   "due": "2021-07-19",
+   "from": "2021-06-01",
+   "to": "2021-06-30",
+   "gross": 273.29,
+   "net": 222.18,
+   "vat": 51.11,
+   "payable": 273.29,
+   "draw": 392,
+   "fed": 11,
+   "opust": 0.8,
+   "cred": 9,
+   "rest": 383,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 383,
+     "price": 0.3011,
+     "net": 115.32
+    },
+    {
+     "k": "zm",
+     "qty": 383,
+     "price": 0.2108,
+     "net": 80.74
+    },
+    {
+     "k": "jak",
+     "qty": 383,
+     "price": 0.0102,
+     "net": 3.91
+    },
+    {
+     "k": "oze",
+     "qty": 383,
+     "price": 0.0022,
+     "net": 0.84
+    },
+    {
+     "k": "kog",
+     "qty": 383,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "moc",
+     "qty": 1,
+     "price": 10.46,
+     "net": 10.46
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2108_00018726",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2108/00018726",
+   "issue": "2021-09-06",
+   "due": "2021-09-20",
+   "from": "2021-08-01",
+   "to": "2021-08-31",
+   "gross": 273.93,
+   "net": 222.7,
+   "vat": 51.23,
+   "payable": 273.73,
+   "draw": 394,
+   "fed": 13,
+   "opust": 0.8,
+   "cred": 10,
+   "rest": 384,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": -0.2,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 384,
+     "price": 0.3011,
+     "net": 115.62
+    },
+    {
+     "k": "zm",
+     "qty": 384,
+     "price": 0.2108,
+     "net": 80.95
+    },
+    {
+     "k": "jak",
+     "qty": 384,
+     "price": 0.0102,
+     "net": 3.92
+    },
+    {
+     "k": "oze",
+     "qty": 384,
+     "price": 0.0022,
+     "net": 0.84
+    },
+    {
+     "k": "kog",
+     "qty": 384,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "moc",
+     "qty": 1,
+     "price": 10.46,
+     "net": 10.46
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "Nadpłata −0,20 zł.",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2109_00041082",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2109/00041082",
+   "issue": "2021-10-05",
+   "due": "2021-10-19",
+   "from": "2021-09-01",
+   "to": "2021-09-30",
+   "gross": 331.33,
+   "net": 269.36,
+   "vat": 61.97,
+   "payable": 331.33,
+   "draw": 478,
+   "fed": 6,
+   "opust": 0.8,
+   "cred": 5,
+   "rest": 473,
+   "progIds": [],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 473,
+     "price": 0.3011,
+     "net": 142.42
+    },
+    {
+     "k": "zm",
+     "qty": 473,
+     "price": 0.2108,
+     "net": 99.71
+    },
+    {
+     "k": "jak",
+     "qty": 473,
+     "price": 0.0102,
+     "net": 4.82
+    },
+    {
+     "k": "oze",
+     "qty": 473,
+     "price": 0.0022,
+     "net": 1.04
+    },
+    {
+     "k": "kog",
+     "qty": 473,
+     "price": 0,
+     "net": 0.0
+    },
+    {
+     "k": "stala",
+     "qty": 1,
+     "price": 6.08,
+     "net": 6.08
+    },
+    {
+     "k": "przej",
+     "qty": 1,
+     "price": 0.33,
+     "net": 0.33
+    },
+    {
+     "k": "moc",
+     "qty": 1,
+     "price": 10.46,
+     "net": 10.46
+    },
+    {
+     "k": "abon",
+     "qty": 1,
+     "price": 4.5,
+     "net": 4.5
+    }
+   ],
+   "note": "",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_03_2512_00012864",
+   "type": "rozl",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2512/00012864",
+   "issue": "2025-12-09",
+   "due": "2025-12-23",
+   "from": "2025-06-01",
+   "to": "2025-11-30",
+   "gross": 1005.53,
+   "net": 817.5,
+   "vat": 188.03,
+   "payable": 885.82,
+   "draw": 2772,
+   "fed": 3461,
+   "opust": 0.8,
+   "cred": 2769,
+   "rest": 3,
+   "progIds": [
+    "pge_prog_00172633_1",
+    "pge_prog_00172633_2"
+   ],
+   "dedMan": 0,
+   "adj": 0,
+   "lines": [
+    {
+     "k": "energia",
+     "qty": 1095.25,
+     "price": 0.505,
+     "net": 553.1
+    },
+    {
+     "k": "zm",
+     "qty": 3,
+     "price": 0.3469,
+     "net": 1.04
+    },
+    {
+     "k": "jak",
+     "qty": 3,
+     "price": 0.0321,
+     "net": 0.09
+    },
+    {
+     "k": "oze",
+     "qty": 2772,
+     "price": 0.0035,
+     "net": 9.7
+    },
+    {
+     "k": "kog",
+     "qty": 2772,
+     "price": 0.003,
+     "net": 8.32
+    },
+    {
+     "k": "stala",
+     "qty": 6,
+     "price": 9.98,
+     "net": 59.88
+    },
+    {
+     "k": "przej",
+     "qty": 6,
+     "price": 0.33,
+     "net": 1.98
+    },
+    {
+     "k": "moc",
+     "qty": 5,
+     "price": 16.01,
+     "net": 80.05
+    },
+    {
+     "k": "abon",
+     "qty": 6,
+     "price": 0.75,
+     "net": 4.5
+    }
+   ],
+   "note": "Rozliczenie po sumarycznym godzinowym bilansowaniu. Akcyza od 2154 kWh: 10,77 zł. Zużycie w 2024: 9423 kWh. UWAGA: suma składników ze specyfikacji (718,66 zł netto) ≠ wartość z nagłówka faktury (817,50 zł netto) — zweryfikuj z fakturą.",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_prog_00172633_1",
+   "type": "prog",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2507/00172633/1",
+   "issue": "",
+   "due": "",
+   "from": "",
+   "to": "",
+   "gross": 50.01,
+   "net": 40.66,
+   "vat": 9.35,
+   "payable": 50.01,
+   "note": "Zaliczka (faktura prognozowa) potrącona na fakturze 03/2512/00012864 — uzupełnij datę i okres z oryginału.",
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "pge_prog_00172633_2",
+   "type": "prog",
+   "seller": "PGE Obrót S.A.",
+   "no": "03/2507/00172633/2",
+   "issue": "",
+   "due": "",
+   "from": "",
+   "to": "",
+   "gross": 69.7,
+   "net": 56.67,
+   "vat": 13.03,
+   "payable": 69.7,
+   "note": "Zaliczka (faktura prognozowa) potrącona na fakturze 03/2512/00012864 — uzupełnij datę i okres z oryginału.",
+   "updatedAt": 1760000000000
+  }
+ ],
+ "docs": [
+  {
+   "id": "doc_pge_38746097_227R_2020",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 38746097/227R/2020",
+   "date": "2020-12-16",
+   "party": "PGE Obrót S.A.",
+   "ref": "38746097/227R/2020",
+   "link": "",
+   "note": "Plik: Dokument_132863217.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2012_00012481",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2012/00012481",
+   "date": "2020-12-30",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2012/00012481",
+   "link": "",
+   "note": "Plik: Dokument_134345021.pdf (zbiorczy, 7 faktur) — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2012_00012506",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2012/00012506",
+   "date": "2020-12-30",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2012/00012506",
+   "link": "",
+   "note": "Plik: Dokument_134345021.pdf (zbiorczy, 7 faktur) — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2012_00012566",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2012/00012566",
+   "date": "2020-12-30",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2012/00012566",
+   "link": "",
+   "note": "Plik: Dokument_134345021.pdf (zbiorczy, 7 faktur) — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2012_00012616",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2012/00012616",
+   "date": "2020-12-30",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2012/00012616",
+   "link": "",
+   "note": "Plik: Dokument_134345021.pdf (zbiorczy, 7 faktur) — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2012_00012660",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2012/00012660",
+   "date": "2020-12-30",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2012/00012660",
+   "link": "",
+   "note": "Plik: Dokument_134345021.pdf (zbiorczy, 7 faktur) — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2012_00012689",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2012/00012689",
+   "date": "2020-12-30",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2012/00012689",
+   "link": "",
+   "note": "Plik: Dokument_134345021.pdf (zbiorczy, 7 faktur) — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2012_00012709",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2012/00012709",
+   "date": "2020-12-30",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2012/00012709",
+   "link": "",
+   "note": "Plik: Dokument_134345021.pdf (zbiorczy, 7 faktur) — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2101_00035892",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2101/00035892",
+   "date": "2021-01-14",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2101/00035892",
+   "link": "",
+   "note": "Plik: Dokument_135688810.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2101_00139312",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2101/00139312",
+   "date": "2021-02-10",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2101/00139312",
+   "link": "",
+   "note": "Plik: Dokument_139081624.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2103_00023582",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2103/00023582",
+   "date": "2021-04-09",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2103/00023582",
+   "link": "",
+   "note": "Plik: Dokument_146089641.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2105_00010833",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2105/00010833",
+   "date": "2021-05-11",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2105/00010833",
+   "link": "",
+   "note": "Plik: Dokument_150082267.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2105_00029247",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2105/00029247",
+   "date": "2021-06-04",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2105/00029247",
+   "link": "",
+   "note": "Plik: Dokument_153399343.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2106_00012226",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2106/00012226",
+   "date": "2021-07-05",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2106/00012226",
+   "link": "",
+   "note": "Plik: Dokument_156939082.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2108_00018726",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2108/00018726",
+   "date": "2021-09-06",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2108/00018726",
+   "link": "",
+   "note": "Plik: Dokument_164632702.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2109_00041082",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2109/00041082",
+   "date": "2021-10-05",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2109/00041082",
+   "link": "",
+   "note": "Plik: Dokument_168457614.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  },
+  {
+   "id": "doc_pge_03_2512_00012864",
+   "kind": "Faktura (kopia)",
+   "title": "Faktura 03/2512/00012864",
+   "date": "2025-12-09",
+   "party": "PGE Obrót S.A.",
+   "ref": "03/2512/00012864",
+   "link": "",
+   "note": "Plik: Dokument_367061172F.pdf — dołącz skan przez „Edytuj”.",
+   "file": null,
+   "updatedAt": 1760000000000
+  }
+ ],
+ "settings_patch": {
+  "seller": "PGE Obrót S.A.",
+  "custNo": "10259120",
+  "ppe": "590543570800768142",
+  "tariff": "G11",
+  "meterNo": "98101207",
+  "contractPower": "13 kW (wg faktury z 2020)",
+  "addr": "Piękna 23, 05-462 Majdan (gm. Wiązowna)"
+ }
+}

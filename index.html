@@ -166,6 +166,24 @@ td.notecell{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-
 .rdcell .chk{margin:3px 0;font-size:.74rem;color:var(--text)}
 .rdcell .mono{font-size:.8rem;padding:8px 0}
 .rdcell .finp input{min-width:0}
+
+/* --- v9: układ na wąskich ekranach + nowe elementy --- */
+.fgrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr))}
+.finp input{flex:1 1 0;width:auto;min-width:0}.finp .unit{flex:0 0 auto;min-width:0}
+.toolbar>*{max-width:100%}.toolbar label.chk,.chk{white-space:normal}
+.grid>*{min-width:0}.card{min-width:0;overflow-wrap:anywhere}
+input[type=date],input[type=datetime-local],input[type=month]{-webkit-appearance:none;appearance:none;min-height:36px;min-width:0;max-width:100%}
+input[type=datetime-local]{min-width:min(205px,100%)}
+textarea{width:100%;max-width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:8px 9px;border-radius:6px;font-size:.86rem;font-family:inherit}
+.lrow{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr));gap:6px;align-items:center;margin-bottom:5px}
+.lrow>span{font-size:.76rem;color:var(--muted)}.lrow.lhead>span{font-size:.64rem;text-transform:uppercase}.lrow input{padding:6px 7px;font-size:.8rem}
+@media(max-width:560px){.lrow{grid-template-columns:repeat(3,minmax(0,1fr))}.lrow>span:first-child{grid-column:1/-1}.lrow.lhead{display:none}}
+.chk{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;color:var(--text);margin:4px 0;cursor:pointer}.chk input{width:auto;margin-top:2px}
+.kvr{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr);gap:4px 12px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:.82rem}.kvr>span{color:var(--muted)}
+@media(max-width:520px){.kvr{grid-template-columns:1fr}}
+details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cyan)}
+.card h3.sub{font-size:.82rem;margin:16px 0 8px;color:var(--muted);font-weight:600}
+.finp{flex-wrap:wrap}.finp input[type=datetime-local]{flex:1 1 150px;min-width:0}.finp button{flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -189,6 +207,7 @@ td.notecell{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-
   <button data-tab="raporty">Raporty</button>
   <button data-tab="pv">☀️ PV</button>
   <button data-tab="faktury">🧾 Faktury</button>
+  <button data-tab="dokumenty">📁 Dokumenty</button>
   <button data-tab="cop">⚡ COP — okres pracy</button>
   <button data-tab="cophist">📈 COP — historia</button>
   <button data-tab="copimp">📥 COP — import</button>
@@ -391,39 +410,94 @@ td.notecell{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-
       <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji faktury</span>
       <button onclick="cancelInvEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
     </div>
-    <h2>🧾 Dodaj fakturę za prąd</h2>
+    <h2>🧾 Faktura za prąd</h2>
     <div class="grid">
-      <div><label>Data wystawienia</label><input type="date" id="inv_issue"></div>
-      <div><label>Okres rozliczeniowy od</label><input type="date" id="inv_from"></div>
-      <div><label>Okres rozliczeniowy do</label><input type="date" id="inv_to"></div>
-      <div><label>Sprzedawca</label><input type="text" id="inv_seller"></div>
+      <div><label>Rodzaj faktury</label><select id="inv_type" onchange="invTypeChanged()"><option value="rozl">Rozliczeniowa</option><option value="prog">Prognozowa (zaliczka)</option></select></div>
+      <div><label>Sprzedawca</label><select id="inv_seller" onchange="sellerChanged('inv_seller','inv_seller_o')"></select></div>
+      <div id="inv_seller_o_w" style="display:none"><label>Inny sprzedawca</label><input type="text" id="inv_seller_o"></div>
       <div><label>Nr faktury</label><input type="text" id="inv_no"></div>
-      <div><label>Kwota do zapłaty — całość (zł)</label><input type="number" id="inv_amount" step="0.01" min="0"></div>
-      <div><label>Energia pobrana z sieci (kWh)</label><input type="number" id="inv_kwhpob" step="0.01" min="0"></div>
-      <div><label>Energia rozliczona z depozytu / oddana (kWh) — opcjonalnie</label><input type="number" id="inv_kwhodd" step="0.01" min="0"></div>
-      <div class="full"><label>Notatka</label><textarea id="inv_note" rows="3"></textarea></div>
+      <div><label>Data wystawienia</label><input type="date" id="inv_issue"></div>
+      <div><label>Termin płatności</label><input type="date" id="inv_due"></div>
+      <div><label>Okres od</label><input type="date" id="inv_from" onchange="invCalc()"></div>
+      <div><label>Okres do</label><input type="date" id="inv_to" onchange="invCalc()"></div>
+      <div><label>Wartość brutto (zł) — przed potrąceniem zaliczek</label><input type="number" id="inv_gross" step="0.01" oninput="invCalc()"></div>
+      <div><label>w tym netto (zł)</label><input type="number" id="inv_net" step="0.01" oninput="invMan(this)"></div>
+      <div><label>w tym VAT (zł)</label><input type="number" id="inv_vat" step="0.01" oninput="invMan(this)"></div>
+      <div><label>DO ZAPŁATY (zł)</label><input type="number" id="inv_payable" step="0.01" oninput="invMan(this)"></div>
     </div>
-    <p class="note" style="margin-top:6px">Pole „energia rozliczona z depozytu” to opcjonalna informacja z faktury (np. przy rozliczeniu rocznym prosumenta na starych zasadach) — nie jest wymagana do obliczeń, ale warto ją zapisać dla własnej historii.</p>
+    <div class="only-rozl">
+      <h3 class="sub">Energia (z specyfikacji faktury)</h3>
+      <div class="grid">
+        <div><label>Pobór z sieci (kWh)</label><input type="number" id="inv_draw" step="0.01" min="0" oninput="invCalc()"></div>
+        <div><label>Wprowadzono do sieci (kWh)</label><input type="number" id="inv_fed" step="0.01" min="0" oninput="invCalc()"></div>
+        <div><label>Współczynnik opustu</label><input type="number" id="inv_opust" step="0.01" min="0" max="1" oninput="invCalc()"></div>
+        <div><label>Odliczone z depozytu (kWh)</label><input type="number" id="inv_cred" step="1" min="0" oninput="invMan(this)"></div>
+        <div><label>Pozostało do rozliczenia (kWh) — tyle zapłacisz za energię</label><input type="number" id="inv_rest" step="1" min="0" oninput="invMan(this)"></div>
+      </div>
+      <p class="note">Odliczone = wprowadzone × opust (zaokrąglone do pełnych kWh, tak jak robi to sprzedawca); pozostało = pobór − odliczone. Pola liczą się same — możesz je nadpisać wartością z faktury.</p>
+      <h3 class="sub">Zaliczki (faktury prognozowe) i korekty</h3>
+      <div id="inv_progs"></div>
+      <div class="grid">
+        <div><label>Zaliczki spoza listy — suma brutto (zł)</label><input type="number" id="inv_dedman" step="0.01" min="0" oninput="invCalc()"></div>
+        <div><label>Nadpłata / dopłata (zł, minus = nadpłata)</label><input type="number" id="inv_adj" step="0.01" oninput="invCalc()"></div>
+      </div>
+      <details><summary>Składniki faktury (opcjonalnie — potrzebne do dokładnego liczenia kosztu bez PV)</summary>
+        <div id="inv_lines"></div>
+        <div class="toolbar" style="margin-top:8px"><button type="button" onclick="invAutoQty()">Uzupełnij ilości z poboru i okresu</button></div>
+        <div id="inv_recon"></div>
+        <p class="note">Wpisz cenę netto z faktury dla każdego składnika (ilości uzupełnią się przyciskiem). Składniki „za kWh” liczone są od energii po rozliczeniu z depozytem; OZE i kogeneracyjna od 1.04.2022 od energii pobranej z sieci przed bilansowaniem; opłaty stałe — za miesiąc.</p>
+      </details>
+    </div>
+    <div class="grid"><div class="full"><label>Notatka</label><textarea id="inv_note" rows="2"></textarea></div></div>
     <button class="submit" id="invSubmitBtn" style="background:var(--ok);color:#0c1f13" onclick="addInv()">Zapisz fakturę</button>
   </div>
 
   <div class="stats" id="invStats"></div>
+  <div id="invGaps"></div>
 
   <div class="card tbl-wrap">
     <h2 style="margin-bottom:8px">Historia faktur</h2>
-    <table class="rc"><thead><tr><th>Wystawiona</th><th>Okres</th><th>Sprzedawca</th><th>Nr faktury</th><th>Pobrana (kWh)</th><th>Oddana/depozyt (kWh)</th><th>Kwota</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc"><thead><tr><th>Rodzaj</th><th>Nr faktury</th><th>Okres</th><th>Sprzedawca</th><th>Pobór kWh</th><th>Wprowadzono kWh</th><th>Do rozliczenia kWh</th><th>Wartość brutto</th><th>Do zapłaty</th><th>Uwagi</th><th></th></tr></thead>
     <tbody id="invTbody"></tbody><tfoot id="invTblFoot"></tfoot></table>
     <div id="invEmptyMsg" class="empty" style="display:none">Brak faktur.</div>
+    <p class="note" style="margin-top:8px">Koszt energii liczony jest z faktur <b>rozliczeniowych</b>. Faktury prognozowe (zaliczki) to tylko przepływ gotówki — ich kwoty są już wliczone w fakturę rozliczeniową, więc nie są liczone drugi raz.</p>
   </div>
 
   <div class="card" style="border-left:4px solid var(--ok)">
-    <h2>💡 Hipotetyczny koszt zużycia, gdyby nie było PV</h2>
-    <div class="toolbar">
-      <span class="rng"><label>Od</label><input type="date" id="hipFrom" onchange="renderInv()">
-      <label>Do</label><input type="date" id="hipTo" onchange="renderInv()"></span>
-    </div>
+    <h2>💡 Ile kosztowałby prąd, gdyby nie było PV</h2>
+    <div class="toolbar"><span class="rng"><label>Od</label><input type="date" id="hipFrom" onchange="renderInv()"><label>Do</label><input type="date" id="hipTo" onchange="renderInv()"></span></div>
     <div id="hipWrap"></div>
-    <p class="note" style="margin-top:10px">Sposób liczenia: Twoje <b>całkowite</b> zużycie prądu w domu to energia, którą realnie pobrałeś z sieci (wg faktur) <b>plus</b> cała energia, którą w tym czasie wyprodukowało PV (bo bez instalacji musiałbyś kupić tę samą ilość z sieci — niezależnie, czy dziś część zużywasz na miejscu, a część oddajesz i odbierasz z depozytu). Do wyceny używana jest <b>rzeczywista cena z Twoich faktur</b> (kwota ÷ kWh pobrane w tym okresie) — a dopiero gdy brak faktur w wybranym zakresie, domyślna cena z zakładki Ustawienia. To realistyczne przybliżenie, nie precyzyjne rozliczenie taryfowe (pomija opłaty stałe niezależne od zużycia, ewentualne różne stawki dzień/noc itp.).</p>
+    <table class="rc" style="margin-top:10px"><thead><tr><th>Okres</th><th>Pobór kWh</th><th>Produkcja PV kWh</th><th>Oddano kWh</th><th>Zużycie kWh</th><th>Cena zmienna zł/kWh</th><th>Faktycznie zł</th><th>Bez PV zł</th><th>Różnica zł</th></tr></thead><tbody id="hipTbody"></tbody></table>
+    <p class="note" style="margin-top:10px"><b>Jak liczone:</b> zużycie = pobór z sieci + (produkcja PV − energia oddana do sieci), czyli także to, co zużyłeś na bieżąco z paneli. Koszt bez PV = zużycie × cena zmienna (suma składników „za kWh” z faktury: energia + opłata sieciowa zmienna + jakościowa + OZE + kogeneracyjna) + opłaty stałe z tej faktury, razem z VAT 23%. Porównujemy to z <b>wartością faktury</b> za ten okres. Założenia: opłaty stałe i progi roczne (przejściowa, mocowa) bez zmian; zaliczki nie są liczone drugi raz.</p>
+  </div>
+</div>
+
+<div class="tab" id="dokumenty">
+  <div class="card">
+    <div id="docCancelBar" style="display:none;margin-bottom:10px;align-items:center;gap:8px">
+      <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji dokumentu</span>
+      <button onclick="cancelDocEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
+    </div>
+    <h2>📁 Dodaj dokument (umowa, pismo, protokół…)</h2>
+    <div class="grid">
+      <div><label>Rodzaj</label><select id="doc_kind"></select></div>
+      <div class="full"><label>Tytuł</label><input type="text" id="doc_title" placeholder="np. Umowa kompleksowa — PGE Obrót"></div>
+      <div><label>Data dokumentu</label><input type="date" id="doc_date"></div>
+      <div><label>Strona / sprzedawca</label><select id="doc_party" onchange="sellerChanged('doc_party','doc_party_o')"></select></div>
+      <div style="display:none"><label>Inna strona</label><input type="text" id="doc_party_o"></div>
+      <div><label>Nr dokumentu / sprawy</label><input type="text" id="doc_ref"></div>
+      <div class="full"><label>Link (np. do pliku w iCloud / na dysku) — opcjonalnie</label><input type="url" id="doc_link" placeholder="https://…"></div>
+      <div class="full"><label>Plik (PDF, skan, zdjęcie)</label><input type="file" id="doc_file" accept=".pdf,image/*,.doc,.docx,.odt,.txt"></div>
+      <div class="full"><label>Notatka</label><textarea id="doc_note" rows="2"></textarea></div>
+    </div>
+    <p class="note" style="margin-top:6px">Plik zapisuje się w pamięci tego urządzenia, a na komputerze — jeśli w Ustawieniach wybrano folder na dane — także w podfolderze <b>dokumenty/</b> na dysku (np. w iCloud). Opis dokumentu (tytuł, data, nr, notatka) synchronizuje się między urządzeniami, <b>same pliki nie</b>: na innych urządzeniach otwierasz je z folderu na dysku/iCloud albo dodajesz ponownie.</p>
+    <button class="submit" id="docSubmitBtn" onclick="addDoc()">Zapisz dokument</button>
+  </div>
+  <div class="card tbl-wrap">
+    <h2 style="margin-bottom:8px">Dokumenty <span class="note" id="docCount" style="font-weight:400"></span></h2>
+    <div class="toolbar"><select id="docFilter" onchange="renderDocs()"></select><input type="text" id="docSearch" placeholder="Szukaj…" oninput="renderDocs()" style="flex:1 1 140px"></div>
+    <table class="rc"><thead><tr><th>Data</th><th>Rodzaj</th><th>Tytuł</th><th>Strona</th><th>Nr</th><th>Plik</th><th>Notatka</th><th></th></tr></thead><tbody id="docTbody"></tbody></table>
+    <div id="docEmpty" class="empty" style="display:none">Brak dokumentów.</div>
   </div>
 </div>
 
@@ -691,9 +765,31 @@ td.notecell{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-
     </div>
   </div>
   <div class="card">
-    <h2>Przechowywanie danych</h2>
-    <p style="font-size:.85rem;color:var(--muted)">Dane zapisują się <b>automatycznie w tej przeglądarce/na tym urządzeniu</b>. <b>Na komputerze</b> (Chrome/Edge) połącz plik .json z folderu iCloud przyciskiem u góry strony — wtedy każdy zapis i każda synchronizacja aktualizuje też ten plik, a zmiany z innych urządzeń trafiają do niego same. <b>Na iPhonie/iPadzie</b> przeglądarka nie pozwala stronie pisać do pliku w iCloud, więc tam wystarczy synchronizacja (poniżej); „Pobierz plik danych” otwiera arkusz udostępniania → „Zapisz w Plikach” (kopia zapasowa). „Wczytaj plik danych” <b>scala</b> plik z danymi w aplikacji, niczego nie nadpisując na ślepo.</p>
-    <div class="toolbar"><button onclick="exportJSON()">Pobierz plik danych</button>
+    <h2>📄 Umowa i punkt poboru energii</h2>
+    <div class="grid">
+      <div><label>Sprzedawca energii</label><select id="c_seller" onchange="sellerChanged('c_seller','c_seller_o');saveContract()"></select></div>
+      <div style="display:none"><label>Inny sprzedawca</label><input type="text" id="c_seller_o" onchange="saveContract()"></div>
+      <div><label>Nr klienta</label><input type="text" id="c_cust" onchange="saveContract()"></div>
+      <div><label>Nr PPE</label><input type="text" id="c_ppe" onchange="saveContract()"></div>
+      <div><label>Taryfa</label><select id="c_tariff" onchange="saveContract()"></select></div>
+      <div><label>Nr licznika</label><input type="text" id="c_meter" onchange="saveContract()"></div>
+      <div><label>Moc umowna</label><input type="text" id="c_power" placeholder="np. 13 kW" onchange="saveContract()"></div>
+      <div class="full"><label>Adres punktu poboru</label><input type="text" id="c_addr" onchange="saveContract()"></div>
+    </div>
+    <p class="note" style="margin-top:8px">Sprzedawca z tej listy jest domyślnie podstawiany przy fakturach i dokumentach (nie trzeba go wpisywać za każdym razem). Dane umowy synchronizują się między urządzeniami razem z resztą ustawień.</p>
+  </div>
+  <div class="card">
+    <h2>💾 Miejsce zapisu na dysku</h2>
+    <div id="diskInfo"></div>
+    <div class="toolbar" style="margin-top:10px">
+      <button onclick="connectFolder()">Wybierz folder na dane i dokumenty</button>
+      <button onclick="connectFile(false)">Otwórz istniejący plik .json</button>
+      <button onclick="connectFile(true)">Utwórz nowy plik…</button>
+      <button onclick="disconnectDisk()">Odłącz</button>
+    </div>
+    <div class="grid"><div class="full"><label>Moja notatka: gdzie leży plik (np. iCloud Drive → Pompa → pompa_dane.json)</label><input type="text" id="d_note" placeholder="iCloud Drive/Pompa/pompa_dane.json" onchange="saveContract()"></div></div>
+    <p class="note" style="margin-top:8px"><b>Gdzie będzie plik?</b> Tam, gdzie go wskażesz — przeglądarka sama niczego nie wybiera i nie pokazuje pełnej ścieżki (tylko nazwę pliku/folderu). Polecany układ: na komputerze utwórz w iCloud Drive folder, np. „Pompa”, i wybierz go przyciskiem <i>Wybierz folder…</i> — aplikacja założy w nim plik <b>pompa_dane.json</b> oraz podfolder <b>dokumenty/</b>. Na iPhonie/iPadzie zobaczysz je w aplikacji Pliki → iCloud Drive → Pompa. Po ponownym uruchomieniu przeglądarki Chrome może poprosić o ponowne potwierdzenie dostępu. <b>Na iPhonie</b> strona nie może zapisywać do plików — tam dane zapisują się w urządzeniu i synchronizują przez Gist; „Pobierz plik danych” → Zapisz w Plikach robi kopię.</p>
+    <div class="toolbar"><button onclick="exportJSON()">Pobierz plik danych (kopia)</button>
       <label style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:0">Wczytaj plik danych<input type="file" accept=".json" style="display:none" onchange="importJSONFile(event)"></label>
     </div>
   </div>
@@ -728,7 +824,7 @@ td.notecell{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-
 
 </main>
 <script>
-let R=[], PV=[], INV=[], M=[], TOMB=[], EXTRA={}, SIG={}, copEditId=null, copCtx=null, SET={price:0,pvPower:10,pvPrice:0.25,pvMode:'netbilling',pvOpust:0.8}, fileHandle=null, editId=null, pvEditId=null, invEditId=null;
+let R=[], PV=[], INV=[], M=[], TOMB=[], DOCS=[], dirHandle=null, docsDir=null, EXTRA={}, SIG={}, copEditId=null, copCtx=null, SET={price:0,pvPower:10,pvPrice:0.25,pvMode:'netbilling',pvOpust:0.8}, fileHandle=null, editId=null, pvEditId=null, invEditId=null;
 const hasFS = 'showOpenFilePicker' in window;
 
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>{
@@ -760,22 +856,22 @@ async function connectFile(create){
   if(!hasFS){ alert('Ta przeglądarka nie wspiera bezpośredniego zapisu na dysk. Użyj zakładki Ustawienia (Pobierz/Wczytaj plik).'); return; }
   try{
     let h;
-    if(create) h = await window.showSaveFilePicker({suggestedName:'pompa_dane.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
-    else [h] = await window.showOpenFilePicker({types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    if(create) h = await window.showSaveFilePicker({id:'pompa-dane',startIn:'documents',suggestedName:'pompa_dane.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
+    else [h] = await window.showOpenFilePicker({id:'pompa-dane',startIn:'documents',types:[{description:'JSON',accept:{'application/json':['.json']}}]});
     fileHandle=h; await idbOp('readwrite','handle',h); await loadFromFile();
   }catch(e){ if(e.name!=='AbortError') alert('Błąd: '+e.message); }
 }
 /* ===================== ZAPIS LOKALNY + SYNCHRONIZACJA ===================== */
 const LS_KEY='hp_pv_dane_v1';
-const KNOWN_KEYS=['settings','records','pv','inv','tomb','meas'];
+const KNOWN_KEYS=['settings','records','pv','inv','tomb','meas','docs','settings_patch'];
 function normalizeSet(){
   if(SET.pvPower==null) SET.pvPower=10; if(SET.pvPrice==null) SET.pvPrice=0.25;
   if(SET.pvMode==null) SET.pvMode='netbilling'; if(SET.pvOpust==null) SET.pvOpust=SET.pvPower>10?0.7:0.8;
   if(SET.price==null) SET.price=0;
 }
-function syncPayload(){ return {...EXTRA, settings:SET, records:R, pv:PV, inv:INV, meas:M, tomb:TOMB}; }
+function syncPayload(){ return {...EXTRA, settings:SET, records:R, pv:PV, inv:INV, meas:M, docs:DOCS, tomb:TOMB}; }
 function applyData(d){
-  R=d.records||[]; SET=d.settings||{price:0}; PV=d.pv||[]; INV=d.inv||[]; M=d.meas||[]; TOMB=d.tomb||[];
+  R=d.records||[]; SET=d.settings||{price:0}; PV=d.pv||[]; INV=d.inv||[]; M=d.meas||[]; DOCS=d.docs||[]; TOMB=d.tomb||[];
   EXTRA={}; Object.keys(d).forEach(k=>{ if(!KNOWN_KEYS.includes(k)) EXTRA[k]=d[k]; });
 }
 function applySettingsToInputs(){
@@ -788,7 +884,7 @@ function applySettingsToInputs(){
   document.getElementById('pv_price').value = SET.pvPrice;
   document.getElementById('co_price').value = SET.price||'';
   document.getElementById('w_price').value = SET.price||'';
-  updatePvModeUI();
+  updatePvModeUI(); fillContractInputs();
 }
 function saveToLocalStorage(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(syncPayload())); return true; }catch(e){ return false; } }
 function loadFromLocalStorage(){
@@ -797,7 +893,7 @@ function loadFromLocalStorage(){
 
 /* Znaczniki zmian: zamiast ręcznie oznaczać każdy zapis, porównujemy stan z ostatnim "zdjęciem" (SIG).
    Nowy/zmieniony wpis dostaje updatedAt, a usunięty — wpis w TOMB (żeby usunięcie dotarło na inne urządzenia). */
-const SYNC_ARRS=[['r',()=>R],['pv',()=>PV],['inv',()=>INV],['meas',()=>M]];
+const SYNC_ARRS=[['r',()=>R],['pv',()=>PV],['inv',()=>INV],['meas',()=>M],['doc',()=>DOCS]];
 function sigOf(o){ const {updatedAt,...rest}=o; return JSON.stringify(rest); }
 function snapshotSig(){
   SIG={}; SYNC_ARRS.forEach(([t,g])=>g().forEach(r=>{ if(r&&r.id) SIG[t+'|'+r.id]=sigOf(r); })); SIG['set']=sigOf(SET);
@@ -813,11 +909,12 @@ function stampChanges(){
 
 function mergeIncoming(d){
   const allTomb=[...TOMB,...(d.tomb||[])];
-  R=mergeList(R,d.records,allTomb,'r'); PV=mergeList(PV,d.pv,allTomb,'pv'); INV=mergeList(INV,d.inv,allTomb,'inv'); M=mergeList(M,d.meas,allTomb,'meas');
+  R=mergeList(R,d.records,allTomb,'r'); PV=mergeList(PV,d.pv,allTomb,'pv'); INV=mergeList(INV,d.inv,allTomb,'inv'); M=mergeList(M,d.meas,allTomb,'meas'); DOCS=mergeList(DOCS,d.docs,allTomb,'doc');
   const tmap=new Map(); allTomb.forEach(t=>{ const k=t.type+'|'+t.id; const c=tmap.get(k); if(!c||t.deletedAt>c.deletedAt) tmap.set(k,t); });
   TOMB=[...tmap.values()];
   Object.keys(d).forEach(k=>{ if(!KNOWN_KEYS.includes(k)&&!(k in EXTRA)) EXTRA[k]=d[k]; });
   if(d.settings) SET=mergeSets(SET,d.settings);
+  if(d.settings_patch) Object.keys(d.settings_patch).forEach(k=>{ if(SET[k]==null||SET[k]==='') SET[k]=d.settings_patch[k]; });
 }
 let lastFileMod=0;
 /* Plik .json (np. w iCloud) jest repliką: wczytanie = SCALENIE z tym, co już jest w aplikacji (nic nie jest nadpisywane na ślepo). */
@@ -890,7 +987,7 @@ function mergeList(localArr, remoteArr, allTomb, type){
 }
 function canonPayload(p){
   const c={...p}, byId=(a,b)=>String(a.id).localeCompare(String(b.id));
-  ['records','pv','inv','meas'].forEach(k=>{ c[k]=[...(c[k]||[])].sort(byId); });
+  ['records','pv','inv','meas','docs'].forEach(k=>{ c[k]=[...(c[k]||[])].sort(byId); });
   c.tomb=[...(c.tomb||[])].sort((a,b)=>(a.type+a.id).localeCompare(b.type+b.id));
   return JSON.stringify(c);
 }
@@ -975,10 +1072,12 @@ function checkSyncHashOnLoad(){
 
 /* ---- Start aplikacji (wywoływany na końcu skryptu, gdy wszystko jest już zadeklarowane) ---- */
 function startupInit(){
+  buildSelects();
   document.getElementById('pv_date').value = ymd(new Date());
-  document.getElementById('inv_issue').value = ymd(new Date());
+  gi('doc_date').value = ymd(new Date());
   if(loadFromLocalStorage()) migratePrices();
   applySettingsToInputs();
+  resetInvForm();
   snapshotSig();
   updateStoreBar();
   renderAll();
@@ -990,6 +1089,7 @@ function startupInit(){
   checkSyncHashOnLoad();
   (async()=>{
     if(hasFS){
+      try{ const dh=await idbOp('readonly','dir'); if(dh && (await dh.queryPermission({mode:'readwrite'}))==='granted'){ dirHandle=dh; docsDir=await dh.getDirectoryHandle('dokumenty',{create:true}); } }catch(e){}
       try{ const h=await idbOp('readonly','handle'); if(h){
         const perm = await h.queryPermission({mode:'readwrite'});
         if(perm==='granted'){ fileHandle=h; await loadFromFile(); }
@@ -1108,89 +1208,283 @@ function renderPv(){
   document.getElementById('pvTblFoot').innerHTML = rows.length ? `<tr><td style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCredit.toFixed(2)}</td><td></td><td class="num">${totVal.toFixed(2)} zł</td><td colspan="2"></td></tr>` : '';
 }
 
-function cancelInvEdit(){
-  invEditId=null;
-  document.getElementById('invSubmitBtn').textContent='Zapisz fakturę';
-  document.getElementById('invCancelBar').style.display='none';
+/* ===================== FAKTURY (model zgodny z fakturami sprzedawcy: opust, zaliczki, składniki) ===================== */
+const gi=id=>document.getElementById(id);
+const ssum=(a,f)=>a.reduce((t,x)=>t+(f(x)||0),0);
+const escH=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SELLERS=['PGE Obrót S.A.','TAURON Sprzedaż sp. z o.o.','Enea S.A.','ENERGA-OBRÓT S.A.','E.ON Polska S.A.','Fortum Marketing and Sales Polska S.A.','Respect Energy S.A.'];
+const TARIFFS=['G11','G12','G12w','G13','C11','C12a','C12b','Inna'];
+/* składniki: v = za kWh po rozliczeniu z depozytem, g = za kWh pobrane (przed bilansowaniem, od 1.04.2022), m = miesięczne */
+const COMP=[['energia','Energia całodobowa','v'],['zm','Opłata sieciowa zmienna','v'],['jak','Opłata jakościowa','v'],['oze','Opłata OZE','g'],['kog','Opłata kogeneracyjna','g'],['stala','Opłata sieciowa stała','m'],['przej','Opłata przejściowa','m'],['moc','Opłata mocowa','m'],['abon','Abonament','m']];
+const invKind=r=>r.type||'rozl';
+const invGross=r=>r.gross!=null?r.gross:(r.amount||0);
+const invPay=r=>r.payable!=null?r.payable:invGross(r);
+const invDraw=r=>r.draw!=null?r.draw:(r.kwhPob||0);
+const invFed=r=>r.fed!=null?r.fed:(r.kwhOdd||0);
+const invCred=r=>r.cred!=null?r.cred:Math.round(invFed(r)*(r.opust!=null?r.opust:0.8));
+const invRest=r=>r.rest!=null?r.rest:Math.max(0,invDraw(r)-invCred(r));
+const f2n=(v,d=2)=>(v==null||isNaN(v))?'—':Number(v).toLocaleString('pl-PL',{minimumFractionDigits:d,maximumFractionDigits:d});
+const gv=id=>{ const e=gi(id); return e?e.value:''; };
+const gn=id=>{ const v=parseFloat(gv(id)); return isNaN(v)?null:v; };
+const ymKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+function monthsBetween(a,b){
+  if(!a||!b) return 0; let d=new Date(a+'T00:00:00'); const e=new Date(b+'T00:00:00'); let tot=0;
+  while(d<=e){ const y=d.getFullYear(), m=d.getMonth(), dim=new Date(y,m+1,0).getDate(); const last=new Date(Math.min(e.getTime(), new Date(y,m,dim).getTime()));
+    tot+=(Math.round((last-d)/864e5)+1)/dim; d=new Date(y,m+1,1); }
+  return +tot.toFixed(4);
 }
+function invTotals(){
+  const rz=INV.filter(r=>invKind(r)==='rozl'), pg=INV.filter(r=>invKind(r)==='prog'), linked=new Set(INV.flatMap(r=>r.progIds||[]));
+  return {n:INV.length, cost:ssum(rz,invGross), cash:ssum(INV,invPay), draw:ssum(rz,invDraw), fed:ssum(rz,invFed), rest:ssum(rz,invRest), advOpen:ssum(pg.filter(r=>!linked.has(r.id)),invGross)};
+}
+/* --- selecty: sprzedawca / taryfa --- */
+function sellerOptions(sel,blank){
+  sel.innerHTML=(blank?'<option value="">— wybierz —</option>':'')+SELLERS.map(s=>`<option>${escH(s)}</option>`).join('')+'<option value="__other">Inny (wpisz)…</option>';
+}
+function buildSelects(){
+  ['c_seller','inv_seller','doc_party'].forEach(id=>{ const e=gi(id); if(e) sellerOptions(e,id==='doc_party'); });
+  const t=gi('c_tariff'); if(t) t.innerHTML=TARIFFS.map(x=>`<option>${x}</option>`).join('');
+  const k=gi('doc_kind'); if(k) k.innerHTML=DOC_KINDS.map(x=>`<option>${escH(x)}</option>`).join('');
+  const kf=gi('docFilter'); if(kf) kf.innerHTML='<option value="">Wszystkie rodzaje</option>'+DOC_KINDS.map(x=>`<option>${escH(x)}</option>`).join('');
+  buildInvLines();
+}
+function setSellerSel(selId,otherId,name){
+  const sel=gi(selId), oth=gi(otherId); if(!sel) return;
+  if(!name){ sel.value=sel.options[0]?sel.options[0].value:''; }
+  else if(SELLERS.includes(name)) sel.value=name; else { sel.value='__other'; if(oth) oth.value=name; }
+  if(oth) oth.parentElement.style.display = sel.value==='__other'?'':'none';
+}
+function getSeller(selId,otherId){ const v=gv(selId); return v==='__other'?gv(otherId).trim():v; }
+/* --- ustawienia: umowa i punkt poboru --- */
+function fillContractInputs(){
+  if(!gi('c_seller')) return;
+  setSellerSel('c_seller','c_seller_o',SET.seller||'');
+  gi('c_cust').value=SET.custNo||''; gi('c_ppe').value=SET.ppe||''; gi('c_tariff').value=SET.tariff||'G11';
+  gi('c_meter').value=SET.meterNo||''; gi('c_power').value=SET.contractPower||''; gi('c_addr').value=SET.addr||'';
+  gi('d_note').value=SET.diskNote||'';
+}
+function saveContract(){
+  SET.seller=getSeller('c_seller','c_seller_o'); setSellerSel('c_seller','c_seller_o',SET.seller);
+  SET.custNo=gv('c_cust').trim(); SET.ppe=gv('c_ppe').trim(); SET.tariff=gv('c_tariff'); SET.meterNo=gv('c_meter').trim();
+  SET.contractPower=gv('c_power').trim(); SET.addr=gv('c_addr').trim(); SET.diskNote=gv('d_note').trim();
+  persist();
+}
+/* --- formularz faktury --- */
+function buildInvLines(){
+  const w=gi('inv_lines'); if(!w) return;
+  w.innerHTML='<div class="lrow lhead"><span>Składnik</span><span>Ilość</span><span>Cena netto</span><span>Netto zł</span></div>'+COMP.map(([k,l,t])=>
+   `<div class="lrow"><span>${l} <i>(${t==='m'?'mies.':'kWh'})</i></span><input type="number" step="any" id="l_${k}_q" placeholder="ilość" oninput="invLineNets()"><input type="number" step="any" id="l_${k}_p" placeholder="cena" oninput="invLineNets()"><input type="number" step="0.01" id="l_${k}_n" placeholder="netto" oninput="this.dataset.m=1;invRecon()"></div>`).join('');
+}
+function invAuto(id,val){ const e=gi(id); if(e && e.dataset.m!=='1') e.value=(val==null||val==='')?'':val; }
+function invMan(el){ el.dataset.m='1'; invCalc(); }
+function invAutoValues(){
+  const gross=gn('inv_gross'), opIn=gn('inv_opust'), op=opIn==null?(SET.pvOpust!=null?SET.pvOpust:0.8):opIn;
+  const draw=gn('inv_draw')||0, fed=gn('inv_fed')||0;
+  const net=gross!=null?+(gross/1.23).toFixed(2):null; const netV=gn('inv_net')!=null&&gi('inv_net').dataset.m==='1'?gn('inv_net'):net;
+  const cred=Math.round(fed*op), credV=gi('inv_cred').dataset.m==='1'?(gn('inv_cred')||0):cred;
+  const ded=getCheckedProgs().reduce((s,id)=>{ const p=INV.find(x=>x.id===id); return s+(p?invGross(p):0); },0);
+  const pay=gross!=null?(gv('inv_type')==='prog'?gross:+(gross-ded-(gn('inv_dedman')||0)+(gn('inv_adj')||0)).toFixed(2)):null;
+  return {net, vat:gross!=null&&netV!=null?+(gross-netV).toFixed(2):null, cred, rest:Math.max(0,draw-credV), payable:pay};
+}
+function invCalc(){
+  const a=invAutoValues(); invAuto('inv_net',a.net); invAuto('inv_vat',gn('inv_gross')!=null&&gn('inv_net')!=null?+(gn('inv_gross')-gn('inv_net')).toFixed(2):a.vat);
+  invAuto('inv_cred',a.cred); const a2=invAutoValues(); invAuto('inv_rest',a2.rest); invAuto('inv_payable',a2.payable); invRecon();
+}
+function invLineNets(){ COMP.forEach(([k])=>{ const q=gn('l_'+k+'_q'), p=gn('l_'+k+'_p'), n=gi('l_'+k+'_n'); if(q!=null&&p!=null&&n.dataset.m!=='1') n.value=(q*p).toFixed(2); }); invRecon(); }
+function invAutoQty(){
+  const draw=gn('inv_draw')||0, rest=gn('inv_rest')||0, mo=monthsBetween(gv('inv_from'),gv('inv_to')), newRule=gv('inv_to')>='2022-04-01';
+  COMP.forEach(([k,l,t])=>{ gi('l_'+k+'_q').value=+(t==='m'?mo:(t==='g'&&newRule?draw:rest)).toFixed(4); gi('l_'+k+'_n').dataset.m=''; }); invLineNets();
+}
+function invLinesRead(){
+  return COMP.map(([k])=>({k,qty:gn('l_'+k+'_q'),price:gn('l_'+k+'_p'),net:gn('l_'+k+'_n')})).filter(x=>x.qty!=null||x.price!=null||x.net!=null).map(x=>({k:x.k,qty:x.qty,price:x.price,net:x.net!=null?x.net:(x.qty!=null&&x.price!=null?+(x.qty*x.price).toFixed(2):0)}));
+}
+function invRecon(){
+  const el=gi('inv_recon'); if(!el) return; const L=invLinesRead(); if(!L.length){ el.innerHTML=''; return; }
+  const s=ssum(L,x=>x.net), net=gn('inv_net'); const d=net!=null?+(net-s).toFixed(2):null;
+  el.innerHTML=`<div class="warnline ${d!=null&&Math.abs(d)<=0.1?'good':'bad'}">Suma składników: <b>${f2n(s)} zł</b> netto${net!=null?` · wartość faktury: <b>${f2n(net)} zł</b> · różnica: <b>${f2n(d)} zł</b>${Math.abs(d)>0.1?' — sprawdź, czy nie brakuje składnika lub zaliczki':' ✓'}`:''}</div>`;
+}
+function getCheckedProgs(){ return [...document.querySelectorAll('#inv_progs input[type=checkbox]:checked')].map(e=>e.value); }
+function buildProgList(selected){
+  const w=gi('inv_progs'); if(!w) return; selected=selected||getCheckedProgs();
+  const taken=new Set(INV.filter(r=>r.id!==invEditId).flatMap(r=>r.progIds||[]));
+  const list=INV.filter(r=>invKind(r)==='prog'&&(!taken.has(r.id)||selected.includes(r.id)));
+  w.innerHTML=list.length?'<label style="display:block;margin-bottom:4px">Zaliczki (faktury prognozowe) potrącone na tej fakturze:</label>'+list.map(p=>`<label class="chk"><input type="checkbox" value="${p.id}" ${selected.includes(p.id)?'checked':''} onchange="invCalc()"> ${escH(p.no||'(bez nr)')} — ${f2n(invGross(p))} zł brutto${p.from?' · '+escH(p.from)+'…'+escH(p.to||''):''}</label>`).join(''):'<p class="note" style="margin:0 0 8px">Brak nierozliczonych faktur prognozowych. Dodaj je najpierw jako „Prognozowa (zaliczka)” albo wpisz sumę poniżej.</p>';
+}
+function invTypeChanged(){
+  const t=gv('inv_type'); document.querySelectorAll('#faktury .only-rozl').forEach(e=>e.style.display=t==='rozl'?'':'none');
+  gi('inv_seller_o_w').style.display=gv('inv_seller')==='__other'?'':'none'; buildProgList(); invCalc();
+}
+function resetInvForm(){
+  ['inv_no','inv_issue','inv_due','inv_from','inv_to','inv_gross','inv_net','inv_vat','inv_draw','inv_fed','inv_opust','inv_cred','inv_rest','inv_dedman','inv_adj','inv_payable','inv_note','inv_seller_o'].forEach(id=>{ const e=gi(id); if(e){ e.value=''; delete e.dataset.m; } });
+  COMP.forEach(([k])=>['q','p','n'].forEach(c=>{ const e=gi('l_'+k+'_'+c); e.value=''; delete e.dataset.m; }));
+  gi('inv_type').value='rozl'; gi('inv_issue').value=ymd(new Date()); gi('inv_opust').value=SET.pvOpust!=null?SET.pvOpust:0.8; setSellerSel('inv_seller','inv_seller_o',SET.seller||'');
+  buildProgList([]); invTypeChanged();
+}
+function cancelInvEdit(){ invEditId=null; gi('invSubmitBtn').textContent='Zapisz fakturę'; gi('invCancelBar').style.display='none'; resetInvForm(); }
 function editInv(id){
   const r=INV.find(x=>x.id===id); if(!r) return;
-  document.querySelector('nav button[data-tab="faktury"]').click();
-  invEditId=id;
-  document.getElementById('invCancelBar').style.display='flex';
-  document.getElementById('invSubmitBtn').textContent='Zapisz zmiany (faktura)';
-  document.getElementById('inv_issue').value=r.issue||'';
-  document.getElementById('inv_from').value=r.from||'';
-  document.getElementById('inv_to').value=r.to||'';
-  document.getElementById('inv_seller').value=r.seller||'';
-  document.getElementById('inv_no').value=r.no||'';
-  document.getElementById('inv_amount').value=r.amount??'';
-  document.getElementById('inv_kwhpob').value=r.kwhPob??'';
-  document.getElementById('inv_kwhodd').value=r.kwhOdd??'';
-  document.getElementById('inv_note').value=r.note||'';
+  document.querySelector('nav button[data-tab="faktury"]').click(); resetInvForm(); invEditId=id;
+  gi('invCancelBar').style.display='flex'; gi('invSubmitBtn').textContent='Zapisz zmiany (faktura)';
+  gi('inv_type').value=invKind(r); setSellerSel('inv_seller','inv_seller_o',r.seller||'');
+  const set=(i,v)=>{ gi(i).value=v==null?'':v; };
+  set('inv_no',r.no); set('inv_issue',r.issue); set('inv_due',r.due); set('inv_from',r.from); set('inv_to',r.to);
+  set('inv_gross',invGross(r)||''); set('inv_net',r.net); set('inv_vat',r.vat); set('inv_draw',invDraw(r)||''); set('inv_fed',invFed(r)||'');
+  set('inv_opust',r.opust!=null?r.opust:(SET.pvOpust!=null?SET.pvOpust:0.8)); set('inv_cred',r.cred); set('inv_rest',r.rest);
+  set('inv_dedman',r.dedMan||''); set('inv_adj',r.adj||''); set('inv_payable',r.payable!=null?r.payable:''); set('inv_note',r.note);
+  (r.lines||[]).forEach(l=>{ set('l_'+l.k+'_q',l.qty); set('l_'+l.k+'_p',l.price); set('l_'+l.k+'_n',l.net); gi('l_'+l.k+'_n').dataset.m='1'; });
+  buildProgList(r.progIds||[]); invTypeChanged();
+  const a=invAutoValues(); [['inv_net','net'],['inv_vat','vat'],['inv_cred','cred'],['inv_rest','rest'],['inv_payable','payable']].forEach(([i,k])=>{ const e=gi(i); if(e.value!==''&&a[k]!=null&&Math.abs(parseFloat(e.value)-a[k])>0.011) e.dataset.m='1'; });
+  invRecon(); gi('invCancelBar').scrollIntoView({behavior:'smooth',block:'start'});
 }
 async function addInv(){
-  const from=document.getElementById('inv_from').value, to=document.getElementById('inv_to').value;
-  const amount=parseFloat(document.getElementById('inv_amount').value), kwhPob=parseFloat(document.getElementById('inv_kwhpob').value);
-  if(!from||!to||isNaN(amount)||isNaN(kwhPob)){ alert('Podaj co najmniej okres (od/do), kwotę i energię pobraną (kWh).'); return; }
-  const rec={issue:document.getElementById('inv_issue').value||from,from,to,
-    seller:document.getElementById('inv_seller').value||'',no:document.getElementById('inv_no').value||'',
-    amount,kwhPob,kwhOdd:parseFloat(document.getElementById('inv_kwhodd').value)||null,
-    note:document.getElementById('inv_note').value||''};
-  const wasEdit=!!invEditId;
-  if(wasEdit){ const idx=INV.findIndex(x=>x.id===invEditId); if(idx>-1) INV[idx]={...INV[idx],...rec}; }
-  else INV.push({id:uid(),...rec});
-  cancelInvEdit();
-  ['inv_issue','inv_from','inv_to','inv_seller','inv_no','inv_amount','inv_kwhpob','inv_kwhodd','inv_note'].forEach(id=>document.getElementById(id).value='');
-  await persist(); alert(wasEdit?'Zaktualizowano fakturę.':'Zapisano fakturę na dysku.');
-}
-async function delInv(id){ if(!confirm('Usunąć fakturę?')) return; INV=INV.filter(r=>r.id!==id); await persist(); }
-function renderInv(){
-  const totAmount=INV.reduce((s,r)=>s+(r.amount||0),0), totKwhPob=INV.reduce((s,r)=>s+(r.kwhPob||0),0);
-  const realPrice = totKwhPob>0 ? totAmount/totKwhPob : 0;
-  document.getElementById('invStats').innerHTML = `
-    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${totAmount.toFixed(2)} zł</div><div class="l">Suma zapłacona</div></div>
-    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${totKwhPob.toFixed(2)} kWh</div><div class="l">Suma energii pobranej</div></div>
-    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${realPrice.toFixed(3)} zł/kWh</div><div class="l">Rzeczywista śr. cena (z faktur)</div></div>
-    <div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${INV.length}</div><div class="l">Liczba faktur</div></div>`;
-
-  const rows=[...INV].sort((a,b)=>b.from.localeCompare(a.from));
-  document.getElementById('invEmptyMsg').style.display = rows.length?'none':'block';
-  document.getElementById('invTbody').innerHTML = rows.map(r=>`<tr>
-      <td>${r.issue||'—'}</td><td>${r.from} → ${r.to}</td><td>${r.seller||'—'}</td><td>${r.no||'—'}</td>
-      <td class="num">${(r.kwhPob||0).toFixed(2)}</td><td class="num">${r.kwhOdd!=null?r.kwhOdd.toFixed(2):'—'}</td>
-      <td class="num">${(r.amount||0).toFixed(2)} zł</td><td class="notecell">${xmlEsc(r.note||'—')}</td>
-      <td><button class="btn2 edit" onclick="editInv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delInv('${r.id}')">Usuń</button></td></tr>`).join('');
-  document.getElementById('invTblFoot').innerHTML = rows.length ? `<tr><td colspan="4" style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwhPob.toFixed(2)}</td><td></td><td class="num">${totAmount.toFixed(2)} zł</td><td colspan="2"></td></tr>` : '';
-
-  // --- Hipotetyczny koszt bez PV ---
-  const hf=document.getElementById('hipFrom').value, ht=document.getElementById('hipTo').value;
-  let invRows=[...INV]; if(hf) invRows=invRows.filter(r=>r.to>=hf); if(ht) invRows=invRows.filter(r=>r.from<=ht);
-  let pvRows=[...PV]; if(hf) pvRows=pvRows.filter(r=>r.date>=hf); if(ht) pvRows=pvRows.filter(r=>r.date<=ht);
-  const kwhPobRange=invRows.reduce((s,r)=>s+(r.kwhPob||0),0), amountRange=invRows.reduce((s,r)=>s+(r.amount||0),0);
-  const pvKwhRange=pvRows.reduce((s,r)=>s+(r.kwh||0),0);
-  if(!invRows.length && !pvRows.length){
-    document.getElementById('hipWrap').innerHTML='<div class="empty">Dodaj faktury i/lub wpisy PV (ewentualnie zawęź zakres dat), aby zobaczyć wyliczenie.</div>';
-  } else {
-    const priceUsed = kwhPobRange>0 ? amountRange/kwhPobRange : (SET.price||0);
-    const priceSrc = kwhPobRange>0 ? 'rzeczywista z faktur' : 'domyślna z Ustawień (brak faktur w zakresie)';
-    const totalKwh = kwhPobRange+pvKwhRange;
-    const hipCost = totalKwh*priceUsed;
-    const savings = hipCost-amountRange;
-    document.getElementById('hipWrap').innerHTML = `
-      <div class="miniStats">
-        <div><div class="big">${kwhPobRange.toFixed(1)} kWh</div><div class="lbl">Pobrane z sieci (faktury)</div></div>
-        <div><div class="big" style="color:var(--pv)">+ ${pvKwhRange.toFixed(1)} kWh</div><div class="lbl">Wyprodukowane przez PV</div></div>
-        <div><div class="big">= ${totalKwh.toFixed(1)} kWh</div><div class="lbl">Szac. całkowite zużycie domu</div></div>
-      </div>
-      <div class="miniStats" style="padding-top:10px;border-top:1px dashed var(--line)">
-        <div><div class="big">${priceUsed.toFixed(3)} zł/kWh</div><div class="lbl">Cena użyta (${priceSrc})</div></div>
-        <div><div class="big" style="font-size:1.3rem">${hipCost.toFixed(2)} zł</div><div class="lbl">Szac. koszt, gdyby nie było PV</div></div>
-        <div><div class="big" style="font-size:1.3rem">${amountRange.toFixed(2)} zł</div><div class="lbl">Rzeczywiście zapłacono (faktury)</div></div>
-        <div><div class="big" style="font-size:1.3rem;color:var(--ok)">${savings.toFixed(2)} zł</div><div class="lbl">Szacowana oszczędność dzięki PV</div></div>
-      </div>`;
+  const type=gv('inv_type'), from=gv('inv_from'), to=gv('inv_to'), gross=gn('inv_gross');
+  if(gross==null){ alert('Podaj wartość faktury brutto.'); return; }
+  if(type==='rozl'&&(!from||!to)){ alert('Dla faktury rozliczeniowej podaj okres od/do.'); return; }
+  const a=invAutoValues(); const net=gn('inv_net')!=null?gn('inv_net'):a.net;
+  const rec={type, seller:getSeller('inv_seller','inv_seller_o'), no:gv('inv_no').trim(), issue:gv('inv_issue')||from, due:gv('inv_due'), from, to, gross, net, vat:gn('inv_vat')!=null?gn('inv_vat'):+(gross-net).toFixed(2), payable:gn('inv_payable')!=null?gn('inv_payable'):a.payable, note:gv('inv_note').trim()};
+  if(type==='rozl'){
+    Object.assign(rec,{draw:gn('inv_draw')||0, fed:gn('inv_fed')||0, opust:gn('inv_opust')!=null?gn('inv_opust'):(SET.pvOpust!=null?SET.pvOpust:0.8), cred:gn('inv_cred')!=null?gn('inv_cred'):a.cred, rest:gn('inv_rest')!=null?gn('inv_rest'):a.rest, progIds:getCheckedProgs(), dedMan:gn('inv_dedman')||0, adj:gn('inv_adj')||0, lines:invLinesRead()});
   }
+  const wasEdit=!!invEditId;
+  if(wasEdit){ const idx=INV.findIndex(x=>x.id===invEditId); if(idx>-1){ const old=INV[idx]; INV[idx]={id:old.id,...rec}; } }
+  else INV.push({id:uid(),...rec});
+  invEditId=null; gi('invSubmitBtn').textContent='Zapisz fakturę'; gi('invCancelBar').style.display='none'; resetInvForm();
+  await persist(); alert(wasEdit?'Zaktualizowano fakturę.':'Zapisano fakturę.');
 }
+async function delInv(id){
+  const r=INV.find(x=>x.id===id); if(!r) return;
+  const used=INV.filter(x=>(x.progIds||[]).includes(id)).length;
+  if(!confirm('Usunąć fakturę'+(r.no?' '+r.no:'')+'?'+(used?'\nUwaga: jest potrącona na fakturze rozliczeniowej — jej kwota przestanie być widoczna w rozliczeniu.':''))) return;
+  INV=INV.filter(x=>x.id!==id); await persist();
+}
+/* --- luki w okresach faktur --- */
+function invGaps(){
+  const rz=INV.filter(r=>invKind(r)==='rozl'&&r.from&&r.to); if(!rz.length) return [];
+  const cov=new Set(); rz.forEach(r=>{ let d=new Date(r.from.slice(0,7)+'-01T00:00:00'); const e=new Date(r.to.slice(0,7)+'-01T00:00:00'); while(d<=e){ cov.add(ymKey(d)); d.setMonth(d.getMonth()+1); } });
+  const keys=[...cov].sort(); let d=new Date(keys[0]+'-01T00:00:00'); const e=new Date(keys[keys.length-1]+'-01T00:00:00'), gaps=[];
+  while(d<=e){ const k=ymKey(d); if(!cov.has(k)) gaps.push(k); d.setMonth(d.getMonth()+1); }
+  const out=[]; gaps.forEach(k=>{ const l=out[out.length-1]; const nx=l?(()=>{ const x=new Date(l.to+'-01T00:00:00'); x.setMonth(x.getMonth()+1); return ymKey(x); })():null; if(l&&nx===k){ l.to=k; l.n++; } else out.push({from:k,to:k,n:1}); });
+  return out;
+}
+/* --- koszt bez PV: dokładnie wg składników faktur --- */
+function hipRow(r){
+  const L=r.lines||[]; const has=L.length>0;
+  const uv=ssum(L.filter(l=>{ const c=COMP.find(x=>x[0]===l.k); return c&&c[2]!=='m'; }),l=>l.price||0);   // zł netto / kWh (składniki zmienne)
+  const fx=ssum(L.filter(l=>{ const c=COMP.find(x=>x[0]===l.k); return c&&c[2]==='m'; }),l=>l.net||0);      // opłaty stałe netto za okres
+  const draw=invDraw(r), fed=invFed(r), pvRows=PV.filter(p=>p.date>=r.from&&p.date<=r.to), prod=ssum(pvRows,p=>p.kwh);
+  const self=prod>0?Math.max(0,prod-fed):0, C=draw+self;
+  const unitNet=has?uv:(SET.price||0)/1.23, fixNet=has?fx:0;
+  const noPv=(C*unitNet+fixNet)*1.23, actual=invGross(r);
+  return {r,has,draw,fed,prod,self,C,noPv,actual,save:noPv-actual,unitGross:unitNet*1.23,noProd:prod===0};
+}
+function renderHip(){
+  const hf=gv('hipFrom'), ht=gv('hipTo'), tb=gi('hipTbody'), wrap=gi('hipWrap'); if(!tb||!wrap) return;
+  let rows=INV.filter(r=>invKind(r)==='rozl'&&r.from&&r.to); if(hf) rows=rows.filter(r=>r.to>=hf); if(ht) rows=rows.filter(r=>r.from<=ht);
+  rows.sort((a,b)=>b.from.localeCompare(a.from)); const H=rows.map(hipRow);
+  if(!H.length){ wrap.innerHTML='<div class="empty">Dodaj faktury rozliczeniowe (najlepiej ze składnikami), aby zobaczyć wyliczenie.</div>'; tb.innerHTML=''; return; }
+  const T={draw:ssum(H,x=>x.draw),prod:ssum(H,x=>x.prod),C:ssum(H,x=>x.C),noPv:ssum(H,x=>x.noPv),actual:ssum(H,x=>x.actual),save:ssum(H,x=>x.save)};
+  const noLines=H.filter(x=>!x.has).length, noPvData=H.filter(x=>x.noProd).length;
+  wrap.innerHTML=`<div class="miniStats"><div><div class="big">${f2n(T.C,0)} kWh</div><div class="lbl">Szac. całkowite zużycie (pobór + zużyte na miejscu)</div></div>
+   <div><div class="big">${f2n(T.noPv)} zł</div><div class="lbl">Koszt gdyby nie było PV</div></div>
+   <div><div class="big">${f2n(T.actual)} zł</div><div class="lbl">Wartość faktur (faktycznie)</div></div>
+   <div><div class="big" style="color:${T.save>=0?'var(--ok)':'var(--danger)'}">${T.save>=0?'+':''}${f2n(T.save)} zł</div><div class="lbl">Różnica = oszczędność dzięki PV</div></div></div>`
+   +(noLines?`<div class="warnline bad">Dla ${noLines} faktur brak składników — użyto ceny z Ustawień (${f2n(SET.price,3)} zł/kWh brutto) i pominięto opłaty stałe. Uzupełnij „Składniki faktury”, a wynik będzie dokładny.</div>`:'')
+   +(noPvData?`<div class="warnline bad">Dla ${noPvData} okresów nie ma wpisów produkcji PV — przyjęto brak zużycia własnego (tylko pobór z sieci).</div>`:'');
+  tb.innerHTML=H.map(x=>`<tr><td class="num">${escH(x.r.from)} → ${escH(x.r.to)}</td><td class="num">${f2n(x.draw,0)}</td><td class="num">${x.prod?f2n(x.prod,0):'—'}</td><td class="num">${x.fed?f2n(x.fed,0):'—'}</td><td class="num">${f2n(x.C,0)}</td><td class="num">${f2n(x.unitGross,3)}</td><td class="num">${f2n(x.actual)}</td><td class="num">${f2n(x.noPv)}</td><td class="num" style="color:${x.save>=0?'var(--ok)':'var(--danger)'}">${f2n(x.save)}</td></tr>`).join('');
+}
+function renderInv(){
+  if(!gi('invStats')) return; const T=invTotals();
+  const lastL=[...INV].filter(r=>invKind(r)==='rozl'&&(r.lines||[]).length).sort((a,b)=>(b.to||'').localeCompare(a.to||''))[0];
+  const uvG=lastL?ssum(lastL.lines.filter(l=>{ const c=COMP.find(x=>x[0]===l.k); return c&&c[2]!=='m'; }),l=>l.price||0)*1.23:null;
+  gi('invStats').innerHTML=[
+    ['Koszt energii (faktury rozliczeniowe)',f2n(T.cost)+' zł'],['Zapłacono łącznie (gotówka)',f2n(T.cash)+' zł'],
+    ['Zaliczki jeszcze nierozliczone',f2n(T.advOpen)+' zł'],['Pobór z sieci / po opuście',f2n(T.draw,0)+' / '+f2n(T.rest,0)+' kWh'],
+    ['Cena zmienna 1 kWh (ostatnia faktura, brutto)',uvG!=null?f2n(uvG,4)+' zł':'—'],['Liczba faktur',String(T.n)]
+  ].map(([l,v])=>`<div class="stat" style="border-left:3px solid var(--ok)"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+  const rows=[...INV].sort((a,b)=>(b.from||b.issue||'').localeCompare(a.from||a.issue||''));
+  gi('invEmptyMsg').style.display=rows.length?'none':'block';
+  gi('invTbody').innerHTML=rows.map(r=>{ const prog=invKind(r)==='prog';
+    return `<tr${prog?' style="opacity:.8"':''}><td><span class="pill ${prog?'cwu':'co'}">${prog?'zaliczka':'rozliczeniowa'}</span></td><td>${escH(r.no||'—')}</td><td class="num">${r.from?escH(r.from)+' → '+escH(r.to||''):'—'}</td><td>${escH(r.seller||'—')}</td><td class="num">${prog?'—':f2n(invDraw(r),0)}</td><td class="num">${prog?'—':f2n(invFed(r),0)}</td><td class="num">${prog?'—':f2n(invRest(r),0)}</td><td class="num">${f2n(invGross(r))} zł</td><td class="num">${f2n(invPay(r))} zł</td><td class="notecell">${escH(r.note||'')}</td><td class="btncell"><button class="btn2 edit" onclick="editInv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delInv('${r.id}')">Usuń</button></td></tr>`; }).join('');
+  gi('invTblFoot').innerHTML=rows.length?`<tr><td colspan="7" style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${f2n(ssum(rows,invGross))} zł</td><td class="num">${f2n(ssum(rows,invPay))} zł</td><td colspan="2"></td></tr>`:'';
+  const g=invGaps(); gi('invGaps').innerHTML=g.length?`<div class="warnline bad"><b>Brakujące okresy w fakturach rozliczeniowych:</b> ${g.map(x=>x.n>1?x.from+' … '+x.to+' ('+x.n+' mies.)':x.from).join(' · ')}. Jeśli te faktury istnieją, dodaj je, żeby koszty były kompletne.</div>`:'';
+  buildProgList(); renderHip();
+}
+/* ===================== DOKUMENTY ===================== */
+const DOC_KINDS=['Umowa','Aneks do umowy','Pismo / korespondencja','Faktura (kopia)','Protokół / odbiór','Gwarancja / instrukcja','Inne'];
+let docEditId=null;
+function idbDel(k){ return new Promise((res,rej)=>{ const rq=indexedDB.open('hp_store',1); rq.onupgradeneeded=()=>rq.result.createObjectStore('kv'); rq.onsuccess=()=>{ const tx=rq.result.transaction('kv','readwrite'); tx.objectStore('kv').delete(k); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }; rq.onerror=()=>rej(rq.error); }); }
+function safeName(s){ return String(s).replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,' ').trim().slice(0,80)||'dokument'; }
+async function saveDocFile(id,file,title,date){
+  await idbOp('readwrite','doc:'+id,file); let disk=null;
+  if(docsDir){ try{ const ext=(file.name.match(/\.[A-Za-z0-9]{1,6}$/)||[''])[0]; const name=(date?date+'_':'')+safeName(title)+ext;
+    const fh=await docsDir.getFileHandle(name,{create:true}); const w=await fh.createWritable(); await w.write(file); await w.close(); disk=name; }catch(e){} }
+  return disk;
+}
+function cancelDocEdit(){ docEditId=null; gi('docSubmitBtn').textContent='Zapisz dokument'; gi('docCancelBar').style.display='none'; ['doc_title','doc_date','doc_ref','doc_link','doc_note','doc_party_o'].forEach(i=>gi(i).value=''); gi('doc_file').value=''; gi('doc_kind').selectedIndex=0; setSellerSel('doc_party','doc_party_o',''); gi('doc_date').value=ymd(new Date()); }
+async function addDoc(){
+  const title=gv('doc_title').trim(); if(!title){ alert('Podaj tytuł dokumentu.'); return; }
+  const file=gi('doc_file').files[0]; const id=docEditId||uid(); const old=DOCS.find(x=>x.id===id);
+  const rec={kind:gv('doc_kind'),title,date:gv('doc_date'),party:getSeller('doc_party','doc_party_o'),ref:gv('doc_ref').trim(),link:gv('doc_link').trim(),note:gv('doc_note').trim(),file:old?old.file:null};
+  if(file){ const disk=await saveDocFile(id,file,title,rec.date); rec.file={name:file.name,size:file.size,type:file.type,disk}; }
+  if(old) Object.assign(old,rec); else DOCS.push({id,...rec});
+  cancelDocEdit(); await persist();
+  alert(file?('Zapisano dokument i plik'+(docsDir?' (także w folderze dokumentów na dysku).':' w pamięci tego urządzenia.')):'Zapisano dokument.');
+}
+function editDoc(id){
+  const d=DOCS.find(x=>x.id===id); if(!d) return; docEditId=id;
+  document.querySelector('nav button[data-tab="dokumenty"]').click();
+  gi('docCancelBar').style.display='flex'; gi('docSubmitBtn').textContent='Zapisz zmiany (dokument)';
+  gi('doc_kind').value=d.kind||DOC_KINDS[0]; gi('doc_title').value=d.title||''; gi('doc_date').value=d.date||''; gi('doc_ref').value=d.ref||''; gi('doc_link').value=d.link||''; gi('doc_note').value=d.note||'';
+  setSellerSel('doc_party','doc_party_o',d.party||''); gi('doc_file').value='';
+  gi('docCancelBar').scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function delDoc(id){
+  const d=DOCS.find(x=>x.id===id); if(!d||!confirm('Usunąć dokument „'+d.title+'”?\nPlik w folderze dokumentów na dysku (jeśli był zapisany) zostaje nietknięty.')) return;
+  DOCS=DOCS.filter(x=>x.id!==id); try{ await idbDel('doc:'+id); }catch(e){} await persist();
+}
+async function getDocBlob(id){ try{ return await idbOp('readonly','doc:'+id); }catch(e){ return null; } }
+async function openDoc(id,dl){
+  const d=DOCS.find(x=>x.id===id); if(!d) return; const b=await getDocBlob(id);
+  if(b){ const u=URL.createObjectURL(b);
+    if(dl){ const a=document.createElement('a'); a.href=u; a.download=(d.file&&d.file.name)||safeName(d.title); a.click(); } else window.open(u,'_blank');
+    setTimeout(()=>URL.revokeObjectURL(u),60000); return; }
+  if(d.link){ window.open(d.link,'_blank'); return; }
+  alert('Pliku nie ma w pamięci tego urządzenia'+(d.file&&d.file.disk?' — leży w folderze dokumentów na dysku jako: '+d.file.disk:' (został dodany na innym urządzeniu)')+'.\nMożesz go dodać tutaj przez „Edytuj” → wybór pliku.');
+}
+function renderDocs(){
+  const tb=gi('docTbody'); if(!tb) return; const kf=gv('docFilter'), q=gv('docSearch').trim().toLowerCase();
+  let rows=[...DOCS]; if(kf) rows=rows.filter(d=>d.kind===kf); if(q) rows=rows.filter(d=>[d.title,d.ref,d.party,d.note].join(' ').toLowerCase().includes(q));
+  rows.sort((a,b)=>(b.date||'').localeCompare(a.date||'')); gi('docEmpty').style.display=rows.length?'none':'block';
+  tb.innerHTML=rows.map(d=>{ const fl=d.file?`📎 ${escH(d.file.name)} (${(d.file.size/1024).toFixed(0)} KB)${d.file.disk?' 📁':''}`:(d.link?'🔗 link':'—');
+    return `<tr><td class="num">${escH(d.date||'—')}</td><td>${escH(d.kind||'')}</td><td><b>${escH(d.title)}</b></td><td>${escH(d.party||'—')}</td><td>${escH(d.ref||'—')}</td><td>${fl}</td><td class="notecell">${escH(d.note||'')}</td><td class="btncell">${(d.file||d.link)?`<button class="btn2" onclick="openDoc('${d.id}')">Otwórz</button><button class="btn2" onclick="openDoc('${d.id}',1)">Pobierz</button>`:''}<button class="btn2 edit" onclick="editDoc('${d.id}')">Edytuj</button><button class="btn2 del" onclick="delDoc('${d.id}')">Usuń</button></td></tr>`; }).join('');
+  gi('docCount').textContent=DOCS.length+' dokumentów'+(docsDir?' · folder na dysku: dokumenty/ ('+(dirHandle?dirHandle.name:'')+')':'');
+}
+/* ===================== MIEJSCE ZAPISU NA DYSKU ===================== */
+async function connectFolder(){
+  if(!window.showDirectoryPicker){ alert('Ta przeglądarka nie pozwala stronie zapisywać do folderu (działa w Chrome/Edge na komputerze). Na iPhonie/iPadzie dane zapisują się w urządzeniu i synchronizują przez Gist; kopię do iCloud zrobisz przyciskiem „Pobierz plik danych”.'); return; }
+  try{
+    const d=await window.showDirectoryPicker({id:'pompa-dane',mode:'readwrite',startIn:'documents'});
+    const fh=await d.getFileHandle('pompa_dane.json',{create:true}); docsDir=await d.getDirectoryHandle('dokumenty',{create:true});
+    dirHandle=d; fileHandle=fh; await idbOp('readwrite','dir',d); await idbOp('readwrite','handle',fh); await loadFromFile();
+  }catch(e){ if(e.name!=='AbortError') alert('Błąd: '+e.message); }
+}
+async function disconnectDisk(){
+  if(!fileHandle&&!dirHandle) return; if(!confirm('Odłączyć zapis na dysk? Dane zostają w pamięci przeglądarki (i w synchronizacji); plik na dysku nie jest usuwany.')) return;
+  fileHandle=null; dirHandle=null; docsDir=null; try{ await idbOp('readwrite','handle',null); await idbOp('readwrite','dir',null); }catch(e){} updateStoreBar(); renderDiskInfo();
+}
+async function renderDiskInfo(){
+  const el=gi('diskInfo'); if(!el) return; const rows=[];
+  if(fileHandle){ let sz='',mod=''; try{ const f=await fileHandle.getFile(); sz=(f.size/1024).toFixed(1)+' KB'; mod=new Date(f.lastModified).toLocaleString('pl-PL'); }catch(e){}
+    if(dirHandle) rows.push(['Folder danych',escH(dirHandle.name)+' <span class="note">(wybrany przez Ciebie)</span>']);
+    rows.push(['Plik z danymi',escH(fileHandle.name)+(sz?' · '+sz:'')]); if(mod) rows.push(['Ostatni zapis na dysk',mod]);
+    rows.push(['Dokumenty (pliki)',docsDir?'podfolder <b>dokumenty/</b> w folderze danych':'tylko w pamięci urządzenia (wybierz folder, by zapisywać je też na dysku)']);
+  } else rows.push(['Zapis na dysk','<b>nie połączono</b> — dane są tylko w pamięci tej przeglądarki'+(hasFS?'':' (ta przeglądarka nie obsługuje zapisu do plików)')]);
+  let ls=0; try{ ls=(localStorage.getItem(LS_KEY)||'').length; }catch(e){} rows.push(['Pamięć przeglądarki (kopia robocza)',(ls/1024).toFixed(0)+' KB']);
+  rows.push(['Pełna ścieżka','przeglądarka jej nie udostępnia — pokazuje tylko nazwę pliku/folderu; wpisz swoją ścieżkę w polu poniżej']);
+  el.innerHTML=rows.map(([k,v])=>`<div class="kvr"><span>${k}</span><div>${v}</div></div>`).join('');
+}
+
+function sellerChanged(selId,otherId){ const s=gi(selId), o=gi(otherId); if(o) o.parentElement.style.display=s.value==='__other'?'':'none'; }
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function durMin(start,end){ if(!start||!end) return null; const s=new Date(start), e=new Date(end); const m=Math.round((e-s)/60000); return m>=0?m:null; }
@@ -1560,7 +1854,7 @@ function renderDashboard(){
   const days=new Set(); items.forEach(x=>allocDays(x.P).forEach(a=>days.add(a.day))); const nDays=daySpan(days), dsorted=[...days].sort();
   const pE=sum(items,x=>x.r.E), pH=sum(items,x=>x.r.hours);
   const pvKwh=sum(PV,r=>r.kwh), pvCredit=sum(PV,r=>r.creditKwh??r.kwh), pvVal=sum(PV,r=>r.value);
-  const invAmt=sum(INV,r=>r.amount), invKwh=sum(INV,r=>r.kwhPob), net=pvVal-hpCost;
+  const _it=invTotals(), invAmt=_it.cost, invKwh=_it.draw, net=pvVal-hpCost;
   const f=(v,d)=>v==null?'—':v.toFixed(d);
   $('dashKpis').innerHTML=[
     kpi(f(hpKwh,1)+' kWh','Energia pompy (cykle CO+CWU)','var(--amber)'), kpi(f(hpCost,2)+' zł','Koszt energii pompy'),
@@ -1582,7 +1876,7 @@ function renderDashboard(){
     +(dsorted.length?kv('Zakres dat',dsorted[0]+' … '+dsorted[dsorted.length-1]):'')):'<div class="empty">Brak okresów — dodaj w „⚡ COP — okres pracy” albo zaimportuj.</div>';
   $('dashBalance').innerHTML=kv('Produkcja PV / wpisy',`${f(pvKwh,1)} kWh · ${PV.length}`)+kv('Do rozliczenia (opusty/net)',f(pvCredit,1)+' kWh')+kv('Wartość energii z PV',f(pvVal,2)+' zł')
     +kv('Koszt pompy',f(hpCost,2)+' zł')+kv('Saldo (PV − pompa)',`<span style="color:${net>=0?'var(--ok)':'var(--danger)'}">${net>=0?'+':''}${f(net,2)} zł</span>`)+kv('PV vs zużycie pompy (kWh)',hpKwh?(pvKwh/hpKwh*100).toFixed(0)+'%':'—')
-    +kv('Faktury: liczba / suma',`${INV.length} · ${f(invAmt,2)} zł`)+kv('Energia z faktur / cena',invKwh>0?`${f(invKwh,1)} kWh · ${f(invAmt/invKwh,3)} zł/kWh`:'—')
+    +kv('Faktury: liczba / koszt energii',`${INV.length} · ${f(invAmt,2)} zł`)+kv('Pobór z sieci / po opuście (faktury)',invKwh>0?`${f(invKwh,0)} / ${f(_it.rest,0)} kWh`:'—')
     +'<p class="note" style="margin:6px 0 0;font-size:.68rem">Saldo to porównanie sum z całego okresu, nie rozdział dzień po dniu.</p>';
   /* miesięcznie */
   const rangeN=parseInt($('dashRange').value), {map:am}=buildAgg('period','month'), {map:pm}=buildPvAgg('month');
@@ -2183,7 +2477,7 @@ function labelRc(){
       [...tr.children].forEach(td=>{ const cs=td.colSpan||1; if(cs===1){ td.setAttribute('data-l',hs[i]||''); td.classList.toggle('nodata',/^[—\s]*$/.test(td.textContent)&&!td.querySelector('button')); if(!(hs[i]||'')&&td.querySelector('button')) td.classList.add('btncell'); } i+=cs; }); });
   });
 }
-function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); labelRc(); }
+function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); renderDiskInfo(); labelRc(); }
 renderAll();
 startupInit();
 { let lt=null; new MutationObserver(()=>{ clearTimeout(lt); lt=setTimeout(labelRc,0); }).observe(document.querySelector('main'),{childList:true,subtree:true}); }
