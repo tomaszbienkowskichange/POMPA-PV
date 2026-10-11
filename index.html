@@ -20,18 +20,18 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.4;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 .mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
-header{padding:18px 16px 6px;max-width:1000px;margin:0 auto}
+header{padding:18px 24px 6px;max-width:none;margin:0}
 h1{font-size:1.25rem;margin:0 0 2px;font-weight:700}
 header p{margin:0;color:var(--muted);font-size:.85rem}
-.storebar{max-width:1000px;margin:10px auto 0;padding:0 16px}
+.storebar{max-width:none;margin:10px 0 0;padding:0 24px}
 .storebar .inner{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.8rem}
 .storebar .stat-dot{width:8px;height:8px;border-radius:50%;background:var(--danger)}
 .storebar .stat-dot.ok{background:var(--ok)}
 .storebar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.76rem;cursor:pointer;font-family:inherit}
-nav{display:flex;gap:6px;max-width:1000px;margin:12px auto 0;padding:0 16px;flex-wrap:wrap}
+nav{display:flex;gap:6px;max-width:none;margin:12px 0 0;padding:0 24px;flex-wrap:wrap}
 nav button{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:8px;font-size:.83rem;cursor:pointer;font-family:inherit}
 nav button.on{color:var(--text);border-color:#3a4652;background:var(--panel2)}
-main{max-width:1000px;margin:0 auto;padding:14px 16px 60px}
+main{max-width:none;margin:0;padding:14px 24px 60px}
 .tab{display:none} .tab.on{display:block}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
 .card h2{font-size:.95rem;margin:0 0 12px;font-weight:700;display:flex;align-items:center;gap:8px}
@@ -184,6 +184,38 @@ textarea{width:100%;max-width:100%;background:var(--bg);border:1px solid var(--l
 details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cyan)}
 .card h3.sub{font-size:.82rem;margin:16px 0 8px;color:var(--muted);font-weight:600}
 .finp{flex-wrap:wrap}.finp input[type=datetime-local]{flex:1 1 150px;min-width:0}.finp button{flex:0 0 auto}
+
+/* --- v7: przegląd z okresem, wykresy, faktury podzakładki --- */
+.chartScroll{overflow-x:auto;overflow-y:hidden}
+.pbtns{display:flex;gap:6px;flex-wrap:wrap}
+.pbtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 11px;border-radius:7px;cursor:pointer;font-size:.8rem;font-family:inherit}
+.pbtn.on{background:var(--amber);color:#10151a;border-color:var(--amber);font-weight:700}
+.dashKpis{grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+.kpi .d{font-size:.64rem;margin-top:3px;color:var(--muted)}.kpi .d.good{color:var(--ok)}.kpi .d.bad{color:var(--danger)}
+.balGrid{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.balBox{flex:1 1 230px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.balBox .v{font-size:1.5rem;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.balBox .l{font-size:.78rem;color:var(--muted);margin-top:3px}
+.balOp{align-self:center;color:var(--muted);font-size:1.3rem}
+@media(min-width:900px){.dc.w12{grid-column:span 12}}
+@media(min-width:1500px){.dashGrid .dc.w6{grid-column:span 6}}
+.dashGrid table{font-size:.8rem}
+details.recon summary{cursor:pointer;color:var(--cyan)}
+details.recon div{max-height:220px;overflow:auto;margin-top:6px}
+.inv-hide{display:none!important}
+@media(min-width:1100px){
+table.rc{display:table;border-collapse:collapse}
+table.rc thead{display:table-header-group}
+table.rc tbody{display:table-row-group}
+table.rc tfoot{display:table-footer-group}
+table.rc tr{display:table-row;background:none;border:0;border-radius:0;padding:0;margin:0}
+table.rc td{display:table-cell;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;overflow-wrap:normal;vertical-align:top}
+table.rc td[data-l]::before{display:none}
+table.rc td.notecell{white-space:normal;min-width:240px;max-width:460px;overflow-wrap:anywhere}
+table.rc td.btncell{display:table-cell;white-space:nowrap}
+table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
+}
+#dashMonths table th,#dashMonths table td{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -216,18 +248,24 @@ details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cy
 <main>
 
 <div class="tab on" id="dashboard">
+  <div class="card dashPeriod">
+    <div class="pbtns" id="dashPbtns"></div>
+    <div class="toolbar" style="margin:8px 0 0"><span class="rng" id="dashCustom" style="display:none"><label>Od</label><input type="date" id="dashFrom" onchange="renderDashboard()"><label>Do</label><input type="date" id="dashTo" onchange="renderDashboard()"></span></div>
+    <div class="note" id="dashPeriodInfo" style="margin-top:8px"></div>
+  </div>
   <div class="dashKpis" id="dashKpis"></div>
   <div class="dashGrid">
+    <div class="card dc w12" style="border-left:4px solid var(--pv)"><h2>☀️ Bilans: produkcja PV vs zużycie pompy (wybrany okres)</h2><div id="dashBal"></div><div id="dashBalChart" style="margin-top:10px"></div></div>
     <div class="card dc w4"><h2>⚡ Pompa — cykle CO / CWU</h2><div id="dashPump"></div></div>
     <div class="card dc w4"><h2>🌡️ COP — okresy pracy</h2><div id="dashCop"></div></div>
-    <div class="card dc w4 panel-pv" style="border-left:4px solid var(--pv)"><h2>☀️ PV, bilans i faktury</h2><div id="dashBalance"></div></div>
-    <div class="card dc w6"><h2>Miesięcznie — wszystkie dane</h2>
-      <div class="toolbar" style="margin:0 0 8px"><label>Zakres</label><select id="dashRange" onchange="renderDashboard()"><option value="3">3 mies.</option><option value="6" selected>6 mies.</option><option value="12">12 mies.</option></select></div>
+    <div class="card dc w4"><h2>🧾 Faktury w okresie</h2><div id="dashBalance"></div></div>
+    <div class="card dc w12"><h2>Zestawienie w wybranym okresie</h2>
+      <div class="toolbar" style="margin:0 0 8px"><label>Wiersze</label><select id="dashGran" onchange="renderDashboard()"><option value="auto" selected>Automatycznie</option><option value="day">Dni</option><option value="week">Tygodnie</option><option value="month">Miesiące</option></select></div>
+      <div class="note" id="dashGranNote" style="margin-bottom:6px"></div>
       <div class="tbl-wrap" id="dashMonths"></div></div>
-    <div class="card dc w6"><h2>Ostatnie okresy pracy (COP)</h2><div class="tbl-wrap" id="dashPeriods"></div>
-      <h2 style="margin-top:14px">Ostatnie dni</h2><div class="tbl-wrap" id="dashDays"></div></div>
-    <div class="card dc w6"><h3>🔥 Pompa — kWh miesięcznie (CO + CWU)</h3><div id="dashCoWrap"></div></div>
-    <div class="card dc w6"><h3>☀️ PV — kWh miesięcznie</h3><div id="dashCwuWrap"></div></div>
+    <div class="card dc w6"><h2>Ostatnie okresy pracy (COP)</h2><div class="tbl-wrap" id="dashPeriods"></div></div>
+    <div class="card dc w6"><h2>Ostatnie dni</h2><div class="tbl-wrap" id="dashDays"></div></div>
+    <div class="card dc w12"><h3>🔥 Pompa — CO i CWU w okresie (kWh)</h3><div id="dashCoWrap"></div></div>
   </div>
 </div>
 
@@ -317,6 +355,7 @@ details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cy
     <label>Grupuj wg</label><select id="repGroupBy" onchange="renderReports()">
       <option value="period">Okresu czasu</option><option value="temp">Temperatury zewnętrznej</option>
     </select>
+    <span id="tempBinWrap" style="display:none"><label>Krok temperatury</label><select id="repTempBin" onchange="renderReports()"><option value="1" selected>1 °C</option><option value="2">2 °C</option><option value="5">5 °C</option></select></span>
     <span id="granWrap"><label>Granulacja</label><select id="gran" onchange="renderReports()">
       <option value="day">Dziennie</option><option value="week">Tygodniowo</option>
       <option value="month" selected>Miesięcznie</option><option value="quarter">Kwartalnie</option>
@@ -405,7 +444,8 @@ details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cy
 </div>
 
 <div class="tab" id="faktury">
-  <div class="card">
+  <div class="pbtns" id="invSubBtns" style="margin-bottom:12px"><button type="button" class="pbtn on" data-sub="list" onclick="setInvSub('list')">🧾 Faktury i dodawanie</button><button type="button" class="pbtn" data-sub="rep" onclick="setInvSub('rep')">📊 Raporty faktur</button><button type="button" class="pbtn" data-sub="nopv" onclick="setInvSub('nopv')">💡 Koszt bez PV</button></div>
+  <div class="card" data-inv="list">
     <div id="invCancelBar" style="display:none;margin-bottom:10px;align-items:center;gap:8px">
       <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji faktury</span>
       <button onclick="cancelInvEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
@@ -452,10 +492,10 @@ details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cy
     <button class="submit" id="invSubmitBtn" style="background:var(--ok);color:#0c1f13" onclick="addInv()">Zapisz fakturę</button>
   </div>
 
-  <div class="stats" id="invStats"></div>
-  <div id="invGaps"></div>
+  <div class="stats" id="invStats" data-inv="list rep"></div>
+  <div id="invGaps" data-inv="list rep"></div>
 
-  <div class="card tbl-wrap">
+  <div class="card tbl-wrap" data-inv="list">
     <h2 style="margin-bottom:8px">Historia faktur</h2>
     <table class="rc"><thead><tr><th>Rodzaj</th><th>Nr faktury</th><th>Okres</th><th>Sprzedawca</th><th>Pobór kWh</th><th>Wprowadzono kWh</th><th>Do rozliczenia kWh</th><th>Wartość brutto</th><th>Do zapłaty</th><th>Uwagi</th><th></th></tr></thead>
     <tbody id="invTbody"></tbody><tfoot id="invTblFoot"></tfoot></table>
@@ -463,7 +503,7 @@ details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cy
     <p class="note" style="margin-top:8px">Koszt energii liczony jest z faktur <b>rozliczeniowych</b>. Faktury prognozowe (zaliczki) to tylko przepływ gotówki — ich kwoty są już wliczone w fakturę rozliczeniową, więc nie są liczone drugi raz.</p>
   </div>
 
-  <div class="card" id="invRepCard" style="border-left:4px solid var(--amber,#e0904f)">
+  <div class="card" data-inv="rep" id="invRepCard" style="border-left:4px solid var(--amber,#e0904f)">
     <h2>📊 Raport faktur</h2>
     <div class="toolbar">
       <label>Grupuj wg</label><select id="irGran" onchange="renderInvReport()">
@@ -492,7 +532,7 @@ details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cy
     <p class="note" style="margin-top:8px"><b>Jak liczone:</b> faktury rozliczeniowe obejmujące kilka miesięcy są rozkładane na miesiące proporcjonalnie do liczby dni (dotyczy też zawężenia zakresem Od/Do). „Zapłacono” to gotówka z wszystkich faktur (także zaliczek) wg daty wystawienia — dlatego może różnić się od kosztu energii. Netto/VAT, jeśli ich nie podano na fakturze, liczone są przy VAT 23%.</p>
   </div>
 
-  <div class="card" style="border-left:4px solid var(--ok)">
+  <div class="card" data-inv="nopv" style="border-left:4px solid var(--ok)">
     <h2>💡 Ile kosztowałby prąd, gdyby nie było PV</h2>
     <div class="toolbar"><span class="rng"><label>Od</label><input type="date" id="hipFrom" onchange="renderInv()"><label>Do</label><input type="date" id="hipTo" onchange="renderInv()"></span></div>
     <div id="hipWrap"></div>
@@ -1436,10 +1476,18 @@ function renderInv(){
     return `<tr${prog?' style="opacity:.8"':''}><td><span class="pill ${prog?'cwu':'co'}">${prog?'zaliczka':'rozliczeniowa'}</span></td><td>${escH(r.no||'—')}</td><td class="num">${r.from?escH(r.from)+' → '+escH(r.to||''):'—'}</td><td>${escH(r.seller||'—')}</td><td class="num">${prog?'—':f2n(invDraw(r),0)}</td><td class="num">${prog?'—':f2n(invFed(r),0)}</td><td class="num">${prog?'—':f2n(invRest(r),0)}</td><td class="num">${f2n(invGross(r))} zł</td><td class="num">${f2n(invPay(r))} zł</td><td class="notecell">${escH(r.note||'')}</td><td class="btncell"><button class="btn2 edit" onclick="editInv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delInv('${r.id}')">Usuń</button></td></tr>`; }).join('');
   gi('invTblFoot').innerHTML=rows.length?`<tr><td colspan="7" style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${f2n(ssum(rows,invGross))} zł</td><td class="num">${f2n(ssum(rows,invPay))} zł</td><td colspan="2"></td></tr>`:'';
   const g=invGaps(); gi('invGaps').innerHTML=g.length?`<div class="warnline bad"><b>Brakujące okresy w fakturach rozliczeniowych:</b> ${g.map(x=>x.n>1?x.from+' … '+x.to+' ('+x.n+' mies.)':x.from).join(' · ')}. Jeśli te faktury istnieją, dodaj je, żeby koszty były kompletne.</div>`:'';
-  buildProgList(); renderHip(); renderInvReport();
+  buildProgList(); renderHip(); renderInvReport(); applyInvSub();
 }
 
 /* ===================== RAPORT FAKTUR ===================== */
+let INV_SUB=(function(){ try{ return localStorage.getItem('hp_inv_sub')||'list'; }catch(e){ return 'list'; } })();
+function setInvSub(x){ INV_SUB=x; try{ localStorage.setItem('hp_inv_sub',x); }catch(e){} applyInvSub(); }
+function applyInvSub(){
+  const root=document.getElementById('faktury'); if(!root) return;
+  root.querySelectorAll('[data-inv]').forEach(e=>e.classList.toggle('inv-hide',!e.dataset.inv.split(' ').includes(INV_SUB)));
+  root.querySelectorAll('#invSubBtns .pbtn').forEach(b=>b.classList.toggle('on',b.dataset.sub===INV_SUB));
+}
+
 function irBucket(ds,gran){ const y=ds.slice(0,4), m=+ds.slice(5,7);
   if(gran==='year') return y; if(gran==='half') return y+(m<=6?' H1':' H2'); if(gran==='quarter') return y+' Q'+Math.ceil(m/3); return ds.slice(0,7); }
 function irAlloc(r,from,to){ /* rozkład faktury na miesiące wg dni; zwraca [{ds,frac}] */
@@ -1836,7 +1884,7 @@ function svgDonut(data,unitLbl){
 function axisLabel(c,x,yBase){ const txt=String(c).length>16?String(c).slice(0,15)+'…':String(c);
   return `<text x="${x}" y="${yBase}" font-size="9.5" fill="#8b98a5" text-anchor="end" transform="rotate(-35 ${x} ${yBase})">${txt}</text>`; }
 function svgBars(categories,seriesList,unitLbl){
-  const w=Math.max(340,categories.length*46), h=190, padL=34, padB=44, chartW=w-padL-10, chartH=h-padB-14;
+  const w=Math.max((window.__chartW||560),categories.length*(categories.length>24?26:46)), h=210, padL=34, padB=44, chartW=w-padL-10, chartH=h-padB-14;
   const totals=categories.map((_,i)=>seriesList.reduce((s,s2)=>s+(s2.values[i]||0),0));
   const max=Math.max(1,...totals);
   const step=chartW/categories.length, barW=Math.max(8,step*0.55);
@@ -1845,12 +1893,12 @@ function svgBars(categories,seriesList,unitLbl){
     seriesList.forEach(s=>{ const v=s.values[i]||0, bh=v/max*chartH, x=padL+i*step+(step-barW)/2;
       if(bh>0){ bars+=`<rect x="${x.toFixed(1)}" y="${(y0-bh).toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" fill="${s.color}" rx="3"><title>${s.name} ${c}: ${v} ${unitLbl||''}</title></rect>`; y0-=bh; } }); });
   const labels=categories.map((c,i)=>axisLabel(c,(padL+i*step+step/2).toFixed(1),h-padB+16)).join('');
-  const gridY=[0,.25,.5,.75,1].map(f=>{ const y=(h-padB)-f*chartH; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-4}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="1" y="${(y+3).toFixed(1)}" font-size="9" fill="#8b98a5">${(max*f).toFixed(0)}</text>`; }).join('');
+  const gridY=[0,.25,.5,.75,1].map(f=>{ const y=(h-padB)-f*chartH; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-4}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="1" y="${(y+3).toFixed(1)}" font-size="10" fill="#8b98a5">${(max*f).toFixed(0)}</text>`; }).join('');
   const baseline=`<line x1="${padL}" y1="${h-padB}" x2="${w-4}" y2="${h-padB}" stroke="#3a4652"/>`;
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">${gridY}${baseline}${bars}${labels}</svg>`;
+  return `<div class="chartScroll"><svg viewBox="0 0 ${w} ${h}" style="display:block;width:100%;min-width:${w}px;max-width:${Math.round(w*1.5)}px;height:auto">${gridY}${baseline}${bars}${labels}</svg></div>`;
 }
 function svgLine(categories,seriesList,unitLbl){
-  const w=Math.max(340,categories.length*46), h=190, padL=34, padB=44, chartW=w-padL-10, chartH=h-padB-14;
+  const w=Math.max((window.__chartW||560),categories.length*(categories.length>24?26:46)), h=210, padL=34, padB=44, chartW=w-padL-10, chartH=h-padB-14;
   const max=Math.max(1,...seriesList.flatMap(s=>s.values));
   const step= categories.length>1 ? chartW/(categories.length-1) : chartW;
   const xAt=i=>padL+(categories.length>1?i*step:chartW/2), yAt=v=>(h-padB)-(v/max*chartH);
@@ -1860,9 +1908,9 @@ function svgLine(categories,seriesList,unitLbl){
     paths+=s.values.map((v,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(v).toFixed(1)}" r="3.5" fill="${s.color}"><title>${s.name} ${categories[i]}: ${v} ${unitLbl||''}</title></circle>`).join('');
   });
   const labels=categories.map((c,i)=>axisLabel(c,xAt(i).toFixed(1),h-padB+16)).join('');
-  const gridY=[0,.25,.5,.75,1].map(f=>{ const y=(h-padB)-f*chartH; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-4}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="1" y="${(y+3).toFixed(1)}" font-size="9" fill="#8b98a5">${(max*f).toFixed(0)}</text>`; }).join('');
+  const gridY=[0,.25,.5,.75,1].map(f=>{ const y=(h-padB)-f*chartH; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-4}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="1" y="${(y+3).toFixed(1)}" font-size="10" fill="#8b98a5">${(max*f).toFixed(0)}</text>`; }).join('');
   const baseline=`<line x1="${padL}" y1="${h-padB}" x2="${w-4}" y2="${h-padB}" stroke="#3a4652"/>`;
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px">${gridY}${baseline}${paths}${labels}</svg>`;
+  return `<div class="chartScroll"><svg viewBox="0 0 ${w} ${h}" style="display:block;width:100%;min-width:${w}px;max-width:${Math.round(w*1.5)}px;height:auto">${gridY}${baseline}${paths}${labels}</svg></div>`;
 }
 function panelChart(color,categories,values,unitLbl,chartType){
   const sum=values.reduce((a,b)=>a+b,0), avg=categories.length?sum/categories.length:0;
@@ -1872,7 +1920,7 @@ function panelChart(color,categories,values,unitLbl,chartType){
     ${chartHtml}`;
 }
 
-function tempKey(t){ return t.toFixed(1)+'°C'; }
+function tempKey(t){ const e=document.getElementById('repTempBin'), b=e?(parseFloat(e.value)||1):1, k=Math.round(t/b)*b; return (b>=1?k.toFixed(0):k.toFixed(1))+'°C'; }
 function outdoorTemp(r){ if(r.type==='CO'){ const vals=[r.out1,r.out2].filter(v=>v!=null); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null; } return r.out!=null?r.out:null; }
 function ensureAgg(map,k){ if(!map.has(k)) map.set(k,{dates:new Set(),coKwh:0,cwuKwh:0,coCost:0,cwuCost:0,coMin:0,cwuMin:0,coCount:0,cwuCount:0}); }
 function addAgg(o,r){ if(r.date) o.dates.add(r.date); const min=durMin(r.start,r.end)||0, c=recCost(r); if(r.type==='CO'){o.coKwh+=r.kwh||0;o.coCost+=c;o.coMin+=min;o.coCount++;} else {o.cwuKwh+=r.kwh||0;o.cwuCost+=c;o.cwuMin+=min;o.cwuCount++;} }
@@ -1918,7 +1966,7 @@ function periodKey(date,g){
 function renderReports(){
   const groupBy=document.getElementById('repGroupBy').value, gran=document.getElementById('gran').value;
   const metric=document.getElementById('repMetric').value, chartType=document.getElementById('repChartType').value;
-  document.getElementById('granWrap').style.display = groupBy==='temp' ? 'none' : '';
+  document.getElementById('granWrap').style.display = groupBy==='temp' ? 'none' : ''; document.getElementById('tempBinWrap').style.display = groupBy==='temp' ? '' : 'none'; { const g=document.querySelector('#raporty .panelGrid'); if(g) g.style.gridTemplateColumns = groupBy==='temp' ? '1fr' : ''; }
   const rg=repRange(); const {keys, map} = buildAgg(groupBy,gran,rg);
   const show = groupBy==='temp' ? keys : keys.slice(-24);
   const totalCo=[...map.values()].reduce((s,o)=>s+o.coKwh,0), totalCwu=[...map.values()].reduce((s,o)=>s+o.cwuKwh,0);
@@ -1967,60 +2015,124 @@ async function exportXLSX(){
   await saveBlob(blob,'pompa_dane.xls','Excel',{'application/vnd.ms-excel':['.xls']});
 }
 
-function renderDashboard(){
-  const $=id=>document.getElementById(id), sum=(a,f)=>a.reduce((t,x)=>t+(f(x)||0),0);
-  const kv=(l,v,sub)=>`<div class="kv${sub?' sub':''}"><span>${l}</span><b>${v}</b></div>`;
-  const kpi=(v,l,c)=>`<div class="kpi"><div class="v"${c?` style="color:${c}"`:''}>${v}</div><div class="l">${l}</div></div>`;
-  const coR=R.filter(r=>r.type==='CO'), cwuR=R.filter(r=>r.type==='CWU');
-  const totalCo=sum(coR,r=>r.kwh), totalCwu=sum(cwuR,r=>r.kwh), hpKwh=totalCo+totalCwu, hpCost=sum(R,recCost);
-  const coMin=sum(coR,r=>durMin(r.start,r.end)), cwuMin=sum(cwuR,r=>durMin(r.start,r.end));
-  const rDates=[...new Set(R.map(r=>r.date).filter(Boolean))].sort();
-  const items=M.filter(m=>m.start&&m.end).map(m=>({P:m,r:calcPeriod(m,{noCompare:true})})).filter(x=>x.r.hours!=null);
-  const withH=items.filter(x=>x.r.heat!=null&&x.r.E>0);
-  const wcop=l=>{ const e=sum(l,x=>x.r.E); return e>0?sum(l,x=>x.r.heat)/e:null; };
-  const copAll=wcop(withH), copCo=wcop(withH.filter(x=>x.P.mode==='CO')), copCwu=wcop(withH.filter(x=>x.P.mode==='CWU'));
-  const days=new Set(); items.forEach(x=>allocDays(x.P).forEach(a=>days.add(a.day))); const nDays=daySpan(days), dsorted=[...days].sort();
-  const pE=sum(items,x=>x.r.E), pH=sum(items,x=>x.r.hours);
-  const pvKwh=sum(PV,r=>r.kwh), pvCredit=sum(PV,r=>r.creditKwh??r.kwh), pvVal=sum(PV,r=>r.value);
-  const _it=invTotals(), invAmt=_it.cost, invKwh=_it.draw, net=pvVal-hpCost;
-  const f=(v,d)=>v==null?'—':v.toFixed(d);
-  $('dashKpis').innerHTML=[
-    kpi(f(hpKwh,1)+' kWh','Energia pompy (cykle CO+CWU)','var(--amber)'), kpi(f(hpCost,2)+' zł','Koszt energii pompy'),
-    kpi(f(totalCo,1)+' kWh','CO — ogrzewanie','var(--amber)'), kpi(f(totalCwu,1)+' kWh','CWU — ciepła woda','var(--cyan)'),
-    kpi(copAll==null?'—':'≈ '+copAll.toFixed(2),'COP ważony (okresy z odczytami)','var(--ok)'),
-    kpi(nDays?f(pE/nDays,2)+' kWh/d':'—','Zużycie na dobę kalend. (okresy COP, dolne oszac.)'),
-    kpi(fmtHM(pH),'Czas pracy w okresach COP'),
-    kpi(f(pvKwh,1)+' kWh','Produkcja PV','var(--pv)'), kpi((net>=0?'+':'')+f(net,2)+' zł','Saldo: wartość PV − koszt pompy',net>=0?'var(--ok)':'var(--danger)'),
-    kpi(invKwh>0?f(invAmt/invKwh,3)+' zł/kWh':'—','Cena z faktur')].join('');
-  const tot=hpKwh||1;
-  $('dashPump').innerHTML=`<div class="sharebar"><i style="width:${totalCo/tot*100}%;background:#e0904f"></i><i style="width:${totalCwu/tot*100}%;background:#49b4cf"></i></div>`
-    +kv('CO — energia / koszt',`${f(totalCo,1)} kWh · ${f(sum(coR,recCost),2)} zł`)+kv('CO — cykle / czas',`${coR.length} · ${fmtHM(coMin/60)}`,1)
-    +kv('CWU — energia / koszt',`${f(totalCwu,1)} kWh · ${f(sum(cwuR,recCost),2)} zł`)+kv('CWU — cykle / czas',`${cwuR.length} · ${fmtHM(cwuMin/60)}`,1)
-    +kv('Razem',`${f(hpKwh,1)} kWh · ${f(hpCost,2)} zł`)+kv('Udział CO / CWU',hpKwh?`${(totalCo/hpKwh*100).toFixed(0)}% / ${(totalCwu/hpKwh*100).toFixed(0)}%`:'—')
-    +kv('Zakres dat',rDates.length?`${rDates[0]} … ${rDates[rDates.length-1]}`:'—')+kv('Dni z wpisami / wpisy',`${rDates.length} / ${R.length}`);
-  $('dashCop').innerHTML=items.length?(kv('COP ważony — razem',copAll==null?'—':'≈ '+copAll.toFixed(2))+kv('COP — CO',copCo==null?'—':'≈ '+copCo.toFixed(2),1)+kv('COP — CWU',copCwu==null?'—':'≈ '+copCwu.toFixed(2),1)
-    +kv('Okresy pracy / z COP',`${items.length} / ${withH.length}`)+kv('Energia w okresach',f(pE,1)+' kWh')+kv('Czas pracy',fmtHM(pH)+(nDays?` (${(pH/(nDays*24)*100).toFixed(0)}% z ${nDays} dób)`:''))
-    +kv('Średnia moc podczas pracy',pH>0?f(pE/pH,2)+' kW':'—')+kv('Zużycie na dobę kalend.',nDays?f(pE/nDays,2)+' kWh/d':'—')+kv('Ciepło oddane (okresy z COP)',f(sum(withH,x=>x.r.heat),1)+' kWh')
-    +(dsorted.length?kv('Zakres dat',dsorted[0]+' … '+dsorted[dsorted.length-1]):'')):'<div class="empty">Brak okresów — dodaj w „⚡ COP — okres pracy” albo zaimportuj.</div>';
-  $('dashBalance').innerHTML=kv('Produkcja PV / wpisy',`${f(pvKwh,1)} kWh · ${PV.length}`)+kv('Do rozliczenia (opusty/net)',f(pvCredit,1)+' kWh')+kv('Wartość energii z PV',f(pvVal,2)+' zł')
-    +kv('Koszt pompy',f(hpCost,2)+' zł')+kv('Saldo (PV − pompa)',`<span style="color:${net>=0?'var(--ok)':'var(--danger)'}">${net>=0?'+':''}${f(net,2)} zł</span>`)+kv('PV vs zużycie pompy (kWh)',hpKwh?(pvKwh/hpKwh*100).toFixed(0)+'%':'—')
-    +kv('Faktury: liczba / koszt energii',`${INV.length} · ${f(invAmt,2)} zł`)+kv('Pobór z sieci / po opuście (faktury)',invKwh>0?`${f(invKwh,0)} / ${f(_it.rest,0)} kWh`:'—')
-    +'<p class="note" style="margin:6px 0 0;font-size:.68rem">Saldo to porównanie sum z całego okresu, nie rozdział dzień po dniu.</p>';
-  /* miesięcznie */
-  const rangeN=parseInt($('dashRange').value), {map:am}=buildAgg('period','month'), {map:pm}=buildPvAgg('month');
-  const cm=new Map(); items.forEach(({r,P})=>allocDays(P).forEach(a=>{ const k=periodKey(a.day,'month'); let o=cm.get(k); if(!o){ o={E:0,Eh:0,heat:0,h:0}; cm.set(k,o); } o.h+=a.h; if(r.E!=null){ o.E+=r.E*a.f; if(r.heat!=null){ o.Eh+=r.E*a.f; o.heat+=r.heat*a.f; } } }));
-  const keys=[...new Set([...am.keys(),...pm.keys(),...cm.keys()])].sort().slice(-rangeN);
-  $('dashMonths').innerHTML=keys.length?'<table><thead><tr><th>Miesiąc</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th><th>Czas pracy</th><th>COP</th></tr></thead><tbody>'+keys.map(k=>{
-    const o=am.get(k)||{coKwh:0,cwuKwh:0,coCost:0,cwuCost:0}, p=pm.get(k), c=cm.get(k);
-    return `<tr><td class="num">${k}</td><td class="num">${o.coKwh.toFixed(1)}</td><td class="num">${o.cwuKwh.toFixed(1)}</td><td class="num">${(o.coCost+o.cwuCost).toFixed(2)}</td><td class="num">${p?p.kwh.toFixed(1):'—'}</td><td class="num">${c?fmtHM(c.h):'—'}</td><td class="num"><b>${c&&c.Eh>0?'≈ '+(c.heat/c.Eh).toFixed(2):'—'}</b></td></tr>`; }).join('')+'</tbody></table>':'<div class="empty">Brak danych.</div>';
-  $('dashCoWrap').innerHTML=keys.length?svgBars(keys,[{name:'CO',color:'#e0904f',values:keys.map(k=>+((am.get(k)||{coKwh:0}).coKwh).toFixed(2))},{name:'CWU',color:'#49b4cf',values:keys.map(k=>+((am.get(k)||{cwuKwh:0}).cwuKwh).toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
-  $('dashCwuWrap').innerHTML=keys.some(k=>pm.get(k))?svgBars(keys,[{name:'PV',color:'#e8c547',values:keys.map(k=>+(pm.get(k)?pm.get(k).kwh:0).toFixed(2))}],'kWh'):'<div class="empty">Brak wpisów PV.</div>';
-  const last=items.slice().sort((a,b)=>b.P.start.localeCompare(a.P.start)).slice(0,5);
-  $('dashPeriods').innerHTML=last.length?'<table><thead><tr><th>Start</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P,r})=>`<tr><td class="num">${fmtY(P.start)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${P.mode==='CWU'?'cwu':'co'}">${P.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP.</div>';
-  const dd=[...new Set([...rDates,...PV.map(r=>r.date).filter(Boolean)])].sort().reverse().slice(0,5);
-  $('dashDays').innerHTML=dd.length?'<table><thead><tr><th>Dzień</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th></tr></thead><tbody>'+dd.map(d=>{ const rr=R.filter(r=>r.date===d);
-    return `<tr><td class="num">${d}</td><td class="num">${sum(rr.filter(r=>r.type==='CO'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr.filter(r=>r.type==='CWU'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr,recCost).toFixed(2)}</td><td class="num">${PV.some(p=>p.date===d)?sum(PV.filter(p=>p.date===d),p=>p.kwh).toFixed(2):'—'}</td></tr>`; }).join('')+'</tbody></table>':'<div class="empty">Brak danych.</div>';
+/* ===================== PRZEGLĄD: wybór okresu, porównanie, bilans PV vs pompa ===================== */
+const DASH={p:(function(){ try{ return localStorage.getItem('hp_dash_p')||'d30'; }catch(e){ return 'd30'; } })(), gran:'auto'};
+const DASH_OPTS=[['d7','Ostatnie 7 dni'],['d30','Ostatnie 30 dni'],['m0','Bieżący miesiąc'],['m1','Poprzedni miesiąc'],['s0','Bieżący sezon grzewczy'],['s1','Poprzedni sezon'],['y1','Ostatnie 12 mies.'],['all','Cała historia'],['custom','Własny zakres']];
+function dashSetP(p){ DASH.p=p; try{ localStorage.setItem('hp_dash_p',p); }catch(e){} renderDashboard(); }
+function dashPeriod(){
+  const T=new Date(); T.setHours(0,0,0,0); const add=(d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
+  const y=T.getFullYear(), m=T.getMonth(); let a,b;
+  const allDates=R.map(r=>r.date).concat(PV.map(p=>p.date)).filter(Boolean).sort();
+  const first=allDates.length?new Date(allDates[0]+'T00:00:00'):T;
+  switch(DASH.p){
+    case 'd7': a=add(T,-6); b=T; break;
+    case 'm0': a=new Date(y,m,1); b=T; break;
+    case 'm1': a=new Date(y,m-1,1); b=new Date(y,m,0); break;
+    case 's0': { const sy=m>=9?y:y-1; a=new Date(sy,9,1); const end=new Date(sy+1,3,30); b=T<end?T:end; break; }
+    case 's1': { const sy=(m>=9?y:y-1)-1; a=new Date(sy,9,1); b=new Date(sy+1,3,30); break; }
+    case 'y1': a=add(T,-364); b=T; break;
+    case 'all': a=first; b=T; break;
+    case 'custom': a=gv('dashFrom')?new Date(gv('dashFrom')+'T00:00:00'):first; b=gv('dashTo')?new Date(gv('dashTo')+'T00:00:00'):T; break;
+    default: a=add(T,-29); b=T;
+  }
+  if(b<a) b=a;
+  const days=Math.round((b-a)/864e5)+1, pb=add(a,-1), pa=add(pb,-(days-1));
+  return {from:ymd(a),to:ymd(b),days,label:(DASH_OPTS.find(o=>o[0]===DASH.p)||['','Ostatnie 30 dni'])[1],prev:DASH.p==='all'?null:{from:ymd(pa),to:ymd(pb)}};
 }
+function dashStats(from,to){
+  const sum=(a,f)=>a.reduce((t,x)=>t+(f(x)||0),0);
+  const RR=R.filter(r=>r.date&&r.date>=from&&r.date<=to), coR=RR.filter(r=>r.type==='CO'), cwuR=RR.filter(r=>r.type==='CWU'), PP=PV.filter(p=>p.date&&p.date>=from&&p.date<=to);
+  const items=M.filter(mm=>mm.start&&mm.end&&mm.start.slice(0,10)>=from&&mm.start.slice(0,10)<=to).map(P=>({P,r:calcPeriod(P,{noCompare:true})})).filter(x=>x.r.hours!=null);
+  const withH=items.filter(x=>x.r.heat!=null&&x.r.E>0), wcop=l=>{ const e=sum(l,x=>x.r.E); return e>0?sum(l,x=>x.r.heat)/e:null; };
+  const co=sum(coR,r=>r.kwh), cwu=sum(cwuR,r=>r.kwh);
+  return {RR,coR,cwuR,PP,items,withH,co,cwu,hp:co+cwu,cost:sum(RR,recCost),coCost:sum(coR,recCost),cwuCost:sum(cwuR,recCost),
+    coMin:sum(coR,r=>durMin(r.start,r.end)),cwuMin:sum(cwuR,r=>durMin(r.start,r.end)),
+    pv:sum(PP,p=>p.kwh),pvCredit:sum(PP,p=>p.creditKwh??p.kwh),pvVal:sum(PP,p=>p.value),
+    hpDays:new Set(RR.map(r=>r.date)).size,pvDays:new Set(PP.map(p=>p.date)).size,
+    cop:wcop(withH),copCo:wcop(withH.filter(x=>x.P.mode==='CO')),copCwu:wcop(withH.filter(x=>x.P.mode==='CWU')),pE:sum(items,x=>x.r.E),pH:sum(items,x=>x.r.hours),heat:sum(withH,x=>x.r.heat)};
+}
+function dashInv(from,to){
+  let n=0,gross=0,draw=0,fed=0,rest=0,cash=0;
+  INV.filter(r=>invKind(r)==='rozl'&&r.from&&r.to).forEach(r=>{ const fr=irAlloc(r,from,to).reduce((s,x)=>s+x.frac,0); if(fr>0){ n++; gross+=invGross(r)*fr; draw+=invDraw(r)*fr; fed+=invFed(r)*fr; rest+=invRest(r)*fr; } });
+  INV.forEach(r=>{ const ds=r.issue||r.from; if(ds&&ds>=from&&ds<=to) cash+=invPay(r); });
+  return {n,gross,draw,fed,rest,cash};
+}
+function svgGroup(categories,seriesList,unitLbl){
+  const n=categories.length, ns=seriesList.length, w=Math.max((window.__chartW||560),n*(n>24?26:48)), h=220, padL=38, padB=46, chartW=w-padL-10, chartH=h-padB-14;
+  const max=Math.max(1,...seriesList.flatMap(s=>s.values)), step=chartW/n, gW=step*0.8, bW=Math.max(3,gW/ns);
+  let bars=''; categories.forEach((c,i)=>seriesList.forEach((s,j)=>{ const v=s.values[i]||0, bh=v/max*chartH, x=padL+i*step+(step-gW)/2+j*bW;
+    if(bh>0) bars+=`<rect x="${x.toFixed(1)}" y="${(h-padB-bh).toFixed(1)}" width="${(bW-1).toFixed(1)}" height="${bh.toFixed(1)}" fill="${s.color}" rx="2"><title>${s.name} ${c}: ${v} ${unitLbl||''}</title></rect>`; }));
+  const labels=categories.map((c,i)=>axisLabel(c,(padL+i*step+step/2).toFixed(1),h-padB+16)).join('');
+  const gridY=[0,.25,.5,.75,1].map(f=>{ const y=(h-padB)-f*chartH; return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-4}" y2="${y.toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="1" y="${(y+3).toFixed(1)}" font-size="9.5" fill="#8b98a5">${(max*f).toFixed(0)}</text>`; }).join('');
+  const lg=seriesList.map(s=>`<span><i class="dotc" style="background:${s.color}"></i>${s.name}</span>`).join('');
+  return `<div class="legend" style="margin-bottom:4px">${lg}</div><div class="chartScroll"><svg viewBox="0 0 ${w} ${h}" style="display:block;width:100%;min-width:${w}px;max-width:${Math.round(w*1.5)}px;height:auto">${gridY}<line x1="${padL}" y1="${h-padB}" x2="${w-4}" y2="${h-padB}" stroke="#3a4652"/>${bars}${labels}</svg></div>`;
+}
+function renderDashboard(){
+  const $=id=>document.getElementById(id), sum=(a,f)=>a.reduce((t,x)=>t+(f(x)||0),0), f=(v,d)=>v==null||isNaN(v)?'—':v.toFixed(d);
+  const kv=(l,v,sub)=>`<div class="kv${sub?' sub':''}"><span>${l}</span><b>${v}</b></div>`;
+  const dlt=(cur,prev,good)=>{ if(!PS||prev==null||!(prev>0)||cur==null) return ''; const p=(cur/prev-1)*100; if(!isFinite(p)) return ''; const cls=Math.abs(p)<1?'':(good==='up'?(p>0?'good':'bad'):good==='down'?(p>0?'bad':'good'):''); return `<div class="d ${cls}">${p>0?'▲':'▼'} ${Math.abs(p).toFixed(0)}% vs poprzedni okres</div>`; };
+  const kpi=(v,l,c,d)=>`<div class="kpi"><div class="v"${c?` style="color:${c}"`:''}>${v}</div><div class="l">${l}</div>${d||''}</div>`;
+  const P=dashPeriod(), S=dashStats(P.from,P.to), PS=P.prev?dashStats(P.prev.from,P.prev.to):null, IV=dashInv(P.from,P.to);
+  const dts=[...R.map(r=>r.date),...PV.map(p=>p.date)].filter(Boolean).sort(), lastDt=dts.length?dts[dts.length-1]:null;
+  /* pasek okresu */
+  $('dashPbtns').innerHTML=DASH_OPTS.map(([k,l])=>`<button type="button" class="pbtn${DASH.p===k?' on':''}" onclick="dashSetP('${k}')">${l}</button>`).join('');
+  $('dashCustom').style.display=DASH.p==='custom'?'inline-flex':'none';
+  const fmtD=s=>s.slice(8,10)+'.'+s.slice(5,7)+'.'+s.slice(0,4);
+  $('dashPeriodInfo').innerHTML=`<b>${P.label}:</b> ${fmtD(P.from)} – ${fmtD(P.to)} (${P.days} dni)${P.prev?` · porównanie z ${fmtD(P.prev.from)} – ${fmtD(P.prev.to)}`:''}<br>`
+    +`Dane w okresie: pompa — ${S.hpDays} dni (${S.RR.length} cykli) · PV — ${S.pvDays} dni (${S.PP.length} wpisów) · okresy COP — ${S.items.length}${lastDt?` · ostatni wpis: ${fmtD(lastDt)}`:''}`;
+  if(!S.RR.length&&!S.PP.length){ $('dashKpis').innerHTML=''; ['dashBal','dashPump','dashCop','dashBalance','dashMonths','dashPeriods','dashDays','dashCoWrap','dashBalChart'].forEach(i=>{ if($(i)) $(i).innerHTML=''; });
+    $('dashKpis').innerHTML=`<div class="card" style="grid-column:1/-1"><div class="empty">Brak wpisów w tym okresie.${lastDt?` Ostatnie dane są z ${fmtD(lastDt)} — wybierz „Cała historia” albo szerszy okres.`:''}</div></div>`; return; }
+  const net=S.pvVal-S.cost, balK=S.pv-S.hp, cover=S.hp>0?S.pv/S.hp*100:null, perDay=S.hpDays?S.hp/S.hpDays:null; const pvGap=S.hpDays>0&&S.pvDays<S.hpDays*0.8, gapTxt=pvGap?' ⚠ niepełne dane PV':''; window.__chartW=Math.max(560,Math.min(1700,window.innerWidth-110));
+  $('dashKpis').innerHTML=[
+    kpi(f(S.hp,1)+' kWh','Pompa — energia (CO+CWU)','var(--amber)',dlt(S.hp,PS&&PS.hp,'down')), kpi(f(S.cost,2)+' zł','Pompa — koszt energii',null,dlt(S.cost,PS&&PS.cost,'down')),
+    kpi(f(S.co,1)+' kWh','CO — ogrzewanie','var(--amber)',dlt(S.co,PS&&PS.co,'down')), kpi(f(S.cwu,1)+' kWh','CWU — ciepła woda','var(--cyan)',dlt(S.cwu,PS&&PS.cwu,'down')),
+    kpi(f(S.pv,1)+' kWh','PV — produkcja','var(--pv)',dlt(S.pv,PS&&PS.pv,'up')), kpi((balK>=0?'+':'')+f(balK,1)+' kWh','Bilans energii: PV − pompa'+gapTxt,balK>=0?'var(--ok)':'var(--danger)'),
+    kpi(cover==null?'—':f(cover,0)+'%','Jaką część energii pompy „pokrywa” produkcja PV'+gapTxt,cover!=null&&cover>=100?'var(--ok)':'var(--amber)'), kpi((net>=0?'+':'')+f(net,2)+' zł','Saldo: wartość PV − koszt pompy'+gapTxt,net>=0?'var(--ok)':'var(--danger)'),
+    kpi(S.cop==null?'—':'≈ '+S.cop.toFixed(2),'COP ważony (z odczytów w okresie)','var(--ok)'), kpi(perDay==null?'—':f(perDay,2)+' kWh','Pompa — średnio na dzień z wpisami')].join('');
+  /* bilans PV vs pompa */
+  const warn=[]; if(S.hpDays&&S.pvDays<S.hpDays*0.8) warn.push(`Wpisy PV są za ${S.pvDays} dni, a wpisy pompy za ${S.hpDays} dni — bilans jest niepełny (brakuje produkcji PV z części okresu, więc PV wygląda na mniejsze, niż było).`);
+  if(S.pvDays&&S.hpDays<S.pvDays*0.8) warn.push(`Wpisy pompy są za ${S.hpDays} dni, a PV za ${S.pvDays} dni — brakuje cykli pompy z części okresu.`);
+  $('dashBal').innerHTML=`<div class="balGrid"><div class="balBox"><div class="v" style="color:var(--amber)">${f(S.hp,1)} kWh</div><div class="l">zużyła pompa (CO ${f(S.co,1)} + CWU ${f(S.cwu,1)}) · koszt ${f(S.cost,2)} zł</div></div><div class="balOp">vs</div>`
+    +`<div class="balBox"><div class="v" style="color:var(--pv)">${f(S.pv,1)} kWh</div><div class="l">wyprodukowało PV · wartość ${f(S.pvVal,2)} zł</div></div><div class="balOp">⇒</div>`
+    +`<div class="balBox"><div class="v" style="color:${balK>=0?'var(--ok)':'var(--danger)'}">${balK>=0?'+':''}${f(balK,1)} kWh</div><div class="l">${cover==null?'brak zużycia pompy':'PV = '+f(cover,0)+'% zużycia pompy'} · saldo ${net>=0?'+':''}${f(net,2)} zł</div></div></div>`
+    +kv('Do rozliczenia po opuście (kWh)',f(S.pvCredit,1))+kv('Dni z wpisami: pompa / PV',`${S.hpDays} / ${S.pvDays}`)
+    +warn.map(w=>`<div class="warnline bad">${w}</div>`).join('')
+    +'<p class="note" style="margin:8px 0 0;font-size:.72rem">Porównanie dotyczy sum z wybranego okresu, nie dzień po dniu: PV produkuje w dzień, a pompa pracuje także nocą. Nadwyżka trafia do sieci (opusty/net-billing), więc „pokrycie” pokazuje skalę, a nie energię zużytą bezpośrednio z paneli.</p>';
+  /* pompa / COP / faktury */
+  const tot=S.hp||1;
+  $('dashPump').innerHTML=`<div class="sharebar"><i style="width:${S.co/tot*100}%;background:#e0904f"></i><i style="width:${S.cwu/tot*100}%;background:#49b4cf"></i></div>`
+    +kv('CO — energia / koszt',`${f(S.co,1)} kWh · ${f(S.coCost,2)} zł`)+kv('CO — cykle / czas',`${S.coR.length} · ${fmtHM(S.coMin/60)}`,1)
+    +kv('CWU — energia / koszt',`${f(S.cwu,1)} kWh · ${f(S.cwuCost,2)} zł`)+kv('CWU — cykle / czas',`${S.cwuR.length} · ${fmtHM(S.cwuMin/60)}`,1)
+    +kv('Razem',`${f(S.hp,1)} kWh · ${f(S.cost,2)} zł`)+kv('Udział CO / CWU',S.hp?`${(S.co/S.hp*100).toFixed(0)}% / ${(S.cwu/S.hp*100).toFixed(0)}%`:'—')
+    +kv('Średnia cena energii',S.hp?f(S.cost/S.hp,3)+' zł/kWh':'—');
+  $('dashCop').innerHTML=S.items.length?(kv('COP ważony — razem',S.cop==null?'—':'≈ '+S.cop.toFixed(2))+kv('COP — CO',S.copCo==null?'—':'≈ '+S.copCo.toFixed(2),1)+kv('COP — CWU',S.copCwu==null?'—':'≈ '+S.copCwu.toFixed(2),1)
+    +kv('Okresy pracy / z COP',`${S.items.length} / ${S.withH.length}`)+kv('Energia w okresach',f(S.pE,1)+' kWh')+kv('Czas pracy',fmtHM(S.pH))+kv('Średnia moc podczas pracy',S.pH>0?f(S.pE/S.pH,2)+' kW':'—')+kv('Ciepło oddane',f(S.heat,1)+' kWh')):'<div class="empty">Brak okresów COP w tym okresie.</div>';
+  $('dashBalance').innerHTML=IV.n||IV.cash?(kv('Koszt energii z faktur (proporcjonalnie do dni)',f(IV.gross,2)+' zł')+kv('Pobór z sieci',f(IV.draw,0)+' kWh')+kv('Oddano do sieci',f(IV.fed,0)+' kWh')+kv('Do rozliczenia po opuście',f(IV.rest,0)+' kWh')
+    +kv('Koszt całkowity / kWh pobrany',IV.draw>0?f(IV.gross/IV.draw,3)+' zł':'—')+kv('Zapłacono w okresie (data wystawienia)',f(IV.cash,2)+' zł')+kv('Faktury obejmujące okres',String(IV.n))
+    +'<p class="note" style="margin:6px 0 0;font-size:.72rem">Faktury rozliczeniowe obejmują całe okresy rozliczeniowe — tu ich wartość jest rozłożona na dni. Szczegóły w Faktury → Raporty.</p>'):'<div class="empty">Brak faktur obejmujących ten okres.</div>';
+  /* zestawienie w okresie */
+  const gsel=$('dashGran').value||'auto', gran=gsel==='auto'?(P.days<=45?'day':P.days<=200?'week':'month'):gsel, rg={from:P.from,to:P.to};
+  const {map:am}=buildAgg('period',gran,rg), {map:pm}=buildPvAgg(gran,rg), cm=new Map();
+  S.items.forEach(({r,P:PP})=>allocDays(PP).forEach(a=>{ if(a.day<P.from||a.day>P.to) return; const k=periodKey(a.day,gran); let o=cm.get(k); if(!o){ o={Eh:0,heat:0,h:0}; cm.set(k,o); } o.h+=a.h; if(r.E!=null&&r.heat!=null){ o.Eh+=r.E*a.f; o.heat+=r.heat*a.f; } }));
+  const keys=[...new Set([...am.keys(),...pm.keys()])].sort(), lbl=k=>gran==='day'?k.slice(8,10)+'.'+k.slice(5,7):k;
+  const rows=keys.map(k=>{ const o=am.get(k)||{coKwh:0,cwuKwh:0,coCost:0,cwuCost:0}, p=pm.get(k), c=cm.get(k), hp=o.coKwh+o.cwuKwh, pv=p?p.kwh:0; return {k,co:o.coKwh,cwu:o.cwuKwh,hp,cost:o.coCost+o.cwuCost,pv,hasPv:!!p,c}; });
+  const T={co:sum(rows,r=>r.co),cwu:sum(rows,r=>r.cwu),hp:sum(rows,r=>r.hp),cost:sum(rows,r=>r.cost),pv:sum(rows,r=>r.pv),h:sum(rows,r=>r.c&&r.c.h),Eh:sum(rows,r=>r.c&&r.c.Eh),heat:sum(rows,r=>r.c&&r.c.heat)};
+  const bal=(pv,hp,has)=>{ const b=pv-hp; return has?`<span style="color:${b>=0?'var(--ok)':'var(--danger)'}">${b>=0?'+':''}${b.toFixed(1)}</span>`:'—'; };
+  $('dashGranNote').textContent=`Wiersze: ${gran==='day'?'dni':gran==='week'?'tygodnie':'miesiące'} z wpisami (${rows.length}). „Brak” przy PV = brak wpisów produkcji w tym wierszu.`;
+  $('dashMonths').innerHTML=rows.length?'<table><thead><tr><th>Okres</th><th>Pompa kWh</th><th>w tym CO</th><th>w tym CWU</th><th>Koszt zł</th><th>PV kWh</th><th>PV − pompa kWh</th><th>PV / pompa</th><th>COP</th><th>Czas pracy (COP)</th></tr></thead><tbody>'+rows.map(r=>
+    `<tr><td class="num">${lbl(r.k)}</td><td class="num"><b>${r.hp.toFixed(1)}</b></td><td class="num">${r.co.toFixed(1)}</td><td class="num">${r.cwu.toFixed(1)}</td><td class="num">${r.cost.toFixed(2)}</td><td class="num">${r.hasPv?r.pv.toFixed(1):'brak'}</td><td class="num">${bal(r.pv,r.hp,r.hasPv)}</td><td class="num">${r.hasPv&&r.hp>0?(r.pv/r.hp*100).toFixed(0)+'%':'—'}</td><td class="num"><b>${r.c&&r.c.Eh>0?'≈ '+(r.c.heat/r.c.Eh).toFixed(2):'—'}</b></td><td class="num">${r.c?fmtHM(r.c.h):'—'}</td></tr>`).join('')
+    +`</tbody><tfoot><tr style="font-weight:700"><td>RAZEM</td><td class="num">${T.hp.toFixed(1)}</td><td class="num">${T.co.toFixed(1)}</td><td class="num">${T.cwu.toFixed(1)}</td><td class="num">${T.cost.toFixed(2)}</td><td class="num">${T.pv.toFixed(1)}</td><td class="num">${bal(T.pv,T.hp,true)}</td><td class="num">${T.hp>0?(T.pv/T.hp*100).toFixed(0)+'%':'—'}</td><td class="num">${T.Eh>0?'≈ '+(T.heat/T.Eh).toFixed(2):'—'}</td><td class="num">${T.h?fmtHM(T.h):'—'}</td></tr></tfoot></table>`:'<div class="empty">Brak danych.</div>';
+  const cats=keys.map(lbl);
+  $('dashBalChart').innerHTML=keys.length?svgGroup(cats,[{name:'Pompa (CO+CWU) kWh',color:'#e0904f',values:rows.map(r=>+r.hp.toFixed(2))},{name:'PV — produkcja kWh',color:'#e8c547',values:rows.map(r=>+r.pv.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
+  $('dashCoWrap').innerHTML=keys.length?svgBars(cats,[{name:'CO',color:'#e0904f',values:rows.map(r=>+r.co.toFixed(2))},{name:'CWU',color:'#49b4cf',values:rows.map(r=>+r.cwu.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
+  window.__chartW=0;
+  const last=S.items.slice().sort((a,b)=>b.P.start.localeCompare(a.P.start)).slice(0,6);
+  $('dashPeriods').innerHTML=last.length?'<table><thead><tr><th>Start</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P:PP,r})=>`<tr><td class="num">${fmtY(PP.start)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${PP.mode==='CWU'?'cwu':'co'}">${PP.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP w tym okresie.</div>';
+  const dd=[...new Set([...S.RR.map(r=>r.date),...S.PP.map(p=>p.date)])].sort().reverse().slice(0,7);
+  $('dashDays').innerHTML=dd.length?'<table><thead><tr><th>Dzień</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th></tr></thead><tbody>'+dd.map(d=>{ const rr=S.RR.filter(r=>r.date===d);
+    return `<tr><td class="num">${d}</td><td class="num">${sum(rr.filter(r=>r.type==='CO'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr.filter(r=>r.type==='CWU'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr,recCost).toFixed(2)}</td><td class="num">${S.PP.some(p=>p.date===d)?sum(S.PP.filter(p=>p.date===d),p=>p.kwh).toFixed(2):'—'}</td></tr>`; }).join('')+'</tbody></table>':'<div class="empty">Brak danych.</div>';
+}
+
 
 /* ===================== COP: okresy pracy (od uruchomienia do zatrzymania) ===================== */
 const cpEl=id=>document.getElementById(id);
@@ -2403,7 +2515,7 @@ async function delCop(id){ if(!confirm('Usunąć okres pracy?')) return; M=M.fil
 /* ===================== HISTORIA ===================== */
 function svgXY(pts,o){
   if(!pts.length) return '<div class="empty">Brak danych.</div>';
-  const w=560,h=240,pl=40,pr=14,pt=14,pb=44,cw=w-pl-pr,ch=h-pt-pb;
+  const w=o.w||560,h=o.h||240,pl=40,pr=14,pt=14,pb=44,cw=w-pl-pr,ch=h-pt-pb;
   let x0=Math.min(...pts.map(p=>p.x)), x1=Math.max(...pts.map(p=>p.x)); if(x0===x1){x0-=1;x1+=1;}
   let y1=Math.max(...pts.map(p=>p.y)); y1=Math.max(1,Math.ceil(y1*1.1*2)/2);
   const X=v=>pl+(v-x0)/(x1-x0)*cw, Y=v=>pt+ch-(v/y1*ch);
@@ -2412,7 +2524,7 @@ function svgXY(pts,o){
   const sorted=[...pts].sort((a,b)=>a.x-b.x);
   const line=o.line?`<polyline points="${sorted.map(p=>X(p.x).toFixed(1)+','+Y(p.y).toFixed(1)).join(' ')}" fill="none" stroke="#3a4652" stroke-width="1.5"/>`:'';
   const dots=pts.map(p=>`<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${p.r||4}" fill="${p.color}" fill-opacity=".85"><title>${p.t}</title></circle>`).join('');
-  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${gy}${gx}<line x1="${pl}" y1="${pt+ch}" x2="${w-pr}" y2="${pt+ch}" stroke="#3a4652"/>${line}${dots}<text x="${(pl+cw/2).toFixed(0)}" y="${h-4}" font-size="10" fill="#8b98a5" text-anchor="middle">${o.xLabel}</text><text x="${pl}" y="9" font-size="10" fill="#8b98a5">${o.yLabel||'COP'}</text></svg>`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;max-width:${Math.round(w*1.5)}px">${gy}${gx}<line x1="${pl}" y1="${pt+ch}" x2="${w-pr}" y2="${pt+ch}" stroke="#3a4652"/>${line}${dots}<text x="${(pl+cw/2).toFixed(0)}" y="${h-4}" font-size="10" fill="#8b98a5" text-anchor="middle">${o.xLabel}</text><text x="${pl}" y="9" font-size="10" fill="#8b98a5">${o.yLabel||'COP'}</text></svg>`;
 }
 function allocDays(P){
   const t0=Date.parse(P.start), t1=Date.parse(P.end), out=[]; let d=new Date(t0); d.setHours(0,0,0,0); let g=0;
@@ -2442,14 +2554,16 @@ function renderCopHist(){
     <div class="stat"><div class="v">${hrs>0?(E/hrs).toFixed(2):'—'} kW</div><div class="l">Średnia moc pobierana podczas pracy (energia ÷ czas pracy)</div></div>
     <div class="stat"><div class="v">${nDays?(E/nDays).toFixed(2):'—'} kWh/d</div><div class="l">Średnio na dobę kalendarzową (energia ÷ ${nDays} dób zakresu). Dolne oszacowanie: nie wszystkie cykle musiały zostać zapisane.</div></div>`
     :'<div class="empty">Brak okresów w wybranym zakresie.</div>';
-  { const ids=new Set(R.map(r=>r.id)), used=new Set(M.map(m=>m.srcId).filter(Boolean));
+  { const ids=new Set(R.map(r=>r.id)), used=new Set(M.map(m=>m.srcId).filter(Boolean)), mode=cpEl('ch_mode').value, fr=cpEl('ch_from').value, to=cpEl('ch_to').value;
+    const inR=r=>(mode==='all'||r.type===mode)&&(!fr||r.date>=fr)&&(!to||r.date<=to), Rr=R.filter(inR);
     const onlyCop=items.filter(x=>!x.P.srcId||!ids.has(x.P.srcId)).filter(x=>!R.some(r=>r.start===x.P.start&&r.type===x.P.mode));
-    const onlyDane=R.filter(r=>r.start&&r.end&&r.kwh>0&&!used.has(r.id)&&!M.some(m=>m.start===r.start&&m.mode===r.type));
-    const Rk=R.filter(r=>r.kwh>0).reduce((a,r)=>a+r.kwh,0);
-    let t='Porównanie z zakładką „Dane”: tam cykle CO+CWU mają razem <b>'+Rk.toFixed(2)+' kWh</b>, tutaj okresy pracy <b>'+E.toFixed(2)+' kWh</b> (w wybranym zakresie dat/trybu).';
-    if(onlyCop.length) t+=' Tylko w COP (brak w „Dane”): '+onlyCop.map(x=>fmtY(x.P.start)+' '+x.P.mode+' '+f2(x.r.E,2)+' kWh').join('; ')+'.';
-    if(onlyDane.length) t+=' Tylko w „Dane” (nie zaimportowane do COP): '+onlyDane.map(r=>fmtDT(r.start)+' '+r.type+' '+r.kwh+' kWh').join('; ')+'.';
-    cpEl('ch_recon').innerHTML=items.length?t:''; }
+    const onlyDane=Rr.filter(r=>r.start&&r.end&&r.kwh>0&&!used.has(r.id)&&!M.some(m=>m.start===r.start&&m.mode===r.type));
+    const Rk=Rr.filter(r=>r.kwh>0).reduce((a,r)=>a+r.kwh,0), Ok=onlyDane.reduce((a,r)=>a+r.kwh,0);
+    const list=(arr,fmt)=>'<details class="recon"><summary>pokaż listę ('+arr.length+')</summary><div>'+arr.slice(0,60).map(fmt).join('<br>')+(arr.length>60?'<br>… i '+(arr.length-60)+' więcej':'')+'</div></details>';
+    let t='<b>Porównanie z zakładką „Dane” (ten sam zakres i tryb):</b> w „Dane” cykle mają razem <b>'+Rk.toFixed(1)+' kWh</b>, w okresach COP <b>'+E.toFixed(1)+' kWh</b>.';
+    if(onlyDane.length) t+='<br>Nie ma w okresach COP: <b>'+onlyDane.length+' cykli ('+Ok.toFixed(1)+' kWh)</b> — to wpisy z „Dane” bez odczytów temperatur i przepływu, dlatego nie liczą się do COP (nie są błędem). '+list(onlyDane,r=>fmtDT(r.start)+' '+r.type+' '+r.kwh+' kWh');
+    if(onlyCop.length) t+='<br>Tylko w COP (brak w „Dane”): <b>'+onlyCop.length+'</b>. '+list(onlyCop,x=>fmtY(x.P.start)+' '+x.P.mode+' '+f2(x.r.E,2)+' kWh');
+    cpEl('ch_recon').innerHTML=items.length||onlyDane.length?t:''; }
   const colorOf=m=>m.mode==='CWU'?'#49b4cf':'#e0904f', rad=h=>Math.max(3,Math.min(11,2.5+Math.sqrt(h)*0.7));
   const cp=withH.filter(x=>x.r.cop!=null);
   const pT=cp.map(x=>({x:(Date.parse(x.P.start)+Date.parse(x.P.end))/2,y:x.r.cop,color:colorOf(x.P),r:rad(x.r.hours),t:`${fmtY(x.P.start)} → ${fmtY(x.P.end)} (${fmtHM(x.r.hours)}) ${x.P.mode}: COP ${x.r.cop.toFixed(2)}`}));
@@ -2458,7 +2572,7 @@ function renderCopHist(){
   cpEl('ch_chartTemp').innerHTML=svgXY(pX,{line:false,xLabel:'T04 — średnia ważona czasem w okresie (°C)',xFmt:v=>v.toFixed(1)});
   const hx=withH.filter(x=>x.r.hz!=null&&x.r.pel>0);
   const pH=[...hx.map(x=>({x:x.r.hz,y:x.r.q,color:'#e0904f',r:rad(x.r.hours),t:`T30 śr. ${x.r.hz.toFixed(0)} Hz: Q ${x.r.q.toFixed(2)} kW (${fmtHM(x.r.hours)})`})),...hx.map(x=>({x:x.r.hz,y:x.r.pel,color:'#49b4cf',r:rad(x.r.hours),t:`T30 śr. ${x.r.hz.toFixed(0)} Hz: Pel ${x.r.pel.toFixed(2)} kW (${fmtHM(x.r.hours)})`}))];
-  cpEl('ch_chartHz').innerHTML=svgXY(pH,{line:false,yLabel:'kW',xLabel:'T30 — średnia ważona czasem w okresie (Hz)',xFmt:v=>v.toFixed(0)})+'<div class="legend"><span><i class="dotc" style="background:#e0904f"></i>Q — moc grzewcza</span><span><i class="dotc" style="background:#49b4cf"></i>Pel — średnia moc pobierana = E ÷ czas (szacunek)</span></div>';
+  cpEl('ch_chartHz').innerHTML=svgXY(pH,{line:false,w:1100,h:320,yLabel:'kW',xLabel:'T30 — średnia ważona czasem w okresie (Hz)',xFmt:v=>v.toFixed(0)})+'<div class="legend"><span><i class="dotc" style="background:#e0904f"></i>Q — moc grzewcza</span><span><i class="dotc" style="background:#49b4cf"></i>Pel — średnia moc pobierana = E ÷ czas (szacunek)</span></div>';
   /* zestawienie: okresy dzielone na doby proporcjonalnie do czasu */
   const map=new Map(), split=cpEl('ch_alloc').value==='split';
   const allocOf=(P,r)=>split?allocDays(P):[{day:P.start.slice(0,10),h:r.hours,f:1}];
