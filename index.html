@@ -463,6 +463,35 @@ details>summary{cursor:pointer;font-size:.85rem;margin:10px 0 8px;color:var(--cy
     <p class="note" style="margin-top:8px">Koszt energii liczony jest z faktur <b>rozliczeniowych</b>. Faktury prognozowe (zaliczki) to tylko przepływ gotówki — ich kwoty są już wliczone w fakturę rozliczeniową, więc nie są liczone drugi raz.</p>
   </div>
 
+  <div class="card" id="invRepCard" style="border-left:4px solid var(--amber,#e0904f)">
+    <h2>📊 Raport faktur</h2>
+    <div class="toolbar">
+      <label>Grupuj wg</label><select id="irGran" onchange="renderInvReport()">
+        <option value="month" selected>Miesiąca</option><option value="quarter">Kwartału</option>
+        <option value="half">Półrocza</option><option value="year">Roku</option><option value="inv">Faktura po fakturze</option>
+      </select>
+      <label>Wykres</label><select id="irMetric" onchange="renderInvReport()">
+        <option value="gross">Koszt brutto (zł)</option><option value="cash">Zapłacono (zł)</option>
+        <option value="draw">Pobór z sieci (kWh)</option><option value="rest">Do rozliczenia (kWh)</option>
+        <option value="unit">Koszt zł / kWh pobrany</option>
+      </select>
+      <label>Sprzedawca</label><select id="irSeller" onchange="renderInvReport()"></select>
+      <span class="rng"><label>Od</label><input type="date" id="irFrom" onchange="renderInvReport()"><label>Do</label><input type="date" id="irTo" onchange="renderInvReport()"></span>
+    </div>
+    <div id="irStats" class="miniStats"></div>
+    <div id="irChart"></div>
+    <div class="tbl-wrap"><table class="rc"><thead id="irThead"></thead><tbody id="irTbody"></tbody><tfoot id="irTfoot"></tfoot></table></div>
+    <h3 class="sub" style="margin-top:14px">Rok do roku</h3>
+    <div class="tbl-wrap"><table class="rc"><thead id="irYoyHead"></thead><tbody id="irYoyBody"></tbody></table></div>
+    <div id="irWarn"></div>
+    <div class="toolbar" style="margin-top:12px">
+      <button type="button" onclick="invRepCsv()">Eksportuj CSV</button>
+      <button type="button" onclick="invRepXls()">Eksportuj XLS</button>
+      <button type="button" onclick="invRepPrint()">Drukuj / PDF</button>
+    </div>
+    <p class="note" style="margin-top:8px"><b>Jak liczone:</b> faktury rozliczeniowe obejmujące kilka miesięcy są rozkładane na miesiące proporcjonalnie do liczby dni (dotyczy też zawężenia zakresem Od/Do). „Zapłacono” to gotówka z wszystkich faktur (także zaliczek) wg daty wystawienia — dlatego może różnić się od kosztu energii. Netto/VAT, jeśli ich nie podano na fakturze, liczone są przy VAT 23%.</p>
+  </div>
+
   <div class="card" style="border-left:4px solid var(--ok)">
     <h2>💡 Ile kosztowałby prąd, gdyby nie było PV</h2>
     <div class="toolbar"><span class="rng"><label>Od</label><input type="date" id="hipFrom" onchange="renderInv()"><label>Do</label><input type="date" id="hipTo" onchange="renderInv()"></span></div>
@@ -1407,7 +1436,106 @@ function renderInv(){
     return `<tr${prog?' style="opacity:.8"':''}><td><span class="pill ${prog?'cwu':'co'}">${prog?'zaliczka':'rozliczeniowa'}</span></td><td>${escH(r.no||'—')}</td><td class="num">${r.from?escH(r.from)+' → '+escH(r.to||''):'—'}</td><td>${escH(r.seller||'—')}</td><td class="num">${prog?'—':f2n(invDraw(r),0)}</td><td class="num">${prog?'—':f2n(invFed(r),0)}</td><td class="num">${prog?'—':f2n(invRest(r),0)}</td><td class="num">${f2n(invGross(r))} zł</td><td class="num">${f2n(invPay(r))} zł</td><td class="notecell">${escH(r.note||'')}</td><td class="btncell"><button class="btn2 edit" onclick="editInv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delInv('${r.id}')">Usuń</button></td></tr>`; }).join('');
   gi('invTblFoot').innerHTML=rows.length?`<tr><td colspan="7" style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${f2n(ssum(rows,invGross))} zł</td><td class="num">${f2n(ssum(rows,invPay))} zł</td><td colspan="2"></td></tr>`:'';
   const g=invGaps(); gi('invGaps').innerHTML=g.length?`<div class="warnline bad"><b>Brakujące okresy w fakturach rozliczeniowych:</b> ${g.map(x=>x.n>1?x.from+' … '+x.to+' ('+x.n+' mies.)':x.from).join(' · ')}. Jeśli te faktury istnieją, dodaj je, żeby koszty były kompletne.</div>`:'';
-  buildProgList(); renderHip();
+  buildProgList(); renderHip(); renderInvReport();
+}
+
+/* ===================== RAPORT FAKTUR ===================== */
+function irBucket(ds,gran){ const y=ds.slice(0,4), m=+ds.slice(5,7);
+  if(gran==='year') return y; if(gran==='half') return y+(m<=6?' H1':' H2'); if(gran==='quarter') return y+' Q'+Math.ceil(m/3); return ds.slice(0,7); }
+function irAlloc(r,from,to){ /* rozkład faktury na miesiące wg dni; zwraca [{ds,frac}] */
+  const a=new Date(r.from+'T00:00:00'), b=new Date(r.to+'T00:00:00'); if(isNaN(a)||isNaN(b)||b<a) return [];
+  const total=Math.round((b-a)/864e5)+1; let d=new Date(Math.max(a, from?new Date(from+'T00:00:00'):a)); const e=new Date(Math.min(b, to?new Date(to+'T00:00:00'):b)); const out=[];
+  while(d<=e){ const y=d.getFullYear(), m=d.getMonth(), eom=new Date(y,m+1,0), last=e<eom?e:eom; const days=Math.round((last-d)/864e5)+1;
+    out.push({ds:y+'-'+String(m+1).padStart(2,'0')+'-01',frac:days/total}); d=new Date(y,m+1,1); }
+  return out;
+}
+function irOpts(){ return {gran:gv('irGran')||'month', from:gv('irFrom'), to:gv('irTo'), seller:gv('irSeller')}; }
+function irBuild(gran,o){
+  const bySeller=r=>!o.seller||(r.seller||'')===o.seller; const map=new Map(), months=new Map();
+  const get=k=>{ if(!map.has(k)) map.set(k,{key:k,n:0,ids:new Set(),draw:0,fed:0,rest:0,net:0,vat:0,gross:0,cash:0}); return map.get(k); };
+  const rz=INV.filter(r=>invKind(r)==='rozl'&&r.from&&r.to&&bySeller(r));
+  if(gran==='inv'){
+    rz.filter(r=>(!o.from||r.to>=o.from)&&(!o.to||r.from<=o.to)).forEach(r=>{ const b=get((r.no||'(bez nr)')+' · '+r.from+'→'+r.to), g=invGross(r), net=r.net!=null?r.net:+(g/1.23).toFixed(2);
+      Object.assign(b,{n:1,draw:invDraw(r),fed:invFed(r),rest:invRest(r),net,vat:r.vat!=null?r.vat:+(g-net).toFixed(2),gross:g,cash:invPay(r),first:r.from}); });
+  } else {
+    rz.forEach(r=>{ const g=invGross(r), net=r.net!=null?r.net:g/1.23, vat=r.vat!=null?r.vat:g-net;
+      irAlloc(r,o.from,o.to).forEach(({ds,frac})=>{ const b=get(irBucket(ds,gran)); b.ids.add(r.id); b.draw+=invDraw(r)*frac; b.fed+=invFed(r)*frac; b.rest+=invRest(r)*frac; b.net+=net*frac; b.vat+=vat*frac; b.gross+=g*frac;
+        months.set(irBucket(ds,'year'),(months.get(irBucket(ds,'year'))||new Set()).add(ds.slice(0,7))); }); });
+    INV.filter(r=>bySeller(r)).forEach(r=>{ const ds=r.issue||r.from; if(!ds||(o.from&&ds<o.from)||(o.to&&ds>o.to)) return; get(irBucket(ds,gran)).cash+=invPay(r); });
+    map.forEach(b=>{ b.n=b.ids.size; });
+  }
+  const keys=[...map.keys()].sort((a,b)=>gran==='inv'?(map.get(a).first||'').localeCompare(map.get(b).first||''):a.localeCompare(b));
+  return {map,keys,months};
+}
+function irTable(o){
+  const {map,keys}=irBuild(o.gran,o); const head=['Okres','Faktur','Pobór kWh','Oddano kWh','Do rozliczenia kWh','Netto zł','VAT zł','Brutto zł','Koszt zł/kWh pobrany','Zapłacono zł'];
+  const row=b=>[b.key,b.n,b.draw,b.fed,b.rest,b.net,b.vat,b.gross,b.draw>0?b.gross/b.draw:null,b.cash];
+  const rows=keys.map(k=>row(map.get(k))); const T={key:'RAZEM',n:0,draw:0,fed:0,rest:0,net:0,vat:0,gross:0,cash:0};
+  keys.forEach(k=>{ const b=map.get(k); ['draw','fed','rest','net','vat','gross','cash'].forEach(f=>T[f]+=b[f]); });
+  if(o.gran==='inv') T.n=keys.length; else T.n=new Set(INV.filter(r=>invKind(r)==='rozl'&&r.from&&r.to&&(!o.seller||(r.seller||'')===o.seller)&&(!o.from||r.to>=o.from)&&(!o.to||r.from<=o.to)).map(r=>r.id)).size;
+  return {head,rows,foot:row(T),keys,map};
+}
+function irYoy(o){
+  const {map,keys,months}=irBuild('year',{...o,from:'',to:''}); /* r/r zawsze na pełnych latach */
+  const head=['Rok','Miesięcy z fakturami','Pobór kWh','Brutto zł','Koszt zł/kWh pobrany','Zmiana brutto r/r'];
+  const rows=keys.map((k,i)=>{ const b=map.get(k), pv=i?map.get(keys[i-1]):null, mo=(months.get(k)||new Set()).size;
+    return [k,mo,b.draw,b.gross,b.draw>0?b.gross/b.draw:null,(pv&&pv.gross>0&&mo>=12&&(months.get(keys[i-1])||new Set()).size>=12)?(b.gross/pv.gross-1)*100:null]; });
+  return {head,rows};
+}
+function renderInvReport(){
+  if(!gi('irTbody')) return;
+  const sel=gi('irSeller'), cur=sel.value, sellers=[...new Set(INV.map(r=>r.seller).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">Wszyscy</option>'+sellers.map(s=>`<option${s===cur?' selected':''}>${escH(s)}</option>`).join('');
+  const o=irOpts(); const {head,rows,foot,keys,map}=irTable(o);
+  const noData=!keys.length;
+  gi('irThead').innerHTML='<tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  const fm=r=>'<tr>'+r.map((v,i)=>{ const d=[0,0,0,0,0,2,2,2,4,2][i]; const t=i===0?escH(v):i===1?String(v):(v==null?'—':f2n(v,i>=2&&i<=4?0:d)); return `<td${i?' class="num"':''}>${t}</td>`; }).join('')+'</tr>';
+  gi('irTbody').innerHTML=rows.map(fm).join('');
+  gi('irTfoot').innerHTML=noData?'':fm(foot).replace('<tr>','<tr style="font-weight:700">');
+  const metric=gv('irMetric')||'gross', lbl={gross:'zł',cash:'zł',draw:'kWh',rest:'kWh',unit:'zł/kWh'}[metric];
+  const show=o.gran==='inv'?keys:keys.slice(-24);
+  const val=k=>{ const b=map.get(k); return +(metric==='unit'?(b.draw>0?b.gross/b.draw:0):b[metric]).toFixed(metric==='unit'?3:2); };
+  gi('irChart').innerHTML=noData?'<div class="empty">Brak faktur rozliczeniowych w wybranym zakresie. Dodaj je powyżej (lub zmień daty/sprzedawcę).</div>':panelChart('#e0904f',show,show.map(val),lbl,'bar');
+  const fo=foot; gi('irStats').innerHTML=noData?'':[[f2n(fo[7])+' zł','Koszt brutto'],[f2n(fo[5])+' zł','w tym netto'],[f2n(fo[6])+' zł','w tym VAT'],[f2n(fo[2],0)+' kWh','Pobór z sieci'],[fo[8]!=null?f2n(fo[8],3)+' zł':'—','Koszt całkowity / kWh pobrany'],[f2n(fo[9])+' zł','Zapłacono (gotówka)']]
+    .map(([v,l])=>`<div><div class="big">${v}</div><div class="lbl">${l}</div></div>`).join('');
+  const y=irYoy(o); gi('irYoyHead').innerHTML='<tr>'+y.head.map(h=>`<th>${h}</th>`).join('')+'</tr>';
+  gi('irYoyBody').innerHTML=y.rows.length?y.rows.map(r=>`<tr><td>${escH(r[0])}</td><td class="num">${r[1]}</td><td class="num">${f2n(r[2],0)}</td><td class="num">${f2n(r[3])}</td><td class="num">${r[4]!=null?f2n(r[4],3):'—'}</td><td class="num" style="color:${r[5]==null?'var(--muted)':r[5]<=0?'var(--ok)':'var(--danger)'}">${r[5]==null?'—':(r[5]>0?'+':'')+f2n(r[5],1)+'%'}</td></tr>`).join(''):'<tr><td colspan="6" class="empty">Brak danych.</td></tr>';
+  const w=[]; const rz=INV.filter(r=>invKind(r)==='rozl');
+  const nop=INV.filter(r=>invKind(r)==='rozl'&&(!r.from||!r.to)).length; if(nop) w.push(`${nop} faktur rozliczeniowych bez okresu od/do — nie wchodzą do raportu.`);
+  const g=invGaps(); if(g.length) w.push('Brakujące okresy: '+g.map(x=>x.n>1?x.from+' … '+x.to:x.from).join(', ')+'.');
+  const nl=rz.filter(r=>!(r.lines||[]).length).length; if(nl&&rz.length) w.push(`${nl} z ${rz.length} faktur bez składników — raport kosztu „bez PV” będzie przybliżony.`);
+  y.rows.forEach(r=>{ if(r[1]<12) w.push(`Rok ${r[0]}: faktury obejmują ${r[1]} z 12 miesięcy — porównanie r/r pominięto.`); });
+  gi('irWarn').innerHTML=w.length?'<div class="warnline bad">'+w.map(escH).join('<br>')+'</div>':'';
+}
+function irCsvNum(v,d){ return v==null?'':(typeof v==='number'?v.toFixed(d).replace('.',','):String(v)); }
+function irSheetRows(o){ const t=irTable(o); const dec=[0,0,2,2,2,2,2,2,4,2];
+  return {t,main:[t.head,...t.rows.map(r=>r.map((v,i)=>typeof v==='number'?+v.toFixed(dec[i]+(i>=2&&i<=4?0:0)):(v==null?'':v))),...(t.keys.length?[t.foot.map((v,i)=>typeof v==='number'?+v.toFixed(dec[i]):(v==null?'':v))]:[])]}; }
+function irFileTag(o){ return (o.from||'poczatek')+'_'+(o.to||'dzis'); }
+async function invRepCsv(){
+  const o=irOpts(), {main}=irSheetRows(o); const csv='\ufeff'+main.map(r=>r.map(v=>{ const t=typeof v==='number'?String(v).replace('.',','):String(v); return /[;"\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t; }).join(';')).join('\r\n');
+  await saveBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'faktury_raport_'+irFileTag(o)+'.csv','CSV',{'text/csv':['.csv']});
+}
+async function invRepXls(){
+  const o=irOpts(), {main}=irSheetRows(o), y=irYoy(o);
+  const list=[['Rodzaj','Nr faktury','Sprzedawca','Wystawiona','Termin płatności','Okres od','Okres do','Pobór kWh','Oddano kWh','Do rozliczenia kWh','Netto zł','VAT zł','Brutto zł','Do zapłaty zł','Notatka'],
+    ...INV.filter(r=>(!o.seller||(r.seller||'')===o.seller)&&(!o.from||(r.to||r.issue||'')>=o.from)&&(!o.to||(r.from||r.issue||'')<=o.to)).sort((a,b)=>(a.from||a.issue||'').localeCompare(b.from||b.issue||'')).map(r=>{ const pr=invKind(r)==='prog';
+      return [pr?'zaliczka':'rozliczeniowa',r.no||'',r.seller||'',r.issue||'',r.due||'',r.from||'',r.to||'',pr?'':invDraw(r),pr?'':invFed(r),pr?'':invRest(r),r.net!=null?r.net:'',r.vat!=null?r.vat:'',invGross(r),invPay(r),r.note||'']; })];
+  const yoy=[y.head,...y.rows.map(r=>r.map(v=>v==null?'':(typeof v==='number'?+v.toFixed(3):v)))];
+  const xml='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'
+    +sheetXML('Raport faktur',main)+sheetXML('Rok do roku',yoy)+sheetXML('Faktury',list)+'</Workbook>';
+  await saveBlob(new Blob([xml],{type:'application/vnd.ms-excel'}),'faktury_raport_'+irFileTag(o)+'.xls','Excel',{'application/vnd.ms-excel':['.xls']});
+}
+function invRepPrint(){
+  const o=irOpts(), t=irTable(o), y=irYoy(o); if(!t.keys.length){ alert('Brak danych do wydruku w wybranym zakresie.'); return; }
+  const tbl=(head,rows,foot)=>'<table><thead><tr>'+head.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+rows+(foot||'')+'</tbody></table>';
+  const fm=(r,b)=>'<tr'+(b?' class="t"':'')+'>'+r.map((v,i)=>`<td${i?' class="n"':''}>${i===0?escH(v):i===1?v:(v==null?'—':f2n(v,i>=2&&i<=4?0:(i===8?4:2)))}</td>`).join('')+'</tr>';
+  const html=`<!doctype html><meta charset="utf-8"><title>Raport faktur</title><style>body{font:12px system-ui,Arial;margin:24px;color:#111}h1{font-size:18px;margin:0 0 4px}p{color:#555;margin:0 0 14px}h2{font-size:14px;margin:18px 0 6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:4px 6px;text-align:left}th{background:#eee}.n{text-align:right;font-variant-numeric:tabular-nums}.t td{font-weight:700;background:#f5f5f5}@media print{body{margin:10mm}}</style>
+  <h1>Raport faktur za energię</h1><p>Zakres: ${escH(o.from||'początek')} – ${escH(o.to||'dziś')} · sprzedawca: ${escH(o.seller||'wszyscy')} · wygenerowano ${escH(ymd(new Date()))}</p>
+  ${tbl(t.head,t.rows.map(r=>fm(r)).join('')+fm(t.foot,true))}
+  <h2>Rok do roku</h2>${tbl(y.head,y.rows.map(r=>'<tr>'+r.map((v,i)=>`<td${i?' class="n"':''}>${i===0?escH(v):v==null?'—':f2n(v,i===1?0:i===2?0:i===4?3:i===5?1:2)+(i===5?'%':'')}</td>`).join('')+'</tr>').join(''))}
+  <script>window.onload=()=>setTimeout(()=>window.print(),200)<\/script>`;
+  const w=window.open('','_blank'); if(!w){ alert('Przeglądarka zablokowała okno wydruku — zezwól na wyskakujące okna lub użyj eksportu XLS/CSV.'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
 }
 /* ===================== DOKUMENTY ===================== */
 const DOC_KINDS=['Umowa','Aneks do umowy','Pismo / korespondencja','Faktura (kopia)','Protokół / odbiór','Gwarancja / instrukcja','Inne'];
