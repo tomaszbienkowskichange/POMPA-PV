@@ -11,13 +11,11 @@
   "c1Name": "CO",
   "c2Name": "CWU",
   "dtOff": 0,
-  "seller": "PGE Obrót S.A.",
-  "custNo": "10259120",
-  "ppe": "590543570800768142",
-  "tariff": "G11",
-  "meterNo": "98101207",
-  "contractPower": "13 kW (wg faktury z 2020)",
-  "addr": "Piękna 23, 05-462 Majdan (gm. Wiązowna)"
+  "place": "DOM",
+  "updatedAt": 1791742647287,
+  "lat": 52.2031,
+  "lon": 21.2719,
+  "wxPR": 0.69
  },
  "records": [
   {
@@ -263,14 +261,16 @@
    "end": "2022-10-07T08:00",
    "rad": null,
    "out1": 8,
-   "out2": null,
+   "out2": 7.2,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 21.38,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp5hu96sxz",
@@ -280,14 +280,16 @@
    "end": "2022-10-07T23:59",
    "rad": null,
    "out1": 2.7,
-   "out2": null,
+   "out2": 11.3,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 22.75,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impsfvb0prq",
@@ -297,14 +299,16 @@
    "end": "2022-10-09T09:00",
    "rad": null,
    "out1": 8,
-   "out2": null,
+   "out2": 10.1,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 21.82,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 37; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 37; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impapap14qr",
@@ -313,15 +317,17 @@
    "start": "2022-10-09T00:00",
    "end": "2022-10-10T10:40",
    "rad": null,
-   "out1": null,
-   "out2": null,
+   "out1": 12.9,
+   "out2": 11.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 16.22,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 38; CWU: 40; bufor: 43 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 38; CWU: 40; bufor: 43 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impxqfmtsj8",
@@ -331,14 +337,16 @@
    "end": "2022-10-10T23:59",
    "rad": null,
    "out1": 0,
-   "out2": null,
+   "out2": 9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 27.69,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 39; CWU: 40; bufor: 50 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 39; CWU: 40; bufor: 50 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp5vs9cd3u",
@@ -348,14 +356,16 @@
    "end": "2022-10-12T08:00",
    "rad": null,
    "out1": 6,
-   "out2": null,
+   "out2": 4.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 22.85,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 50 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 50 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impkafeq7tu",
@@ -365,14 +375,16 @@
    "end": "2022-10-13T08:00",
    "rad": null,
    "out1": 0.5,
-   "out2": null,
+   "out2": 5.2,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 21.87,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36/35; CWU: 40; bufor: 40 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36/35; CWU: 40; bufor: 40 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impw9q3izin",
@@ -382,14 +394,16 @@
    "end": "2022-10-14T08:00",
    "rad": null,
    "out1": -1,
-   "out2": null,
+   "out2": 6.6,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 24.77,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 42; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 42; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp18lyqlqs",
@@ -399,14 +413,16 @@
    "end": "2022-10-15T08:00",
    "rad": null,
    "out1": 2,
-   "out2": null,
+   "out2": 8.7,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 23.26,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impjibl4la3",
@@ -416,14 +432,16 @@
    "end": "2022-10-16T10:00",
    "rad": null,
    "out1": 6,
-   "out2": null,
+   "out2": 14.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 19.67,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36/35; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36/35; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impop2efgnh",
@@ -433,14 +451,16 @@
    "end": "2022-10-17T08:00",
    "rad": null,
    "out1": 11,
-   "out2": null,
+   "out2": 12.3,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 15.15,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 40; bufor: 40 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 40; bufor: 40 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impkytna57z",
@@ -449,15 +469,17 @@
    "start": "2022-10-19T17:00",
    "end": "2022-10-20T07:00",
    "rad": null,
-   "out1": null,
-   "out2": null,
+   "out1": 9.9,
+   "out2": 3,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 43.39,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp0x7564f8",
@@ -467,14 +489,16 @@
    "end": "2022-10-21T07:50",
    "rad": null,
    "out1": -1,
-   "out2": null,
+   "out2": 3.1,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 23.44,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 37; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 37; CWU: 40; bufor: 42 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impqn9vpdsh",
@@ -484,14 +508,16 @@
    "end": "2022-10-22T08:00",
    "rad": null,
    "out1": -1,
-   "out2": null,
+   "out2": 9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 29.18,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 37; CWU: 40; bufor: 43 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 37; CWU: 40; bufor: 43 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp0g59gmnk",
@@ -501,14 +527,16 @@
    "end": "2022-10-23T06:40",
    "rad": null,
    "out1": 6,
-   "out2": null,
+   "out2": 12.1,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 21.21,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 44; bufor: 50; temp zewn dzień: 11; temp zewn dzień start: 11 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 36; CWU: 44; bufor: 50; temp zewn dzień: 11; temp zewn dzień start: 11 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp38q97mqb",
@@ -518,14 +546,16 @@
    "end": "2022-10-24T09:00",
    "rad": null,
    "out1": 11,
-   "out2": null,
+   "out2": 10.1,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 17.22,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 45; bufor: 42; temp zewn dzień: 16; temp zewn dzień start: 16 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 45; bufor: 42; temp zewn dzień: 16; temp zewn dzień start: 16 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp90o1tzd9",
@@ -535,14 +565,16 @@
    "end": "2022-10-25T07:00",
    "rad": null,
    "out1": 7,
-   "out2": null,
+   "out2": 12.1,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 16.04,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 49; bufor: 43; temp zewn dzień: 17; temp zewn dzień start: 12 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 49; bufor: 43; temp zewn dzień: 17; temp zewn dzień start: 12 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impeia15oxq",
@@ -552,14 +584,16 @@
    "end": "2022-10-26T07:00",
    "rad": null,
    "out1": 10,
-   "out2": null,
+   "out2": 11.1,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 14.06,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 46; bufor: 38; temp zewn dzień: 17; temp zewn dzień start: 14 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 46; bufor: 38; temp zewn dzień: 17; temp zewn dzień start: 14 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impnwcyvqkf",
@@ -569,14 +603,16 @@
    "end": "2022-10-27T06:00",
    "rad": null,
    "out1": 12,
-   "out2": null,
+   "out2": 6.8,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 13.43,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 48; bufor: 38; temp zewn dzień: 14; temp zewn dzień start: 12 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 48; bufor: 38; temp zewn dzień: 14; temp zewn dzień start: 12 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impdpzvquxb",
@@ -586,14 +622,16 @@
    "end": "2022-10-28T07:30",
    "rad": null,
    "out1": 3.5,
-   "out2": null,
+   "out2": 9.6,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 17.86,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 51; bufor: 38; temp zewn dzień: 17; temp zewn dzień start: 14 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 51; bufor: 38; temp zewn dzień: 17; temp zewn dzień start: 14 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impp6hzakyu",
@@ -603,14 +641,16 @@
    "end": "2022-10-29T07:30",
    "rad": null,
    "out1": 6,
-   "out2": null,
+   "out2": 13.5,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 17.87,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 51; bufor: 42; temp zewn dzień: 18; temp zewn dzień start: 14 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 35; CWU: 51; bufor: 42; temp zewn dzień: 18; temp zewn dzień start: 14 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impuxy5g8cm",
@@ -620,14 +660,16 @@
    "end": "2022-10-30T08:00",
    "rad": null,
    "out1": 12,
-   "out2": null,
+   "out2": 10.4,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 13.59,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 49; bufor: 42; temp zewn dzień: 15; temp zewn dzień start: 15 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 49; bufor: 42; temp zewn dzień: 15; temp zewn dzień start: 15 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imphm0qcfqb",
@@ -637,14 +679,16 @@
    "end": "2022-10-31T08:00",
    "rad": null,
    "out1": 5.6,
-   "out2": null,
+   "out2": 6.8,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 14.31,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 52; bufor: 38; temp zewn dzień: 18; temp zewn dzień start: 12 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca) | Komentarz XLS [10.2022!B27 · godzina włączenia]: zmiana czasu - stary czas to 18:00"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 52; bufor: 38; temp zewn dzień: 18; temp zewn dzień start: 12 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impy9bcf5wi",
@@ -654,14 +698,16 @@
    "end": "2022-11-01T06:20",
    "rad": null,
    "out1": 10.5,
-   "out2": null,
+   "out2": 11.6,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 16.13,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 51; bufor: 42; temp zewn dzień: 18; temp zewn dzień start: 10 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 51; bufor: 42; temp zewn dzień: 18; temp zewn dzień start: 10 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impo5pdr1r1",
@@ -671,14 +717,16 @@
    "end": "2022-11-02T07:40",
    "rad": null,
    "out1": 11,
-   "out2": null,
+   "out2": 11.3,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 15.04,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 51; bufor: 40; temp zewn dzień: 13; temp zewn dzień start: 10 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)"
+   "note": "Import z XLS (arkusz 10.2022). temp grzejniki noc: 34; CWU: 51; bufor: 40; temp zewn dzień: 13; temp zewn dzień start: 10 (cena 0.74 zł/kWh przyjęta wg stawki z sąsiedniego miesiąca)",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impn1903scb",
@@ -688,14 +736,16 @@
    "end": "2022-11-03T07:10",
    "rad": null,
    "out1": 8,
-   "out2": null,
+   "out2": 6.2,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 13.44,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 33; CWU: 51; bufor: 40; temp zewn dzień: 14; temp zewn dzień start: 9"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 33; CWU: 51; bufor: 40; temp zewn dzień: 14; temp zewn dzień start: 9",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impyi56evwe",
@@ -705,14 +755,16 @@
    "end": "2022-11-04T07:00",
    "rad": null,
    "out1": 3.3,
-   "out2": null,
+   "out2": 7,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 14.82,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 43; temp zewn dzień: 14; temp zewn dzień start: 9"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 43; temp zewn dzień: 14; temp zewn dzień start: 9",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp2hd1vbs1",
@@ -722,14 +774,16 @@
    "end": "2022-11-05T06:40",
    "rad": null,
    "out1": 8,
-   "out2": null,
+   "out2": 8.5,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 22.42,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 34; CWU: 52; bufor: 38; temp zewn dzień: 11; temp zewn dzień start: 9"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 34; CWU: 52; bufor: 38; temp zewn dzień: 11; temp zewn dzień start: 9",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impw6e0zoir",
@@ -739,14 +793,16 @@
    "end": "2022-11-06T09:45",
    "rad": null,
    "out1": 5,
-   "out2": null,
+   "out2": 6.7,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 18.81,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 34; CWU: 52; bufor: 42; temp zewn dzień: 11; temp zewn dzień start: 7"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 34; CWU: 52; bufor: 42; temp zewn dzień: 11; temp zewn dzień start: 7",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impvqquft05",
@@ -756,14 +812,16 @@
    "end": "2022-11-07T07:45",
    "rad": null,
    "out1": -0.5,
-   "out2": null,
+   "out2": 7.3,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 18.01,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 48; temp zewn dzień: 9; temp zewn dzień start: 5"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 48; temp zewn dzień: 9; temp zewn dzień start: 5",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp95rmufq5",
@@ -773,14 +831,16 @@
    "end": "2022-11-08T06:50",
    "rad": null,
    "out1": 5,
-   "out2": null,
+   "out2": 6.2,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 26.02,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 34; CWU: 51; bufor: 35; temp zewn dzień: 12; temp zewn dzień start: 10"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 34; CWU: 51; bufor: 35; temp zewn dzień: 12; temp zewn dzień start: 10",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impebpm1lpt",
@@ -790,14 +850,16 @@
    "end": "2022-11-09T06:45",
    "rad": null,
    "out1": 5,
-   "out2": null,
+   "out2": 7.2,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 18.46,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 35; temp zewn dzień: 13; temp zewn dzień start: 13"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 35; temp zewn dzień: 13; temp zewn dzień start: 13",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impg33n4uwo",
@@ -806,15 +868,17 @@
    "start": "2022-11-09T00:00",
    "end": "2022-11-10T07:15",
    "rad": null,
-   "out1": null,
-   "out2": null,
+   "out1": 7.7,
+   "out2": 7,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 19.44,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022)."
+   "note": "Import z XLS (arkusz 11.2022).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impolts672s",
@@ -824,14 +888,16 @@
    "end": "2022-11-10T23:59",
    "rad": null,
    "out1": 6,
-   "out2": null,
+   "out2": 6.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 17.89,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 38; temp zewn dzień: 12; temp zewn dzień start: 9"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 51; bufor: 38; temp zewn dzień: 12; temp zewn dzień start: 9",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impb7vy0san",
@@ -841,14 +907,16 @@
    "end": "2022-11-12T06:40",
    "rad": null,
    "out1": 9,
-   "out2": null,
+   "out2": 6.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 21.36,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 49; bufor: 40; temp zewn dzień: 9; temp zewn dzień start: 11"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 49; bufor: 40; temp zewn dzień: 9; temp zewn dzień start: 11",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp3aznvkj8",
@@ -857,15 +925,17 @@
    "start": "2022-11-12T14:00",
    "end": "2022-11-13T07:40",
    "rad": null,
-   "out1": null,
-   "out2": null,
+   "out1": 8.9,
+   "out2": 8.5,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 20.72,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 45; bufor: 40; temp zewn dzień: 9; temp zewn dzień start: 8"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 45; bufor: 40; temp zewn dzień: 9; temp zewn dzień start: 8",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp1qmea8lh",
@@ -875,14 +945,16 @@
    "end": "2022-11-15T07:00",
    "rad": null,
    "out1": 5,
-   "out2": null,
+   "out2": 2.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 42.1,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 36; CWU: 44; bufor: 42; temp zewn dzień: 8; temp zewn dzień start: 8"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 36; CWU: 44; bufor: 42; temp zewn dzień: 8; temp zewn dzień start: 8",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impsar4rmz3",
@@ -892,14 +964,16 @@
    "end": "2022-11-16T07:00",
    "rad": null,
    "out1": 4,
-   "out2": null,
+   "out2": 4.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 25.63,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 36; CWU: 42; bufor: 48; temp zewn dzień: 6; temp zewn dzień start: 5.5"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 36; CWU: 42; bufor: 48; temp zewn dzień: 6; temp zewn dzień start: 5.5",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impczv3lj7v",
@@ -909,14 +983,16 @@
    "end": "2022-11-17T07:00",
    "rad": null,
    "out1": 1,
-   "out2": null,
+   "out2": -0.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 25.99,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 42; bufor: 45; temp zewn dzień: 7; temp zewn dzień start: 4.5"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 35; CWU: 42; bufor: 45; temp zewn dzień: 7; temp zewn dzień start: 4.5",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impjk1h7v84",
@@ -926,14 +1002,16 @@
    "end": "2022-11-18T07:00",
    "rad": null,
    "out1": -1.5,
-   "out2": null,
+   "out2": -1.9,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 28.65,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 36; CWU: 42; bufor: 48; temp zewn dzień: 1; temp zewn dzień start: -1"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 36; CWU: 42; bufor: 48; temp zewn dzień: 1; temp zewn dzień start: -1",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impjz79dveu",
@@ -943,14 +1021,16 @@
    "end": "2022-11-18T23:59",
    "rad": null,
    "out1": -4,
-   "out2": null,
+   "out2": -5.8,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 36.6,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 37; CWU: 43; bufor: 40; temp zewn dzień: -1; temp zewn dzień start: -1"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 37; CWU: 43; bufor: 40; temp zewn dzień: -1; temp zewn dzień start: -1",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impkeko3hb0",
@@ -960,14 +1040,16 @@
    "end": "2022-11-19T23:59",
    "rad": null,
    "out1": -7,
-   "out2": null,
+   "out2": -5,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 44.63,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 38; CWU: 41; bufor: nd; temp zewn dzień: -2.6; temp zewn dzień start: nd"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 38; CWU: 41; bufor: nd; temp zewn dzień: -2.6; temp zewn dzień start: nd",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impzuqfcb49",
@@ -977,14 +1059,16 @@
    "end": "2022-11-20T23:59",
    "rad": null,
    "out1": -7.5,
-   "out2": null,
+   "out2": -2.3,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 47.45,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 40; CWU: 43; bufor: nd; temp zewn dzień: -3; temp zewn dzień start: nd"
+   "note": "Import z XLS (arkusz 11.2022). temp grzejniki noc: 40; CWU: 43; bufor: nd; temp zewn dzień: -3; temp zewn dzień start: nd",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impzmu5ws6p",
@@ -993,15 +1077,17 @@
    "start": "2022-11-21T00:00",
    "end": "2022-11-21T23:59",
    "rad": null,
-   "out1": null,
-   "out2": null,
+   "out1": -2.3,
+   "out2": -0.1,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 46.52,
    "price": 0.74,
-   "note": "Import z XLS (arkusz 11.2022). CWU: 43; bufor: nd; temp zewn dzień: 1; temp zewn dzień start: nd"
+   "note": "Import z XLS (arkusz 11.2022). CWU: 43; bufor: nd; temp zewn dzień: 1; temp zewn dzień start: nd",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp0z949l9k",
@@ -1010,7 +1096,7 @@
    "start": "2025-09-29T07:30",
    "end": "2025-09-29T07:30",
    "rad": "6",
-   "out1": null,
+   "out1": 7.3,
    "out2": 8,
    "slope": 0.2,
    "offset": 37,
@@ -1018,7 +1104,9 @@
    "target2": null,
    "kwh": 22.82,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). Brak godziny zakończenia w XLS (wył). | Komentarz XLS [B4 · godz end · kol. 29.09.2025]: 14:10 zmiana offset na 37, docelowa zmieniła się na 35,8, pompa się wyłączyła. Włączona CWU na 45 o 14:45,"
+   "note": "Import z XLS (2025/2026). Brak godziny zakończenia w XLS (wył).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp76qlay5f",
@@ -1083,7 +1171,7 @@
    "out": 9.2,
    "kwh": 1.43,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [P17 · godz end · kol. 03.10.2025]: pompa wyłaczona, nie włączone CO"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impqv58vhbf",
@@ -1113,7 +1201,7 @@
    "target2": 35.6,
    "kwh": 7.3,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [N7 · temp offset · kol. 02.10.2025]: uruchomione na 39 offset, slope 01 na potrzeby podgrzania samego bufora, po podgzaniu bufora zostanie puszczone CO na budynek o godz 13:33 włączona pompa obiegowa na budynek, pompa się zatrzymała z uwagi na osiagniecie temp ok38 ,ruszyła po 4 minutach. Temp zasilania uzyskana o godz 15:00, 15:05 zmniejszony ffset na 37, co dało 35,8 | Komentarz XLS [N9 · wynik · kol. 02.10.2025]: od 15:05 - 35,8, pompa się wyłączyła na | Komentarz XLS [N11 · temp zewn zatrz · kol. 02.10.2025]: przy tej tempprzy zmianie z 39 na 37 offset, pmpa sie zatrzymała na ok30 min | Komentarz XLS [Q9 · wynik · kol. 04.10.2025]: pompa zagrzała bufor do 15:40, włączona pompa obiegowa o 15:42 , temp zewn 12,8, pompa zeszła do 35,5. wyłaczyla się o 16:20 - temp zewn 12,9; ruszyła 16:40"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp4xh2lxx8",
@@ -1143,7 +1231,7 @@
    "target2": 35.8,
    "kwh": 2.86,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [R4 · godz end · kol. 05.10.2025]: nie uruchomione CO- moj błąd nie włączyłem pompy obiegowej | Komentarz XLS [R12 · zużycie kW · kol. 05.10.2025]: zuzycia na sam bufor przy temp ok 10-13 stopni w czasie 6:40 h"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp1orks3s6",
@@ -1173,7 +1261,7 @@
    "target2": 35.7,
    "kwh": 10.22,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [S9 · wynik · kol. 06.10.2025]: pompa ustawiona na 38 offset, 01 slope, wyjsciowa 36,9"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwkka49k6",
@@ -1190,7 +1278,7 @@
    "target2": 35.6,
    "kwh": 3.57,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [T9 · wynik · kol. 07.10.2025]: pompa była włączona na dodatkowe 2 h co dało w sumie 3,57"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp4qnlqmnq",
@@ -1276,7 +1364,7 @@
    "out": 13.3,
    "kwh": 1.61,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [Z21 · zuzycie kW · kol. 12.10.2025]: brak danych z uwagi na fakt przebywania w Kielcach trzeba zsumowac dane z wody, ogrzewania z dnia poprzedniego i ogrzewania z 12.10.2025"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp7dphyueq",
@@ -1285,7 +1373,7 @@
    "start": "2025-10-12T18:20",
    "end": "2025-10-13T09:25",
    "rad": "6",
-   "out1": null,
+   "out1": 11.7,
    "out2": 9,
    "slope": 0.3,
    "offset": 39,
@@ -1293,7 +1381,9 @@
    "target2": null,
    "kwh": 30.2,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). wynik (nieliczbowy): 36,6-38,5. | Komentarz XLS [Y9 · wynik · kol. 11.10.2025]: zmiana na 35,7 ok 20:20 | Komentarz XLS [Y12 · zużycie kW · kol. 11.10.2025]: brak danych z uwagi na fakt przebywania w Kielcach | Komentarz XLS [Z4 · godz end · kol. 12.10.2025]: pompa sam się wyłączyła - choc podejrzewam ze to kierownik wyłączył mysląc że włącza... | Komentarz XLS [AA3 · godz start · kol. 12.10.2025]: ponowne uruchomienie pompy | Komentarz XLS [AB7 · temp offset · kol. 13.10.2025]: po weryfikacjach z AI ustawinie zostały na offset 40-39 i slope 03-0,4 co dawało przy 2-3 stopniach temp na zasilaniu 37,3 - 38,3. niezla efektywnosc cieplna. zuzycie srednio wyszło 1,42 kW/ h. co wg AI daje dobry wynik. | Komentarz XLS [AB12 · zużycie kW · kol. 13.10.2025]: całkowite zzycie od 11.10.2025 po zagrzaniu wody. czyli 11.10 -grzanie, 12.10. - woda, 12.10- grzanie do 13.10.2025 do 9:25"
+   "note": "Import z XLS (2025/2026). wynik (nieliczbowy): 36,6-38,5.",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impwj5238i9",
@@ -1303,14 +1393,16 @@
    "end": "2025-10-14T09:38",
    "rad": "7",
    "out1": 8.1,
-   "out2": null,
+   "out2": 8.2,
    "slope": 0.2,
    "offset": 38,
    "target1": 36.4,
    "target2": 36.4,
    "kwh": 21.94,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026)."
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impa1es930k",
@@ -1333,14 +1425,16 @@
    "end": "2025-10-15T07:25",
    "rad": "6",
    "out1": 9.7,
-   "out2": null,
+   "out2": 2.3,
    "slope": 0.3,
    "offset": 38,
    "target1": 33.8,
    "target2": 33.8,
    "kwh": 19.14,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AF1 · data · kol. 14.10.2025]: pokój mlodego zawór powrotny przycięty o ok 50 proc, nasz pkój zawór powrotny przyciety o ok 50 %, grzejnik wejscie dól przyciety o ok 50 proc - wszystkie ciekną! zawory powrotne poziomy przyciete na 70 %. Cel uzusyac wyzsza delta Tzamiastobecnych 2 stopni zeby było ok 4 stopni, na rzie nie widac na to sznas... | Komentarz XLS [AF7 · temp offset · kol. 14.10.2025]: zmiana offset na 37 slope na 0,2 dało 36,7"
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "imp6z76dm62",
@@ -1370,7 +1464,7 @@
    "target2": 35.7,
    "kwh": 13.28,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AH7 · temp offset · kol. 16.10.2025]: o 23:30 zmiana ustawien na offset 38 slope 0,3, co dało 34,8 | Komentarz XLS [AI4 · godz end · kol. 17.10.2025]: end"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impkhu52rgh",
@@ -1400,7 +1494,7 @@
    "target2": 36.5,
    "kwh": 13.02,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AL7 · temp offset · kol. 18.10.2025]: zmiana na offset 36, slope 0,2 - 34,7 - o godz 14:20, temp zewn 6 stopni, temp wody 43 stopnie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impxq5atonz",
@@ -1409,7 +1503,7 @@
    "start": "2025-10-19T00:00",
    "end": "2025-10-19T12:20",
    "rad": "6",
-   "out1": null,
+   "out1": 3.7,
    "out2": 8.5,
    "slope": 0.2,
    "offset": 36,
@@ -1417,7 +1511,9 @@
    "target2": null,
    "kwh": 28.37,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). Brak godziny startu w XLS (przyjęto 00:00). | Komentarz XLS [AM7 · temp offset · kol. 19.10.2025]: woda cwu ma 36,5"
+   "note": "Import z XLS (2025/2026). Brak godziny startu w XLS (przyjęto 00:00).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impplv4ix4n",
@@ -1447,7 +1543,7 @@
    "target2": 34.1,
    "kwh": 31.97,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AN11 · temp zewn zatrz · kol. 19.10.2025]: temp od godz 17 (start) - 8 stopni, 18:50 - 6,6 stopnia, 19:15 - 3,6 stopnia, 2:00 - -1,4 stopnia,3:25 - -1,9 stopnia, 5:30 - 2,5 stopnia, 7:10 - -2,5 stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impfhcrf81h",
@@ -1477,7 +1573,7 @@
    "target2": 34.8,
    "kwh": 24.24,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AO11 · temp zewn zatrz · kol. 20.10.2025]: o 21:25 było 1,2 stopniaoffset 38, slope 0,2; 1:55 temp 1 stopien, offset 37, slope 0,2, temp 36,7.ok godz 7:00 był 0,5 stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impk322q0q9",
@@ -1507,7 +1603,7 @@
    "target2": 35.5,
    "kwh": 8.68,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AQ12 · zużycie kW · kol. 22.10.2025]: pauza na grzanie wody od 14:35 do 15:00 = 2,91 kW"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp6huiiknd",
@@ -1563,7 +1659,7 @@
    "out": 11.4,
    "kwh": 1.6,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AT21 · zuzycie kW · kol. 25.10.2025]: brak info o zuzycie na wode bo nie było możliwości spisania, suma za całość wyszła 22,73 realnie od 25.10.2025 16:40 | Komentarz XLS [AU21 · zuzycie kW · kol. 26.10.2025]: woda nie zostaął oddzielona zuzyciem od ogrzewania - liczone bedzie razem"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "implt0o9n9p",
@@ -1590,14 +1686,16 @@
    "end": "2025-10-27T07:20",
    "rad": "6",
    "out1": 9.9,
-   "out2": null,
+   "out2": 7.8,
    "slope": 0.2,
    "offset": 39,
    "target1": 36.5,
    "target2": 36.5,
    "kwh": 26.07,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AU4 · godz end · kol. 26.10.2025]: pauza była miedzy 16:40 a 15:10. temp ponownego uszenia pompy przy ok 30 stopni na zasileniu, offset 39, slope 0,2 temp 36,5"
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impuxlrhf1r",
@@ -1607,14 +1705,16 @@
    "end": "2025-10-28T07:20",
    "rad": "6",
    "out1": 7.2,
-   "out2": null,
+   "out2": 6.5,
    "slope": 0.3,
    "offset": 38,
    "target1": 35.7,
    "target2": 35.7,
    "kwh": 25.74,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026)."
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impaxoyd9dr",
@@ -1624,14 +1724,16 @@
    "end": "2025-10-29T07:20",
    "rad": "6",
    "out1": 7.2,
-   "out2": null,
+   "out2": 8.9,
    "slope": 0.3,
    "offset": 38,
    "target1": 35.7,
    "target2": null,
    "kwh": 22.64,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026)."
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impc5n4eoc7",
@@ -1661,7 +1763,7 @@
    "target2": 36.7,
    "kwh": 18.15,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AX10 · temp zewn start · kol. 29.10.2025]: Mtep w nocy spadała do 3,5 - 5 stopni"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impoxpspuva",
@@ -1708,7 +1810,7 @@
    "target2": 34.4,
    "kwh": 28.1,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [AZ11 · temp zewn zatrz · kol. 31.10.2025]: temp w nocy dochodziła do -0,5. o 23:45 było 0,8, a o 1:45 było -0,3.pompa chodiła na 37/0,2 co dawało 36,7 dość duza wilgotnosc powietrza"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impfglpizse",
@@ -1837,7 +1939,7 @@
    "target2": 35.3,
    "kwh": 76.63,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BI4 · godz end · kol. 09.11.2025]: pauza w dniu 10.11.2025 na grzanie wody"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impjpi80vvg",
@@ -1850,7 +1952,7 @@
    "out": 9.2,
    "kwh": 1.77,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BJ21 · zuzycie kW · kol. 10.11.2025]: wyzerowany licznik po nagrzaniu wody"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp4f0qbo1d",
@@ -1927,7 +2029,7 @@
    "target2": 34.4,
    "kwh": 19.18,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BL11 · temp zewn zatrz · kol. 12.11.2025]: temp w nocy ok 4 stopni"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwr4xoxhz",
@@ -2017,7 +2119,7 @@
    "target2": 35.3,
    "kwh": 28.72,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BO10 · temp zewn start · kol. 15.11.2025]: w nocy temp -2,5-2,0"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impk0fsi2v3",
@@ -2090,7 +2192,7 @@
    "out": 3.1,
    "kwh": 2.24,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BR18 · temp pocz z. wody · kol. 18.11.2025]: złapał defrost o 13:07 skonczył ok 13:11-12 temp w zbiorbniku spadła do 387 a na zasileniu 34,8, przepływ 235"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impchl3aw83",
@@ -2150,7 +2252,7 @@
    "out": 4.8,
    "kwh": 2.5,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BT19 · temp doc z. wody · kol. 20.11.2025]: był defrost"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp8uquoc64",
@@ -2180,7 +2282,7 @@
    "out": 2.1,
    "kwh": 2.22,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BU19 · temp doc z. wody · kol. 21.11.2025]: defrost temp zewn 1,9"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impq2tn4vs7",
@@ -2227,7 +2329,7 @@
    "target2": 36.8,
    "kwh": 54.21,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BV9 · wynik · kol. 22.11.2025]: 37,7 przy - 4 stopniach, mróz był juz od ok 17 -2 stopnie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impjs4kl739",
@@ -2257,7 +2359,7 @@
    "target2": 37,
    "kwh": 79.06,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BW9 · wynik · kol. 23.11.2025]: temp była podwyższona do 38, 0,2 =38,3 do godz 22:30, pozniej obnizona do 37, 0,2 = 37,3-37,6. temp cały dzień -1 do -4,5 stopnia 24/25 - od ok 8 rano prze cały dzien było 0 stopni.25.11 temp od 8 ok stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp3wak5a5j",
@@ -2270,7 +2372,7 @@
    "out": 1.3,
    "kwh": 3.3,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BY19 · temp doc z. wody · kol. 25.11.2025]: temp była ustawionw na 48 a ok 8 minut przed koncem zmiena na 46 stopni. duż wigotnosc powietrza"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impza7ul5z0",
@@ -2287,7 +2389,7 @@
    "target2": 37.7,
    "kwh": 43.32,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BY7 · temp offset · kol. 25.11.2025]: zmiana na 37, 0,2 o 17:55 = 36,7 temp zewn = 1 stopien"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp1krppirb",
@@ -2300,7 +2402,7 @@
    "out": 3.8,
    "kwh": 1.61,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [CA21 · zuzycie kW · kol. 27.11.2025]: woda podgrzewana bedac poza domem, brak danych o realnym zuzyciu. zawarta w sumie z dnia 28.11.2025 - 82,87"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imposntwng9",
@@ -2317,7 +2419,7 @@
    "target2": 37.3,
    "kwh": 82.87,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [BZ8 · slope · kol. 26.11.2025]: zmiana na 0,3 0 14:00 = 37 stopni temp przez cały dzien 0 do -1, wilgotno, | Komentarz XLS [BZ10 · temp zewn start · kol. 26.11.2025]: temp w nocy ok 1 stopień | Komentarz XLS [BZ12 · zużycie kW · kol. 26.11.2025]: wartosc wraz z podgrzaniem wody + defrost"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imph8eqo9a6",
@@ -2330,7 +2432,7 @@
    "out": 2.3,
    "kwh": 2.05,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [CB18 · temp pocz z. wody · kol. 28.11.2025]: defrost pk 13:25 koniec ok 13:30"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impkzbmff3s",
@@ -2347,7 +2449,7 @@
    "target2": 36.5,
    "kwh": 38.08,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [CB10 · temp zewn start · kol. 28.11.2025]: temp od 0 do 2"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impvphd8ev4",
@@ -2437,7 +2539,7 @@
    "target2": 36.5,
    "kwh": 39.38,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [CE10 · temp zewn start · kol. 01.12.2025]: duza wilgotnosc -mgła"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impx51iv6y1",
@@ -2857,7 +2959,7 @@
    "target2": 35.2,
    "kwh": 37.33,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [CT10 · temp zewn start · kol. 16.12.2025]: w nocy było -1,5 stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp8va8udk7",
@@ -2887,7 +2989,7 @@
    "target2": 35.3,
    "kwh": 34.33,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [CU10 · temp zewn start · kol. 17.12.2025]: w nocy było ok-1"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwsybozn6",
@@ -2930,7 +3032,7 @@
    "out": 3.1,
    "kwh": 2.45,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [CW19 · temp doc z. wody · kol. 19.12.2025]: z defrostem"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imptmlkzriw",
@@ -3067,7 +3169,7 @@
    "target2": 36,
    "kwh": 43.71,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DA10 · temp zewn start · kol. 23.12.2025]: w nocy zaczeło spadać i rano o 9 było -7,4 stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impx4g8lode",
@@ -3080,7 +3182,7 @@
    "out": -5.5,
    "kwh": 2.95,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DB18 · temp pocz z. wody · kol. 24.12.2025]: defrost"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impat6h5n8w",
@@ -3097,7 +3199,7 @@
    "target2": 37.1,
    "kwh": 60.68,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DB10 · temp zewn start · kol. 24.12.2025]: mróz narastający - do -12,5 stopnia, rano ciągle trzyma o 9:30 było -10,8"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp8t4kj6kd",
@@ -3120,14 +3222,16 @@
    "end": "2026-01-06T11:13",
    "rad": null,
    "out1": -1.8,
-   "out2": null,
+   "out2": -9.8,
    "slope": null,
    "offset": null,
    "target1": null,
    "target2": null,
    "kwh": 56.26,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026)."
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impq6h7a38z",
@@ -3157,7 +3261,7 @@
    "target2": 39.3,
    "kwh": 63.12,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DO11 · temp zewn zatrz · kol. 06.01.2026]: było - 12,3"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impd14beab5",
@@ -3187,7 +3291,7 @@
    "target2": 38.9,
    "kwh": 73,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DP10 · temp zewn start · kol. 07.01.2026]: -12 w nocy, cały dzień mróz najcieplej -7,5"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impfca07ytg",
@@ -3217,7 +3321,7 @@
    "target2": 38.3,
    "kwh": 65.66,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DQ9 · wynik · kol. 08.01.2026]: temp startu na powrocie 28,7 | Komentarz XLS [DQ10 · temp zewn start · kol. 08.01.2026]: temp w nocy - 7,5 do -9,8"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impzn1tutuc",
@@ -3247,7 +3351,7 @@
    "target2": 38.8,
    "kwh": 84.72,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DR9 · wynik · kol. 09.01.2026]: powrót na starcie 28,2 | Komentarz XLS [DR10 · temp zewn start · kol. 09.01.2026]: w nocy było -14,7, cały dzień mróz"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp3gdtsf4q",
@@ -3260,7 +3364,7 @@
    "out": -7.6,
    "kwh": 3.05,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DS19 · temp doc z. wody · kol. 10.01.2026]: defrost"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imph5cdzmkh",
@@ -3337,7 +3441,7 @@
    "target2": 38.3,
    "kwh": 58.97,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DU12 · zużycie kW · kol. 12.01.2026]: w nocy było -9"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp52n2br4c",
@@ -3427,7 +3531,7 @@
    "target2": 37.9,
    "kwh": 58.79,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DX9 · wynik · kol. 15.01.2026]: w nocy do -6,5, ustawienia na 38,9-39,5 wieksza wilgotnosc"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp2gr57gpa",
@@ -3487,7 +3591,7 @@
    "target2": 38,
    "kwh": 68.09,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [DZ9 · wynik · kol. 17.01.2026]: mróz do -14, pompa na 40-41 stopni"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp5vpwyxop",
@@ -3500,7 +3604,7 @@
    "out": -7,
    "kwh": 4,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EA18 · temp pocz z. wody · kol. 18.01.2026]: przez defrost zostało 30,8"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impiljca6um",
@@ -3517,7 +3621,7 @@
    "target2": 39.8,
    "kwh": 73.94,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EA9 · wynik · kol. 18.01.2026]: temp w nocy od -7 do - 14,4 , pompa max 41,2"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwo22otff",
@@ -3547,7 +3651,7 @@
    "target2": 39.2,
    "kwh": 83.6,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EB9 · wynik · kol. 19.01.2026]: od godz 14 temp zaczeła spadac imax = - 16,5 stopnia, o 21 było -13,8, o 22:50 było -15,4, a 0 7 rano było -16,5"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impk7c8jypl",
@@ -3577,7 +3681,7 @@
    "target2": 40.5,
    "kwh": 77.39,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EC9 · wynik · kol. 20.01.2026]: o 22:45 było -12,8, o 1:45 było -14,3, 0 7:10 było - 15,4"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imphg9rgzvo",
@@ -3590,7 +3694,7 @@
    "out": -2.2,
    "kwh": 2.6,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ED18 · temp pocz z. wody · kol. 21.01.2026]: foto 1,04 - słonecznie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impluem0lqw",
@@ -3607,7 +3711,7 @@
    "target2": 38.8,
    "kwh": 82.31,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ED9 · wynik · kol. 21.01.2026]: temp w nocy -16 stopni, wieksza wilgotnosc"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp6ikkgkzl",
@@ -3620,7 +3724,7 @@
    "out": -4,
    "kwh": 2.28,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EE18 · temp pocz z. wody · kol. 22.01.2026]: słonecznie foto 1,16 kw"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp11tiy6ui",
@@ -3637,7 +3741,7 @@
    "target2": 40.2,
    "kwh": 83.19,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EE9 · wynik · kol. 22.01.2026]: w nocy -10 do -7,5 stopnia. zuzycie o 7:05 było na poziomie 60 kw pry tej temp zewn spowodowało to zużycie jak przy wiekszych mrozach ale na ustawieniach 38/0,3 - pompa wyżej się kreciła i dawała wyższa temp ale zuzycie jest wieksze"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imps1apy8g7",
@@ -3650,7 +3754,7 @@
    "out": -5.2,
    "kwh": 3.08,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EF18 · temp pocz z. wody · kol. 23.01.2026]: defrost spowodował spadek wody do 35 stopni- nalezy grzac wode po defroscie na co"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impifs2f7nl",
@@ -3663,7 +3767,7 @@
    "out": 0.7,
    "kwh": 2.31,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EH22 · przerwa miedzy CWU i CO · kol. 25.01.2026]: zuzycie od 23.1.2026 14:30 do 26.1.2026 17:19- wraz z woda 24,25.1.2026"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impdpm6idbk",
@@ -3740,7 +3844,7 @@
    "target2": 37.4,
    "kwh": 53.31,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EK9 · wynik · kol. 28.01.2026]: cala noc z mrozem ok -3 stopnie , wysoka wilgotnosc"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impdf2t2api",
@@ -3770,7 +3874,7 @@
    "target2": 38.6,
    "kwh": 61.88,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EL6 · il grzejników · kol. 29.01.2026]: od 10:50 dodatkowe 3 grzejniki na samej górze z uwagi na potencjalnie silny mróz rzędu - 20 stopni | Komentarz XLS [EL7 · temp offset · kol. 29.01.2026]: wilgotnosc 91 %"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impu5bv3rs5",
@@ -3800,7 +3904,7 @@
    "target2": 38.9,
    "kwh": 83.29,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EM7 · temp offset · kol. 30.01.2026]: ustawienie na wodę i CO - woda 41,5 stopnia, wilgotność 91 %, 13 grzejników, | Komentarz XLS [EM9 · wynik · kol. 30.01.2026]: -13,5 stopnia . w ciagu dnia do 13: 20 -9 stopni"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impau2ju0wx",
@@ -3830,7 +3934,7 @@
    "target2": 39.8,
    "kwh": 79.15,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EN7 · temp offset · kol. 31.01.2026]: wilgotność 85 %,zmiana ustawień zgodnie z notatką z dnia 31.1.2026 - \"pompa ustawienia\" | Komentarz XLS [EN9 · wynik · kol. 31.01.2026]: to był start na 38/0,3, pozniej zmiana na 39/0,3 i temp 42,7 przy ,minus 16,5"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impc4kdjyrz",
@@ -3843,7 +3947,7 @@
    "out": -11.1,
    "kwh": 1.99,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EO17 · godz end · kol. 01.02.2026]: przerwane z uwagi na mróz"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impeayeynb7",
@@ -3860,7 +3964,7 @@
    "target2": 41.7,
    "kwh": 92.06,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EO7 · temp offset · kol. 01.02.2026]: temp -11, wilgotnośc 78% słonecznie. pierwszy z dni z duzym mrozem. zapowiadane -23 stopnie, odczuwalna przy minus 13 = -17 | Komentarz XLS [EO9 · wynik · kol. 01.02.2026]: temp w nocy -18,8, pompa nie daje rady. wg obserwacji pompa daje rade do minus 15-16 stopni"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impo29vgxs2",
@@ -3873,7 +3977,7 @@
    "out": -10.4,
    "kwh": 2.34,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EP20 · temp zewn · kol. 02.02.2026]: uruchomione po defroscie foto =start 590 W,stop 449 W, słonecznie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp61jilvws",
@@ -3890,7 +3994,7 @@
    "target2": 39.7,
    "kwh": 82.6,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EP9 · wynik · kol. 02.02.2026]: dziś ma być do minus 24 stopni wilgotność 71 % target temp był na 42,7 przy minus 22,2. pompa wspmagana recznie aby dogrzewac bufor i wpychac ciepłą wodę na instalację ponieważ bufor sam w sobie nie daje rady pokryc zapotrzebowania"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwnjw0fdo",
@@ -3903,7 +4007,7 @@
    "out": -7.2,
    "kwh": 2.26,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EQ20 · temp zewn · kol. 03.02.2026]: start przed defrostem ale bufor był wygrzany a pompa obiegowa wyłączona, foto start ok 628 W, stop 392 W"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impaqcbc7r3",
@@ -3920,7 +4024,7 @@
    "target2": 39.4,
    "kwh": 72.93,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EQ7 · temp offset · kol. 03.02.2026]: wilgotność 71 %, ustawione 38/0,3 aby agresywniej uzyskać wyzsza temp. powduje to wyzsze zuzycie i czestsze defrosty ale dom jest bardzo wychłodzony. po 18 zmiana na 36/03 - 394 z uwagi na fakt spadku temp do -10 stopni, docelowo temp spadła do -11,7 | Komentarz XLS [EQ11 · temp zewn zatrz · kol. 03.02.2026]: temp w nocy do -11,7, po 20 troche cieplej i było -10do rana"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impajrjlcnp",
@@ -3933,7 +4037,7 @@
    "out": -8.1,
    "kwh": 2.51,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ER20 · temp zewn · kol. 04.02.2026]: 87% wilgotnosc"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwvl0mr07",
@@ -3950,7 +4054,7 @@
    "target2": 39.2,
    "kwh": 67.27,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ER7 · temp offset · kol. 04.02.2026]: ustawienie 37/03 z uwagi na utrzymanie wyzszej temp i dłiższych cykli miedzy defrostami. wilgotnosc 87% | Komentarz XLS [ER10 · temp zewn start · kol. 04.02.2026]: w nocy było do minus 4,5, ale wilgotnośc 92%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp7ut6glee",
@@ -3963,7 +4067,7 @@
    "out": -1.9,
    "kwh": 2.24,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ES20 · temp zewn · kol. 05.02.2026]: wilgotność 92%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impi02urgh5",
@@ -3980,7 +4084,7 @@
    "target2": 38.6,
    "kwh": 63.03,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ES7 · temp offset · kol. 05.02.2026]: 38,6 przy wilgotności 92%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impicfg68bg",
@@ -3993,7 +4097,7 @@
    "out": 1.1,
    "kwh": 2.25,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ET20 · temp zewn · kol. 06.02.2026]: wilgotność 95% brak foto, pochmurno | Komentarz XLS [EU20 · temp zewn · kol. 07.02.2026]: wilgotność 95% , defrost"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwov92q0p",
@@ -4010,7 +4114,7 @@
    "target2": 37.4,
    "kwh": 54.78,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [ET7 · temp offset · kol. 06.02.2026]: wilgotnosc 95%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impjf3u31k3",
@@ -4027,7 +4131,7 @@
    "target2": 38.2,
    "kwh": 58.15,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EU12 · zużycie kW · kol. 07.02.2026]: zuzycie wraz z podgrzewaniem ciepłej wody i defrost przy wodzie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp8i37c9y1",
@@ -4040,7 +4144,7 @@
    "out": -1.2,
    "kwh": 1.8,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EV20 · temp zewn · kol. 08.02.2026]: wilgotnosc 91%, brak foto, pochmurno prószy snieg"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impsy23vm89",
@@ -4057,7 +4161,7 @@
    "target2": 38.2,
    "kwh": 53.84,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EV7 · temp offset · kol. 08.02.2026]: po zmniejszeniu sie wilgotnosci obnizenie ustawien na 37/0,3 wilgotność 85% | Komentarz XLS [EV10 · temp zewn start · kol. 08.02.2026]: wilgotność 91% | Komentarz XLS [EV11 · temp zewn zatrz · kol. 08.02.2026]: w nocy było ok -10. witr, odczuwalan ok -18"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impz2bujkr7",
@@ -4070,7 +4174,7 @@
    "out": -6.3,
    "kwh": 2.58,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EW20 · temp zewn · kol. 09.02.2026]: wilgotność 85% foto start =1,72 kwh, stop = 1,43 kwh | Komentarz XLS [EX21 · zuzycie kW · kol. 10.02.2026]: woda wliczona w zuzycie energii na CO"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impwwthob59",
@@ -4087,7 +4191,7 @@
    "target2": 38.9,
    "kwh": 73.1,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EW10 · temp zewn start · kol. 09.02.2026]: wilgotność 85 % mróz w nocy -12,6 do -6,5 rano i -3 ok 15"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impracomo76",
@@ -4104,7 +4208,7 @@
    "target2": 37.7,
    "kwh": 43.68,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EX10 · temp zewn start · kol. 10.02.2026]: wilgotność 95%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impe9616x2s",
@@ -4117,7 +4221,7 @@
    "out": 3.6,
    "kwh": 2.61,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EY20 · temp zewn · kol. 11.02.2026]: wilgotność 92% foto start = 2,3, foto stop = 2,17"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impjbhyh4bj",
@@ -4147,7 +4251,7 @@
    "out": 4.5,
    "kwh": 1.55,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [EZ20 · temp zewn · kol. 12.02.2026]: wilgotność 96 %"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp9o97qhl0",
@@ -4177,7 +4281,7 @@
    "out": 4.7,
    "kwh": 1.91,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FA20 · temp zewn · kol. 13.02.2026]: wilgotność 93%, pochmurno"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impjii1l75x",
@@ -4194,7 +4298,7 @@
    "target2": 36.9,
    "kwh": 41.39,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FA10 · temp zewn start · kol. 13.02.2026]: wilg 93%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impf39z66qv",
@@ -4224,7 +4328,7 @@
    "target2": 37.5,
    "kwh": 53.22,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FB9 · wynik · kol. 14.02.2026]: temp wzrosła do ok 38,8 przy -6 stopniach zmiana na 37/0,3 co dało ok 38,1 przy minus ok 5 stopniach | Komentarz XLS [FB10 · temp zewn start · kol. 14.02.2026]: w nocy dochodziło do -6,5 stopnia, wilgotność 0d 91 % o godz 13:30 do 70% o godz 13:20 w dniu 15.2.2026"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp275i6lsw",
@@ -4237,7 +4341,7 @@
    "out": -4.8,
    "kwh": 2.87,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FC20 · temp zewn · kol. 15.02.2026]: wilgotnosc 70 % | Komentarz XLS [FC21 · zuzycie kW · kol. 15.02.2026]: z defrostem"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impcakx45bh",
@@ -4254,7 +4358,7 @@
    "target2": 38.6,
    "kwh": 68.62,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FC10 · temp zewn start · kol. 15.02.2026]: wilgotność 70 % temp ujemna tylko już spadała , o godz 7 rano było ciagle 15 stopni mrozu, wilgotność ok 83%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imprfqvy0o8",
@@ -4267,7 +4371,7 @@
    "out": -4.2,
    "kwh": 2.66,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FD20 · temp zewn · kol. 16.02.2026]: wilgotność 83 %, foto startt = 2,62, foto stop = 1,75"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp05bl6f9k",
@@ -4284,7 +4388,7 @@
    "target2": 38.5,
    "kwh": 58.42,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FD10 · temp zewn start · kol. 16.02.2026]: wilgotność 71% o godz. 16:15 | Komentarz XLS [FD11 · temp zewn zatrz · kol. 16.02.2026]: w nocy było -7 stopni, cały dzień i noc był mróz od -5 do -7 stopni, 85 % wilgotn"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impglun0d57",
@@ -4314,7 +4418,7 @@
    "target2": 39.1,
    "kwh": 63.95,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FE10 · temp zewn start · kol. 17.02.2026]: wilg 85% temp w nocy do -5 stopni, rano o 7 3,5"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impoc3dv3ff",
@@ -4327,7 +4431,7 @@
    "out": -1.3,
    "kwh": 2.83,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FF20 · temp zewn · kol. 18.02.2026]: wilgotność 90 %, defrost"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impeyzmbttk",
@@ -4344,7 +4448,7 @@
    "target2": 37.3,
    "kwh": 61.72,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FF10 · temp zewn start · kol. 18.02.2026]: wilgotność 90%,"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impafeghqzl",
@@ -4357,7 +4461,7 @@
    "out": -1.3,
    "kwh": 2.79,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FG20 · temp zewn · kol. 19.02.2026]: wilgotność 75%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp93oy4w6j",
@@ -4374,7 +4478,7 @@
    "target2": 38.2,
    "kwh": 66.94,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FG7 · temp offset · kol. 19.02.2026]: zmienione pozniej na 38/0,2 temp w nocy doszła do -13,5 stopnia, pompa pracowała na 40,7 | Komentarz XLS [FG9 · wynik · kol. 19.02.2026]: wilgotność 75%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impch6z7tgn",
@@ -4387,7 +4491,7 @@
    "out": 0.1,
    "kwh": 2.35,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FH20 · temp zewn · kol. 20.02.2026]: wilg 72% foto start 1,42 foto top = 1"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impapy23gr4",
@@ -4404,7 +4508,7 @@
    "target2": 38.2,
    "kwh": 62,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FH9 · wynik · kol. 20.02.2026]: w nocy było -11,9 stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impq65l4cgw",
@@ -4417,7 +4521,7 @@
    "out": 0,
    "kwh": 3.16,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FI20 · temp zewn · kol. 21.02.2026]: wilg 81%m foto start = 2, foto stop = defrost do 34 stopni"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impmzvah32l",
@@ -4447,7 +4551,7 @@
    "out": 4.6,
    "kwh": 2.37,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FJ20 · temp zewn · kol. 22.02.2026]: wilgotnosć 96%,brak foto"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impv561gvvc",
@@ -4464,7 +4568,7 @@
    "target2": 37,
    "kwh": 36.49,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FJ10 · temp zewn start · kol. 22.02.2026]: wigotnosc 96%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impb0vgzmxy",
@@ -4477,7 +4581,7 @@
    "out": 6.3,
    "kwh": 1.83,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FK20 · temp zewn · kol. 23.02.2026]: wilgotnosc 96%, foto start = 461 w, foto stop = 75W"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp2qn2wzzm",
@@ -4494,7 +4598,7 @@
    "target2": 36.7,
    "kwh": 34.03,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FK11 · temp zewn zatrz · kol. 23.02.2026]: wilgotność 97%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp7c4wvcaz",
@@ -4507,7 +4611,7 @@
    "out": 3.2,
    "kwh": 2.53,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FL20 · temp zewn · kol. 24.02.2026]: wilgotność 97% defrost, start foto = 492 W, foto stop = 205 W"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impp99a3wbn",
@@ -4524,7 +4628,7 @@
    "target2": 36.3,
    "kwh": 44.18,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FL10 · temp zewn start · kol. 24.02.2026]: wilgoynosc 97%"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impxgy5vdat",
@@ -4537,7 +4641,7 @@
    "out": 1.6,
    "kwh": 2.43,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FM20 · temp zewn · kol. 25.02.2026]: wilgotność 97%, defrost"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "implgqbw9ze",
@@ -4554,7 +4658,7 @@
    "target2": 36.6,
    "kwh": 39.96,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FM10 · temp zewn start · kol. 25.02.2026]: wilgotność 97% | Komentarz XLS [FM11 · temp zewn zatrz · kol. 25.02.2026]: w nocy było -4,5"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp7ai3avwj",
@@ -4567,7 +4671,7 @@
    "out": 5.2,
    "kwh": 3.23,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FN20 · temp zewn · kol. 26.02.2026]: defrost, wilg 97%,"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imput87ljv5",
@@ -4576,7 +4680,7 @@
    "start": "2026-03-01T17:20",
    "end": "2026-03-02T13:56",
    "rad": "6",
-   "out1": null,
+   "out1": 10.9,
    "out2": 12,
    "slope": 0.2,
    "offset": 36,
@@ -4584,7 +4688,9 @@
    "target2": 33.4,
    "kwh": 77.62,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FQ12 · zużycie kW · kol. 01.03.2026]: wynik od piatku (bez wody), sobota bez ody, niedziela woda"
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impi6t0krxm",
@@ -4597,7 +4703,7 @@
    "out": 12,
    "kwh": 1.58,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FQ20 · temp zewn · kol. 01.03.2026]: foto start = 4,05, foto stop - 4,05 | Komentarz XLS [FR20 · temp zewn · kol. 02.03.2026]: wilgotnosc 97%, foto start=1,9, foto stop ="
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imprxwevfi2",
@@ -4627,7 +4733,7 @@
    "out": 12.9,
    "kwh": 1.46,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FS17 · godz end · kol. 03.03.2026]: pompa wyłączona"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp2xasq6uv",
@@ -4644,7 +4750,7 @@
    "target2": 33.3,
    "kwh": 23.81,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FS3 · godz start · kol. 03.03.2026]: pompa wyłączona | Komentarz XLS [FS11 · temp zewn zatrz · kol. 03.03.2026]: temp w nocy -2 stopnie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp77c2xnvh",
@@ -4674,7 +4780,7 @@
    "target2": 33.3,
    "kwh": 26.55,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FT11 · temp zewn zatrz · kol. 04.03.2026]: temp w nocy -2 stopnie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impnybs53r3",
@@ -4704,7 +4810,7 @@
    "target2": 33.3,
    "kwh": 29.07,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FU11 · temp zewn zatrz · kol. 05.03.2026]: temp w nocy -4 stopnie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp3suqgzye",
@@ -4721,7 +4827,7 @@
    "target2": null,
    "kwh": 28.5,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FV10 · temp zewn start · kol. 06.03.2026]: w nocy mróz do -2 stopni"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impk9h85u2p",
@@ -4734,7 +4840,7 @@
    "out": 12.5,
    "kwh": 2.38,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FX21 · zuzycie kW · kol. 08.03.2026]: z woda"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "imp28npb3eg",
@@ -4751,7 +4857,7 @@
    "target2": 33.3,
    "kwh": 26.8,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FW10 · temp zewn start · kol. 07.03.2026]: w nocy mróz -1,5 stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impo81vd4uc",
@@ -4768,7 +4874,7 @@
    "target2": 35.1,
    "kwh": 26.77,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FX10 · temp zewn start · kol. 08.03.2026]: w nocy - 2 stopnie, od 4 dni słonecznie"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impxoo2ruhw",
@@ -4798,7 +4904,7 @@
    "target2": 33.3,
    "kwh": 22.96,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FY10 · temp zewn start · kol. 09.03.2026]: ok oło -0,5 stopnia"
+   "note": "Import z XLS (2025/2026)."
   },
   {
    "id": "impbr0hr9gd",
@@ -4820,7 +4926,7 @@
    "start": "2026-03-10T20:50",
    "end": "2026-03-11T07:20",
    "rad": "6",
-   "out1": null,
+   "out1": 8.7,
    "out2": 6.5,
    "slope": null,
    "offset": null,
@@ -4828,7 +4934,9 @@
    "target2": 35,
    "kwh": 14.53,
    "price": 0.74,
-   "note": "Import z XLS (2025/2026). | Komentarz XLS [FZ12 · zużycie kW · kol. 10.03.2026]: zuzycie z woda"
+   "note": "Import z XLS (2025/2026).",
+   "outSrc": "open-meteo",
+   "updatedAt": 1791742070147
   },
   {
    "id": "impl16ve66s",
@@ -4846,6 +4954,71 @@
    "kwh": 17.69,
    "price": 0.74,
    "note": "Import z XLS (2025/2026)."
+  },
+  {
+   "id": "mv40r2dgy3j1",
+   "type": "CWU",
+   "date": "2026-10-11",
+   "start": "2026-10-11T17:00",
+   "end": "2026-10-11T17:35",
+   "t1": 39.8,
+   "t2": 47.4,
+   "out": 11.9,
+   "kwh": 1.6,
+   "price": 1.1,
+   "note": "pochmurno, ale na PV podgrzewane",
+   "updatedAt": 1791734990020
+  },
+  {
+   "id": "mv40t7fmz0h7",
+   "type": "CO",
+   "date": "2026-10-04",
+   "start": "2026-10-04T17:47",
+   "end": "2026-10-04T20:29",
+   "rad": "6",
+   "out1": 11.1,
+   "out2": 12.1,
+   "slope": 0.2,
+   "offset": 37,
+   "target1": 34.78,
+   "target2": null,
+   "kwh": null,
+   "price": 1.1,
+   "note": "34,6, nie spisywany licznik specjalnie dla weryfikacji zuzycia juz po wygrzaniu instalacji",
+   "updatedAt": 1791742070147,
+   "outSrc": "open-meteo"
+  },
+  {
+   "id": "mv45n68830v4",
+   "type": "CWU",
+   "date": "2026-10-10",
+   "start": "2026-10-10T14:47",
+   "end": "2026-10-10T15:13",
+   "t1": 41.1,
+   "t2": 46.9,
+   "out": 13.2,
+   "kwh": 1.47,
+   "price": 1.1,
+   "note": "cześciowo słonecznie, zachmurzenie, 12-14 stopni",
+   "updatedAt": 1791743206473
+  },
+  {
+   "id": "mv45s2b51ni8",
+   "type": "CO",
+   "date": "2026-10-11",
+   "start": "2026-10-11T17:47",
+   "end": "2026-10-11T23:50",
+   "rad": "6",
+   "out1": 11.9,
+   "out2": null,
+   "slope": 0.2,
+   "offset": 37,
+   "target1": 34.62,
+   "target2": null,
+   "kwh": 15,
+   "price": 1.1,
+   "note": "start 37/0,2= 34,8 - temp 11,9; drugi start 38/02=35,6-temp 9,1, dane spisywane z aplikacji i licznika pc, a mimo to system widzi ze to blad...- do weryfikacji, wartość, 1,33 nie skasowana wiec dane z zakonczenia grzania nalezy odjac . Pompa przestała grzac o 19:40, kolejne cykle nie weryfikowane-aż do wyłączenia pompy. dane kWh i temp zewn koniec do uzupełnienia",
+   "updatedAt": 1791743489687
   }
  ],
  "pv": [
@@ -5004,6 +5177,30 @@
    "value": 13.29,
    "note": "pochmurno wietrznie, ok 14 stopni",
    "updatedAt": 1791577332420
+  },
+  {
+   "id": "mv44hzig6di8",
+   "date": "2026-10-10",
+   "kwh": 5.4,
+   "price": 1.1,
+   "mode": "opusty",
+   "opust": 0.8,
+   "creditKwh": 4.32,
+   "value": 4.75,
+   "note": "pochmurno i lekki deszcz, temp 12-14 stopni",
+   "updatedAt": 1791741284872
+  },
+  {
+   "id": "mv44imf5m4np",
+   "date": "2026-10-11",
+   "kwh": 13.2,
+   "price": 1.1,
+   "mode": "opusty",
+   "opust": 0.8,
+   "creditKwh": 10.56,
+   "value": 11.62,
+   "note": "czesciowo słonecznie, 14 stopni",
+   "updatedAt": 1791741314561
   }
  ],
  "inv": [
@@ -8984,6 +9181,90 @@
    "hzMax": 100,
    "note": "",
    "src": "ręcznie"
+  },
+  {
+   "id": "mv419gtwmci3",
+   "start": "2026-10-11T17:47",
+   "end": "2026-10-12T00:00",
+   "date": "2026-10-11",
+   "mode": "CO",
+   "defMin": 0,
+   "kwh": null,
+   "rd": [
+    {
+     "ts": "2026-10-11T17:47",
+     "c1": true,
+     "c2": false,
+     "def": false,
+     "k": 0,
+     "t01": 14.7,
+     "t02": 17.8,
+     "t04": 11.9,
+     "flow": 2.51,
+     "hz": 41,
+     "volt": 399,
+     "amp": 1.9,
+     "p": 0
+    },
+    {
+     "ts": "2026-10-11T18:27",
+     "c1": true,
+     "c2": false,
+     "def": false,
+     "k": null,
+     "t01": 30.4,
+     "t02": 34.6,
+     "t04": 9.1,
+     "flow": 2.47,
+     "hz": 94,
+     "volt": 394,
+     "amp": 3.3,
+     "p": 1.77
+    },
+    {
+     "ts": "2026-10-11T19:27",
+     "c1": true,
+     "c2": false,
+     "def": false,
+     "k": null,
+     "t01": 34.6,
+     "t02": 36.5,
+     "t04": 7.6,
+     "flow": 2.44,
+     "hz": 30,
+     "volt": 395,
+     "amp": 2.1,
+     "p": 1.33
+    },
+    {
+     "ts": "2026-10-12T00:00",
+     "c1": true,
+     "c2": false,
+     "def": false,
+     "k": 15,
+     "t01": 30.4,
+     "t02": 34.6,
+     "t04": 6,
+     "flow": 0,
+     "hz": 0,
+     "volt": null,
+     "amp": null,
+     "p": 15
+    }
+   ],
+   "res": {
+    "T": 0.1,
+    "F": 0.01,
+    "E": 0.1
+   },
+   "rho": 1000,
+   "cpw": 4.186,
+   "dtOff": 0,
+   "useOff": false,
+   "hzMax": 100,
+   "note": "start 37/0,2= 34,8 - temp 11,9; drugi start 38/02=35,6-temp 9,1, dane spisywane z aplikacji i licznika pc, a mimo to system widzi ze to blad...- do weryfikacji, wartość, 1,33 nie skasowana wiec dane z zakonczenia grzania nalezy odjac . Pompa przestała grzac o 19:40",
+   "src": "ręcznie",
+   "updatedAt": 1791740717153
   }
  ],
  "docs": [

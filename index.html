@@ -204,18 +204,70 @@ details.recon summary{cursor:pointer;color:var(--cyan)}
 details.recon div{max-height:220px;overflow:auto;margin-top:6px}
 .inv-hide{display:none!important}
 @media(min-width:1100px){
-table.rc{display:table;border-collapse:collapse}
-table.rc thead{display:table-header-group}
-table.rc tbody{display:table-row-group}
-table.rc tfoot{display:table-footer-group}
-table.rc tr{display:table-row;background:none;border:0;border-radius:0;padding:0;margin:0}
-table.rc td{display:table-cell;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;overflow-wrap:normal;vertical-align:top}
-table.rc td[data-l]::before{display:none}
-table.rc td.notecell{white-space:normal;min-width:240px;max-width:460px;overflow-wrap:anywhere}
-table.rc td.btncell{display:table-cell;white-space:nowrap}
-table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
+table.rc:not(.cards){display:table;border-collapse:collapse}
+table.rc:not(.cards) thead{display:table-header-group}
+table.rc:not(.cards) tbody{display:table-row-group}
+table.rc:not(.cards) tfoot{display:table-footer-group}
+table.rc:not(.cards) tr{display:table-row;background:none;border:0;border-radius:0;padding:0;margin:0}
+table.rc:not(.cards) td{display:table-cell;padding:7px 8px;border-bottom:1px solid var(--line);white-space:normal;overflow-wrap:break-word;vertical-align:top}
+table.rc:not(.cards) td.nodata{display:table-cell}
+table.rc:not(.cards) td[data-l]::before{display:none}
+table.rc:not(.cards) td.notecell{white-space:pre-wrap;min-width:200px;max-width:380px;overflow-wrap:anywhere}
+table.rc:not(.cards) td.btncell{display:table-cell;white-space:nowrap}
+table.rc:not(.cards) th{white-space:normal;vertical-align:bottom;max-width:150px}
 }
-#dashMonths table th,#dashMonths table td{white-space:nowrap}
+
+/* --- v10: bez przewijania w bok, pogoda/API --- */
+.chartScroll{overflow-x:visible}
+.chartScroll svg{min-width:0!important;max-width:100%!important;width:100%;height:auto}
+.panelGrid>*,.dashGrid>*,.stats>*,.balGrid>*{min-width:0}
+.panel{min-width:0;overflow-wrap:anywhere}
+.tbl-wrap{max-width:100%}
+table.rc td.notecell{white-space:pre-wrap}
+@media(max-width:700px){
+ header{padding:12px 12px 4px}header p{font-size:.78rem}
+ .storebar{padding:0 12px;margin-top:8px}.storebar .inner{padding:8px 10px}
+ nav{padding:0 12px;gap:5px;margin-top:8px}nav button{padding:6px 9px;font-size:.76rem}
+ main{padding:10px 10px 50px}
+ .card{padding:12px}.card.tbl-wrap{padding:10px 8px}
+ table.rc tr{padding:9px 10px}
+}
+.wxbar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--cyan);border-radius:10px;padding:8px 12px;margin-bottom:12px;font-size:.78rem}
+.wxbar label{margin:0;white-space:nowrap}
+.wxbar input,.wxbar select{width:74px;padding:5px 6px;font-size:.78rem}.wxbar select{width:auto}
+.wxbar .note{flex:1 1 220px}
+.apirow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:10px}
+.apirow>div{flex:1 1 150px;min-width:0}
+.apibtn{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px 12px;border-radius:7px;cursor:pointer;font-size:.8rem;font-family:inherit}
+.apibtn.pri{background:var(--cyan);color:#071419;border-color:var(--cyan);font-weight:700}
+.apibtn:disabled{opacity:.5;cursor:default}
+.wxres{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.wxres button{text-align:left}
+.formwx{margin:2px 0 4px}
+.formwx .note{display:block;margin-top:4px}
+
+/* --- v11: czytelne karty (Dane, PV, COP historia) + formularz pogody --- */
+table.rc.big tr{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px 16px;padding:14px 16px;margin-bottom:12px;border-radius:12px}
+@media(min-width:700px){table.rc.big tr{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px 22px}}
+table.rc.big td{font-size:.94rem;line-height:1.45}
+table.rc.big td[data-l]::before{font-size:.66rem;margin-bottom:3px;letter-spacing:.03em}
+table.rc.big td.w2{grid-column:span 2}
+table.rc.big td.notecell{border-top:1px dashed var(--line);padding-top:10px;font-size:.9rem;line-height:1.55}
+table.rc.big td.cop b{font-size:1.3rem;color:var(--ok)}
+table.rc.big .notecell2{font-size:.82rem;line-height:1.5}
+table.rc.big .note{font-size:.72rem}
+.tv{font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+.ar{color:var(--muted);margin:0 6px}
+.tl{font-style:normal;color:var(--muted);font-size:.72rem;margin-right:6px}
+.tp{display:inline-block;margin-right:14px;white-space:nowrap}
+.tp i{font-style:normal;color:var(--muted);font-size:.68rem;margin-right:4px}
+.tp b{font-family:'IBM Plex Mono',monospace;font-weight:600}
+.tp.min b{color:var(--cyan)}.tp.max b{color:var(--amber)}
+.wxform{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;padding:10px 12px;margin:2px 0 4px}
+.wxform-h{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:8px}
+.wxform-h .note{flex:1 1 220px}
+.wxform-btns{display:flex;gap:6px;flex-wrap:wrap}
+.wxform-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 </style>
 </head>
 <body>
@@ -243,6 +295,7 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
   <button data-tab="cop">⚡ COP — okres pracy</button>
   <button data-tab="cophist">📈 COP — historia</button>
   <button data-tab="copimp">📥 COP — import</button>
+  <button data-tab="api">🌐 Pogoda i API</button>
   <button data-tab="ustawienia">Ustawienia</button>
 </nav>
 <main>
@@ -291,6 +344,11 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
       <div><label>Przesunięcie krzywej (°C)</label><input type="number" id="co_offset" step="0.1"></div>
       <div><label>Zużycie z licznika (kWh)</label><input type="number" id="co_kwh" step="0.01"></div>
       <div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="co_price" step="0.01" min="0"></div>
+      <div class="full wxform" id="co_wx">
+        <div class="wxform-h"><b>🌦 Pogoda dnia</b><span class="note" id="co_wxinfo"></span>
+          <span class="wxform-btns"><button type="button" class="apibtn" onclick="wxAuto('co',true)">↻ Pobierz z API</button> <button type="button" class="apibtn" onclick="wxClearForm('co')">Wyczyść</button></span></div>
+        <div class="wxform-g"><div><label>Najniższa temp. dnia (°C)</label><input type="number" step="0.1" id="co_wtn" data-wxm="1"></div><div><label>Średnia temp. dnia (°C)</label><input type="number" step="0.1" id="co_wtm" data-wxm="1"></div><div><label>Najwyższa temp. dnia (°C)</label><input type="number" step="0.1" id="co_wtx" data-wxm="1"></div><div><label>Nasłonecznienie (kWh/m²)</label><input type="number" step="0.1" id="co_wrad" data-wxm="1"></div><div><label>Godziny słońca (h)</label><input type="number" step="0.1" id="co_wsun" data-wxm="1"></div></div>
+      </div>
       <div class="full"><label>Notatka</label><textarea id="co_note" rows="3"></textarea></div>
     </div>
     <div class="calcrow">
@@ -311,6 +369,11 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
       <div><label>Temp. zewnętrzna (°C)</label><input type="number" id="w_out" step="0.1"></div>
       <div><label>Zużycie z licznika (kWh)</label><input type="number" id="w_kwh" step="0.01"></div>
       <div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="w_price" step="0.01" min="0"></div>
+      <div class="full wxform" id="w_wx">
+        <div class="wxform-h"><b>🌦 Pogoda dnia</b><span class="note" id="w_wxinfo"></span>
+          <span class="wxform-btns"><button type="button" class="apibtn" onclick="wxAuto('w',true)">↻ Pobierz z API</button> <button type="button" class="apibtn" onclick="wxClearForm('w')">Wyczyść</button></span></div>
+        <div class="wxform-g"><div><label>Najniższa temp. dnia (°C)</label><input type="number" step="0.1" id="w_wtn" data-wxm="1"></div><div><label>Średnia temp. dnia (°C)</label><input type="number" step="0.1" id="w_wtm" data-wxm="1"></div><div><label>Najwyższa temp. dnia (°C)</label><input type="number" step="0.1" id="w_wtx" data-wxm="1"></div><div><label>Nasłonecznienie (kWh/m²)</label><input type="number" step="0.1" id="w_wrad" data-wxm="1"></div><div><label>Godziny słońca (h)</label><input type="number" step="0.1" id="w_wsun" data-wxm="1"></div></div>
+      </div>
       <div class="full"><label>Notatka</label><textarea id="w_note" rows="3"></textarea></div>
     </div>
     <div class="calcrow">
@@ -331,6 +394,7 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
 </div>
 
 <div class="tab" id="dane">
+  <div class="wxbar" data-wxbar></div>
   <div class="toolbar">
     <label>Typ</label><select id="filterType" onchange="renderTable()">
       <option value="all">Wszystkie wpisy</option><option value="CO">Tylko CO</option><option value="CWU">Tylko CWU</option>
@@ -340,7 +404,7 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
     <button onclick="exportXLSX()">Eksportuj XLS</button>
   </div>
   <div class="card tbl-wrap">
-    <table class="rc"><thead><tr><th>Data</th><th>Typ</th><th>Start → Koniec</th><th>Czas</th><th>kWh</th><th>Koszt</th><th>Cel (°C)</th><th>Zewn. (°C)</th><th>Woda (°C)</th><th>Grzej.</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc big cards"><thead><tr><th>Data</th><th>Typ</th><th>Czas pracy (start → koniec)</th><th>Czas trwania</th><th>Energia (kWh)</th><th>Koszt</th><th>Temp. zewn. (start → koniec)</th><th>Cel CO / woda CWU</th><th>Grzejniki</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="tbody"></tbody><tfoot id="tblFoot"></tfoot></table>
     <div id="emptyMsg" class="empty" style="display:none">Brak wpisów.</div>
   </div>
@@ -351,6 +415,7 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
 </div>
 
 <div class="tab" id="raporty">
+  <div class="wxbar" data-wxbar></div>
   <div class="toolbar">
     <label>Grupuj wg</label><select id="repGroupBy" onchange="renderReports()">
       <option value="period">Okresu czasu</option><option value="temp">Temperatury zewnętrznej</option>
@@ -383,6 +448,7 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
 </div>
 
 <div class="tab" id="pv">
+  <div class="wxbar" data-wxbar></div>
   <div class="card">
     <h2><span class="dot pv"></span>Ustawienia instalacji PV</h2>
     <div class="grid">
@@ -429,6 +495,11 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
       <div><label>Data</label><input type="date" id="pv_date"></div>
       <div><label>Produkcja (kWh)</label><input type="number" id="pv_kwh" step="0.01" min="0"></div>
       <div><label>Cena zastosowana w tym wpisie (zł/kWh)</label><input type="number" id="pv_price" step="0.001" min="0"></div>
+      <div class="full wxform" id="pv_wx">
+        <div class="wxform-h"><b>🌦 Pogoda dnia</b><span class="note" id="pv_wxinfo"></span>
+          <span class="wxform-btns"><button type="button" class="apibtn" onclick="wxAuto('pv',true)">↻ Pobierz z API</button> <button type="button" class="apibtn" onclick="wxPvFill('kwh')">Podstaw szacunek kWh</button> <button type="button" class="apibtn" onclick="wxPvFill('note')">Opis pogody → notatka</button> <button type="button" class="apibtn" onclick="wxClearForm('pv')">Wyczyść</button></span></div>
+        <div class="wxform-g"><div><label>Najniższa temp. dnia (°C)</label><input type="number" step="0.1" id="pv_wtn" data-wxm="1"></div><div><label>Średnia temp. dnia (°C)</label><input type="number" step="0.1" id="pv_wtm" data-wxm="1"></div><div><label>Najwyższa temp. dnia (°C)</label><input type="number" step="0.1" id="pv_wtx" data-wxm="1"></div><div><label>Nasłonecznienie (kWh/m²)</label><input type="number" step="0.1" id="pv_wrad" data-wxm="1"></div><div><label>Godziny słońca (h)</label><input type="number" step="0.1" id="pv_wsun" data-wxm="1"></div></div>
+      </div>
       <div class="full"><label>Notatka</label><textarea id="pv_note" rows="3"></textarea></div>
     </div>
     <p class="note" style="margin-top:6px">Pole ceny podpowiada domyślną stawkę z ustawień powyżej — zmień ją tutaj, jeśli akurat tego dnia cena była inna. Zapisuje się wraz z wpisem (razem ze sposobem rozliczania obowiązującym w tym momencie), więc historia zachowuje prawdziwe dane z danego dnia, nawet gdy później zmienisz ustawienia.</p>
@@ -437,7 +508,7 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
 
   <div class="card tbl-wrap">
     <h2 style="margin-bottom:8px">Historia produkcji PV</h2>
-    <table class="rc"><thead><tr><th>Data</th><th>kWh</th><th>kWh do rozliczenia</th><th>Cena (zł/kWh)</th><th>Wartość</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc big cards"><thead><tr><th>Data</th><th>kWh</th><th>kWh do rozliczenia</th><th>Cena (zł/kWh)</th><th>Wartość</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th><th>Szacunek z nasłonecznienia</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="pvTbody"></tbody><tfoot id="pvTblFoot"></tfoot></table>
     <div id="pvEmptyMsg" class="empty" style="display:none">Brak wpisów.</div>
   </div>
@@ -719,6 +790,7 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
 </div>
 
 <div class="tab" id="cophist">
+  <div class="wxbar" data-wxbar></div>
   <div class="toolbar">
     <label>Tryb</label><select id="ch_mode" onchange="renderCopHist()"><option value="all">CO + CWU</option><option value="CO">Tylko CO</option><option value="CWU">Tylko CWU</option></select>
     <span class="rng"><label>Od</label><input type="date" id="ch_from" onchange="renderCopHist()">
@@ -737,13 +809,13 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
   </div>
   <div class="card tbl-wrap">
     <h2 style="margin-bottom:8px">Zestawienie zużycia i COP</h2>
-    <table class="rc"><thead><tr><th>Okres</th><th>Dni z pracą</th><th>Czas pracy</th><th>Energia E (kWh)</th><th>Śr. moc pobierana podczas pracy (kW) — szacunek = E ÷ czas pracy</th><th>Ciepło Q (kWh)</th><th>COP</th><th>T04 temp. zewn. śr. (°C)</th></tr></thead><tbody id="ch_agg"></tbody></table>
+    <table class="rc big cards"><thead><tr><th>Okres</th><th>Dni z pracą</th><th>Czas pracy</th><th>Energia (kWh)</th><th>Moc pobierana (kW)</th><th>Ciepło (kWh)</th><th>COP</th><th>Temp. zewn. T04 śr.</th></tr></thead><tbody id="ch_agg"></tbody></table>
     <p class="note" style="margin-top:8px"><b>Jak czytać:</b> każdy wiersz sumuje okresy pracy przypisane do danego dnia/tygodnia/miesiąca. Przy ustawieniu „dnia uruchomienia” cały okres (np. praca od 21:14 do 7:24) liczy się do dnia, w którym się zaczął — tak jak w zakładce „Dane”. Ustawienie „dób kalendarzowych” dzieli taki okres o północy proporcjonalnie do czasu, więc sumy dnia różnią się od „Dane”. „Czas pracy” to tylko czas zapisanych okresów, nie doba. „Śr. moc podczas pracy” = energia ÷ czas pracy. COP liczony jest tylko z okresów, które mają odczyty T01, T02 i T39; jeśli pokrywają tylko część energii, pod COP widać ile procent.</p>
   </div>
   <div class="card tbl-wrap">
     <h2 style="margin-bottom:8px">Okresy pracy</h2>
     <p class="note" style="margin:0 0 8px"><b>Odczyty: wszystkie / do COP</b> — „wszystkie” to liczba odczytów wpisanych w okresie (Start, Stop i pośrednie), „do COP” to te, z których da się policzyć ciepło: mają T01, T02 i przepływ T39, ΔT &gt; 0, sprężarka pracuje i nie jest to odszranianie. Okres z „0” w drugiej liczbie nie ma COP — dopisz odczyty przyciskiem „Edytuj”.</p>
-    <table class="rc"><thead><tr><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas trwania</th><th>Tryb</th><th>Odczyty: wszystkie / do COP</th><th>T04 temp. zewn. śr. °C (min…max)</th><th>T30 sprężarka śr. (Hz)</th><th>E energia z licznika (kWh)</th><th>Pel śr. moc pobierana (kW) — szacunek = E ÷ czas</th><th>Q śr. moc grzewcza (kW)</th><th>Ciepło oddane (kWh)</th><th>COP</th><th>Zakres COP</th><th>cos φ (* = orient.)</th><th>Kontrole</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc big cards"><thead><tr><th>Tryb</th><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas trwania</th><th>COP</th><th>Energia (kWh)</th><th>Moc pobierana (kW)</th><th>Moc grzewcza (kW)</th><th>Ciepło oddane (kWh)</th><th>Temp. zewn. T04 (śr. · min…max)</th><th>Temp. dnia z API (min · śr. · max)</th><th>Sprężarka T30</th><th>Zakres COP</th><th>cos φ</th><th>Odczyty (wszystkie / do COP)</th><th>Kontrole</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="ch_tbody"></tbody></table>
     <div id="ch_empty" class="empty" style="display:none">Brak okresów — dodaj w zakładce „⚡ COP — okres pracy” albo zaimportuj dane w „📥 COP — import”.</div>
   </div>
@@ -788,6 +860,60 @@ table.rc th{white-space:normal;vertical-align:bottom;max-width:150px}
     • Tryb: tekst zawierający „CWU” = CWU, inaczej CO.<br>
     • Importowane okresy używają bieżącej korekty ΔT z Ustawień (domyślnie 0 K).<br>
     • Wiersze bez poprawnej daty startu i stopu są pomijane (zobaczysz powód w podglądzie).</p>
+  </div>
+</div>
+
+<div class="tab" id="api">
+  <div class="card">
+    <h2>📍 Lokalizacja instalacji</h2>
+    <p class="note">Potrzebna do pobrania pogody. Zapisuje się w ustawieniach (synchronizuje się razem z danymi). Dane pogodowe: <b>Open-Meteo.com</b> — bezpłatne, bez klucza i rejestracji, historia od 1940 r.</p>
+    <div class="apirow">
+      <div><label>Szukaj miejscowości</label><input id="wx_q" placeholder="np. Wiązowna" onkeydown="if(event.key==='Enter')wxSearchPlace()"></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="wxSearchPlace()">Szukaj</button></div>
+    </div>
+    <div id="wx_results" class="wxres"></div>
+    <div class="apirow">
+      <div><label>Szerokość geogr. (lat)</label><input type="number" step="0.0001" id="wx_lat" onchange="wxSaveLoc()"></div>
+      <div><label>Długość geogr. (lon)</label><input type="number" step="0.0001" id="wx_lon" onchange="wxSaveLoc()"></div>
+      <div><label>Nazwa (opcjonalnie)</label><input id="wx_place" onchange="wxSaveLoc()"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>🌦 Dane pogodowe — pobierz do pamięci aplikacji</h2>
+    <p class="note">Pobiera dla każdej doby: temperaturę (średnia/min/max), nasłonecznienie (kWh/m²), godziny słońca, opad, wiatr — oraz temperaturę godzinową (do podstawiania przy cyklach). Dane trzymane są lokalnie w przeglądarce; da się je w każdej chwili pobrać ponownie.</p>
+    <div class="apirow">
+      <div><label>Od</label><input type="date" id="wx_from"></div>
+      <div><label>Do</label><input type="date" id="wx_to"></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="wxRangeFromData()">Zakres z moich wpisów</button></div>
+      <div style="flex:0 0 auto"><button class="apibtn pri" id="wx_fetchBtn" onclick="wxFetchUI()">Pobierz pogodę</button></div>
+    </div>
+    <div id="wx_status" class="note" style="margin-top:8px"></div>
+    <div id="wx_cache" class="note" style="margin-top:4px"></div>
+  </div>
+  <div class="card">
+    <h2>☀️ Pogoda w formularzach i szacunek PV</h2>
+    <p class="note"><b>Pogoda podstawia się automatycznie</b> w zakładkach „+ Dodaj” (CO/CWU) i „PV”, gdy wpisujesz datę/godzinę <b>nowego</b> wpisu: temperatura zewnętrzna na starcie i końcu cyklu oraz temperatura min/śr./max dnia, nasłonecznienie i godziny słońca. Każdą wartość możesz zmienić ręcznie — ręcznie zmieniona nie jest już nadpisywana. Zapisane wpisy aplikacja <b>sama nie zmienia</b> (w edycji pola pogody nic nie podstawiają, dopóki sam nie klikniesz „Pobierz z API”).</p>
+    <h3 class="sub">Szacunek produkcji PV z nasłonecznienia</h3>
+    <p class="note">Szacunek = promieniowanie dnia (kWh/m²) × moc instalacji (kWp) × współczynnik. Współczynnik można skalibrować na Twoich prawdziwych wpisach PV. Szacunek widać w tabeli „Historia produkcji PV” i przy dodawaniu wpisu — nie jest dopisywany do rozliczeń.</p>
+    <div id="wx_calib" class="note"></div>
+    <div class="apirow">
+      <div><label>Współczynnik (PR względem promieniowania poziomego)</label><input type="number" step="0.01" min="0.2" max="1.2" id="wx_pr" onchange="wxSavePR()"></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="wxCalibrate()">Skalibruj z moich wpisów PV</button></div>
+    </div>
+  </div>
+  <div class="card" style="border-left:4px solid var(--pv)">
+    <h2>⚡ SolaX Cloud — falownik</h2>
+    <p class="note">Oficjalne API SolaxCloud (tokenID + numer rejestracyjny modułu Wi-Fi/LAN) zwraca <b>tylko dane bieżące</b>: produkcję dziś (<code>yieldtoday</code>), sumę (<code>yieldtotal</code>), energię oddaną do sieci i pobraną (jeśli licznik podłączony). Brak historii wstecz — dlatego aplikacja zapisuje migawkę dnia przy każdym pobraniu; wieczorna migawka = produkcja dnia. Token i numer zostają <b>tylko w tej przeglądarce</b> (nie trafiają do pliku ani do synchronizacji).</p>
+    <div class="apirow">
+      <div><label>tokenID (23–24 znaki)</label><input id="sx_token" type="password" autocomplete="off" onchange="sxSave()"></div>
+      <div><label>Numer rejestracyjny (sn)</label><input id="sx_sn" autocomplete="off" onchange="sxSave()"></div>
+    </div>
+    <div class="apirow">
+      <div style="flex:2 1 280px"><label>Adres API (serwer)</label><input id="sx_base" list="sx_bases" onchange="sxSave()"><datalist id="sx_bases"><option value="https://www.eu.solaxcloud.com:9443/proxy/api/"><option value="https://www.solaxcloud.com/proxyApp/proxy/api/"></datalist></div>
+      <div style="flex:0 0 auto"><button class="apibtn pri" onclick="sxFetch()">Pobierz teraz</button></div>
+    </div>
+    <div id="sx_status" class="note" style="margin-top:8px"></div>
+    <div id="sx_snaps"></div>
   </div>
 </div>
 
@@ -953,7 +1079,7 @@ function applySettingsToInputs(){
   document.getElementById('pv_price').value = SET.pvPrice;
   document.getElementById('co_price').value = SET.price||'';
   document.getElementById('w_price').value = SET.price||'';
-  updatePvModeUI(); fillContractInputs();
+  updatePvModeUI(); fillContractInputs(); wxInit();
 }
 function saveToLocalStorage(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(syncPayload())); return true; }catch(e){ return false; } }
 function loadFromLocalStorage(){
@@ -1217,7 +1343,7 @@ function updatePvModeUI(){
 function cancelPvEdit(){
   pvEditId=null;
   document.getElementById('pvSubmitBtn').textContent='Zapisz wpis PV';
-  document.getElementById('pvCancelBar').style.display='none';
+  document.getElementById('pvCancelBar').style.display='none'; wxClearForm('pv');
 }
 function editPv(id){
   const r=PV.find(x=>x.id===id); if(!r) return;
@@ -1228,7 +1354,7 @@ function editPv(id){
   document.getElementById('pv_date').value=r.date;
   document.getElementById('pv_kwh').value=r.kwh;
   document.getElementById('pv_price').value=r.price;
-  document.getElementById('pv_note').value=r.note||'';
+  document.getElementById('pv_note').value=r.note||''; wxLoadForm('pv',r);
 }
 async function addPv(){
   const date=document.getElementById('pv_date').value, kwh=parseFloat(document.getElementById('pv_kwh').value);
@@ -1236,7 +1362,7 @@ async function addPv(){
   const price=parseFloat(document.getElementById('pv_price').value)||SET.pvPrice||0;
   const mode=SET.pvMode||'netbilling', opust=mode==='opusty'?(SET.pvOpust||0):1;
   const creditKwh=+(kwh*opust).toFixed(3);
-  const rec={date,kwh,price,mode,opust,creditKwh,value:+(creditKwh*price).toFixed(2),note:document.getElementById('pv_note').value||''};
+  const rec={date,kwh,price,mode,opust,creditKwh,value:+(creditKwh*price).toFixed(2),note:document.getElementById('pv_note').value||'',wx:wxRead('pv')||undefined};
   const wasEdit=!!pvEditId;
   if(wasEdit){ const idx=PV.findIndex(x=>x.id===pvEditId); if(idx>-1) PV[idx]={...PV[idx],...rec}; }
   else PV.push({id:uid(),...rec});
@@ -1248,18 +1374,19 @@ async function addPv(){
 async function delPv(id){ if(!confirm('Usunąć wpis PV?')) return; PV=PV.filter(r=>r.id!==id); await persist(); }
 function buildPvAgg(gran,rg){
   const map=new Map();
-  PV.forEach(r=>{ if(!r.date||!inRange(r.date,rg)) return; const k=periodKey(r.date,gran); if(!map.has(k)) map.set(k,{kwh:0,creditKwh:0,value:0});
+  PV.forEach(r=>{ if(!r.date||!inRange(r.date,rg)||!wxPass(r.date)) return; const k=periodKey(r.date,gran); if(!map.has(k)) map.set(k,{kwh:0,creditKwh:0,value:0});
     const o=map.get(k); o.kwh+=r.kwh||0; o.creditKwh+=(r.creditKwh??r.kwh)||0; o.value+=r.value||0; });
   return {keys:[...map.keys()].sort(), map};
 }
 function renderPv(){
-  const totKwh=PV.reduce((s,r)=>s+(r.kwh||0),0), totCredit=PV.reduce((s,r)=>s+((r.creditKwh??r.kwh)||0),0), totVal=PV.reduce((s,r)=>s+(r.value||0),0);
-  const avgDaily=PV.length?totKwh/PV.length:0;
+  const PVx=PV.filter(r=>wxPass(r.date));
+  const totKwh=PVx.reduce((s,r)=>s+(r.kwh||0),0), totCredit=PVx.reduce((s,r)=>s+((r.creditKwh??r.kwh)||0),0), totVal=PVx.reduce((s,r)=>s+(r.value||0),0);
+  const avgDaily=PVx.length?totKwh/PVx.length:0;
   document.getElementById('pvStats').innerHTML = `
     <div class="stat stat-pv"><div class="v">${totKwh.toFixed(2)} kWh</div><div class="l">Łączna produkcja</div></div>
     <div class="stat stat-pv"><div class="v">${totCredit.toFixed(2)} kWh</div><div class="l">Łącznie do rozliczenia</div></div>
     <div class="stat stat-pv"><div class="v">${totVal.toFixed(2)} zł</div><div class="l">${SET.pvMode==='opusty'?'Szac. oszczędność':'Łączna wartość'}</div></div>
-    <div class="stat stat-pv"><div class="v">${PV.length}</div><div class="l">Liczba wpisów</div></div>`;
+    <div class="stat stat-pv"><div class="v">${PVx.length}</div><div class="l">Liczba wpisów</div></div>`;
 
   const gran=document.getElementById('pvGran').value, metric=document.getElementById('pvMetric').value, chartType=document.getElementById('pvChartType').value;
   const {keys,map}=buildPvAgg(gran);
@@ -1268,13 +1395,13 @@ function renderPv(){
   const vals = show.map(k=> +( (metric==='kwh'?map.get(k).kwh:map.get(k).value) ).toFixed(2));
   document.getElementById('pvChartWrap').innerHTML = show.length ? panelChart('#e8c547', show, vals, lbl, chartType) : '<div class="empty">Brak danych — dodaj wpisy poniżej.</div>';
 
-  const rows=[...PV].sort((a,b)=>b.date.localeCompare(a.date));
+  const rows=[...PVx].sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById('pvEmptyMsg').style.display = rows.length?'none':'block';
   document.getElementById('pvTbody').innerHTML = rows.map(r=>`<tr>
       <td>${r.date}</td><td class="num">${r.kwh.toFixed(2)}</td><td class="num">${((r.creditKwh??r.kwh)||0).toFixed(2)}</td><td class="num">${r.price.toFixed(3)}</td>
-      <td class="num">${r.value.toFixed(2)} zł</td><td class="notecell">${xmlEsc(r.note||'—')}</td>
+      <td class="num">${r.value.toFixed(2)} zł</td><td class="w2">${wxTempsHtml(wxRec(r))}</td><td class="num">${wxRadHtml(wxRec(r))}</td><td class="num">${wxPvCell(r)}</td><td class="notecell">${xmlEsc(r.note||'—')}</td>
       <td><button class="btn2 edit" onclick="editPv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delPv('${r.id}')">Usuń</button></td></tr>`).join('');
-  document.getElementById('pvTblFoot').innerHTML = rows.length ? `<tr><td style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCredit.toFixed(2)}</td><td></td><td class="num">${totVal.toFixed(2)} zł</td><td colspan="2"></td></tr>` : '';
+  document.getElementById('pvTblFoot').innerHTML = rows.length ? `<tr><td style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCredit.toFixed(2)}</td><td></td><td class="num">${totVal.toFixed(2)} zł</td><td colspan="5"></td></tr>` : '';
 }
 
 /* ===================== FAKTURY (model zgodny z fakturami sprzedawcy: opust, zaliczki, składniki) ===================== */
@@ -1707,6 +1834,7 @@ function cancelEdit(){
   document.getElementById('cancelEditBar').style.display='none';
   document.getElementById('co_price').value=SET.price||'';
   document.getElementById('w_price').value=SET.price||'';
+  wxClearForm('co'); wxClearForm('w');
 }
 function editRecord(id){
   const r=R.find(x=>x.id===id); if(!r) return;
@@ -1719,14 +1847,14 @@ function editRecord(id){
     document.getElementById('co_out2').value=r.out2??''; document.getElementById('co_slope').value=r.slope??'';
     document.getElementById('co_offset').value=r.offset??''; document.getElementById('co_kwh').value=r.kwh??'';
     document.getElementById('co_price').value=(r.price!=null?r.price:(SET.price||0));
-    document.getElementById('co_note').value=r.note||''; liveCO();
+    document.getElementById('co_note').value=r.note||''; liveCO(); wxLoadForm('co',r);
     document.getElementById('coSubmitBtn').textContent='Zapisz zmiany (CO)';
   } else {
     document.getElementById('w_start').value=r.start; document.getElementById('w_end').value=r.end;
     document.getElementById('w_t1').value=r.t1??''; document.getElementById('w_t2').value=r.t2??'';
     document.getElementById('w_out').value=r.out??''; document.getElementById('w_kwh').value=r.kwh??'';
     document.getElementById('w_price').value=(r.price!=null?r.price:(SET.price||0));
-    document.getElementById('w_note').value=r.note||''; liveW();
+    document.getElementById('w_note').value=r.note||''; liveW(); wxLoadForm('w',r);
     document.getElementById('cwuSubmitBtn').textContent='Zapisz zmiany (CWU)';
   }
 }
@@ -1743,7 +1871,7 @@ async function addCO(){
     rad:document.getElementById('co_rad').value||null,out1:isNaN(out1)?null:out1,out2:isNaN(out2)?null:out2,
     slope:isNaN(slope)?null:slope,offset:isNaN(off)?null:off,target1:t1,target2:t2,kwh:parseFloat(document.getElementById('co_kwh').value)||null,
     price:parsedPrice('co_price'),
-    note:document.getElementById('co_note').value||''};
+    note:document.getElementById('co_note').value||'',wx:wxRead('co')||undefined,outSrc:wxOutSrc('co')};
   const wasEdit=!!editId;
   if(wasEdit){ const idx=R.findIndex(x=>x.id===editId); if(idx>-1) R[idx]={...R[idx],...rec}; }
   else R.push({id:uid(),...rec});
@@ -1761,7 +1889,7 @@ async function addCWU(){
     t1:parseFloat(document.getElementById('w_t1').value)||null,t2:parseFloat(document.getElementById('w_t2').value)||null,
     out:parseFloat(document.getElementById('w_out').value)||null,kwh:parseFloat(document.getElementById('w_kwh').value)||null,
     price:parsedPrice('w_price'),
-    note:document.getElementById('w_note').value||''};
+    note:document.getElementById('w_note').value||'',wx:wxRead('w')||undefined,outSrc:wxOutSrc('w')};
   const wasEdit=!!editId;
   if(wasEdit){ const idx=R.findIndex(x=>x.id===editId); if(idx>-1) R[idx]={...R[idx],...rec}; }
   else R.push({id:uid(),...rec});
@@ -1775,7 +1903,7 @@ async function delRec(id){ if(!confirm('Usunąć wpis?')) return; R=R.filter(r=>
 function renderTable(){
   const f=document.getElementById('filterType').value;
   const from=document.getElementById('danFrom').value, to=document.getElementById('danTo').value;
-  let rows=[...R].filter(r=>f==='all'||r.type===f);
+  let rows=[...R].filter(r=>(f==='all'||r.type===f)&&wxPass(r.date));
   if(from) rows=rows.filter(r=>r.date>=from);
   if(to) rows=rows.filter(r=>r.date<=to);
   rows.sort((a,b)=>(b.date+b.start).localeCompare(a.date+a.start));
@@ -1783,22 +1911,23 @@ function renderTable(){
   document.getElementById('emptyMsg').style.display=rows.length?'none':'block';
   rows.forEach(r=>{
     const min=durMin(r.start,r.end);
-    const cel = r.type==='CO' ? `${r.target1??'—'}→${r.target2??'—'}` : '—';
-    const zewn = r.type==='CO' ? `${r.out1??'—'}→${r.out2??'—'}` : `${r.out??'—'}`;
-    const woda = r.type==='CWU' ? `${r.t1??'—'}→${r.t2??'—'}` : '—';
+    const zewn = r.type==='CO' ? tmpArrow(r.out1,r.out2) : '<span class="tv">'+tmpF(r.out)+'</span>';
+    const celwoda = r.type==='CO' ? '<i class="tl">cel</i>'+tmpArrow(r.target1,r.target2) : '<i class="tl">woda</i>'+tmpArrow(r.t1,r.t2);
     const grzej = r.type==='CO' ? (r.rad??'—') : '—';
+    const W=wxRec(r);
     const tr=document.createElement('tr');
     tr.innerHTML=`<td class="num">${r.date}</td><td><span class="pill ${r.type==='CO'?'co':'cwu'}">${r.type}</span></td>
-      <td class="num">${fmtDT(r.start)} → ${fmtDT(r.end)}</td><td class="num">${fmtDur(min)}</td>
+      <td class="num w2">${fmtDT(r.start)} → ${fmtDT(r.end)}</td><td class="num">${fmtDur(min)}</td>
       <td class="num">${r.kwh??'—'}</td>
       <td class="num">${r.kwh?recCost(r).toFixed(2)+' zł':'—'}</td>
-      <td class="num">${cel}</td><td class="num">${zewn}</td><td class="num">${woda}</td><td class="num">${grzej}</td>
+      <td class="num w2">${zewn}</td><td class="num w2">${celwoda}</td><td class="num">${grzej}</td>
+      <td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td>
       <td class="notecell">${xmlEsc(r.note||'—')}</td>
       <td><button class="btn2 edit" onclick="editRecord('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></td>`;
     tbody.appendChild(tr);
   });
   const totKwh=rows.reduce((s,r)=>s+(r.kwh||0),0), totCost=rows.reduce((s,r)=>s+recCost(r),0);
-  document.getElementById('tblFoot').innerHTML = rows.length ? `<tr><td colspan="4" style="text-align:right;color:var(--muted)">Razem (${rows.length} wpisów):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCost.toFixed(2)} zł</td><td colspan="6"></td></tr>` : '';
+  document.getElementById('tblFoot').innerHTML = rows.length ? `<tr><td colspan="4" style="text-align:right;color:var(--muted)">Razem (${rows.length} wpisów):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCost.toFixed(2)} zł</td><td colspan="7"></td></tr>` : '';
   renderDanePv();
 }
 function renderDanePv(){
@@ -1837,7 +1966,7 @@ function dayCard(date, typeFilter){
     const notesHtml=rows.filter(r=>r.note).map(r=>`<div class="daynote"><b>${fmtDT(r.start)}</b> ${xmlEsc(r.note)}</div>`).join('');
     return `<div style="margin-top:10px;border-left:3px solid ${clr};padding-left:10px">
       <div style="font-size:.82rem;font-weight:700;color:${clr}">${label} — ${kwh.toFixed(2)} kWh · ${rcost.toFixed(2)} zł (${rows.length} cykl.)</div>
-      <div class="tbl-wrap"><table style="margin-top:4px"><thead><tr><th>Godz.</th><th>Czas</th><th>kWh</th><th>Koszt</th><th></th></tr></thead><tbody>${rowsHtml}</tbody></table></div>${notesHtml}</div>`;
+      <div class="tbl-wrap"><table class="rc" style="margin-top:4px"><thead><tr><th>Godz.</th><th>Czas</th><th>kWh</th><th>Koszt</th><th></th></tr></thead><tbody>${rowsHtml}</tbody></table></div>${notesHtml}</div>`;
   }
   const secCo=section(startedCo,'CO — ogrzewanie domu','var(--amber)');
   const secCwu=section(startedCwu,'CWU — ciepła woda','var(--cyan)');
@@ -1927,7 +2056,7 @@ function addAgg(o,r){ if(r.date) o.dates.add(r.date); const min=durMin(r.start,r
 function inRange(d,rg){ return !rg||((!rg.from||d>=rg.from)&&(!rg.to||d<=rg.to)); }
 function repRange(){ const g=id=>(document.getElementById(id)||{}).value||''; return {from:g('repFrom'),to:g('repTo')}; }
 function buildAgg(groupBy,gran,rg){
-  const map=new Map(); const RR=R.filter(r=>inRange(r.date,rg));
+  const map=new Map(); const RR=R.filter(r=>inRange(r.date,rg)&&wxPass(r.date));
   if(groupBy==='temp'){
     RR.forEach(r=>{ const t=outdoorTemp(r); if(t==null) return; const k=tempKey(t); ensureAgg(map,k); addAgg(map.get(k),r); });
     return {keys:[...map.keys()].sort((a,b)=>parseFloat(a)-parseFloat(b)), map};
@@ -2119,7 +2248,7 @@ function renderDashboard(){
   const T={co:sum(rows,r=>r.co),cwu:sum(rows,r=>r.cwu),hp:sum(rows,r=>r.hp),cost:sum(rows,r=>r.cost),pv:sum(rows,r=>r.pv),h:sum(rows,r=>r.c&&r.c.h),Eh:sum(rows,r=>r.c&&r.c.Eh),heat:sum(rows,r=>r.c&&r.c.heat)};
   const bal=(pv,hp,has)=>{ const b=pv-hp; return has?`<span style="color:${b>=0?'var(--ok)':'var(--danger)'}">${b>=0?'+':''}${b.toFixed(1)}</span>`:'—'; };
   $('dashGranNote').textContent=`Wiersze: ${gran==='day'?'dni':gran==='week'?'tygodnie':'miesiące'} z wpisami (${rows.length}). „Brak” przy PV = brak wpisów produkcji w tym wierszu.`;
-  $('dashMonths').innerHTML=rows.length?'<table><thead><tr><th>Okres</th><th>Pompa kWh</th><th>w tym CO</th><th>w tym CWU</th><th>Koszt zł</th><th>PV kWh</th><th>PV − pompa kWh</th><th>PV / pompa</th><th>COP</th><th>Czas pracy (COP)</th></tr></thead><tbody>'+rows.map(r=>
+  $('dashMonths').innerHTML=rows.length?'<table class="rc"><thead><tr><th>Okres</th><th>Pompa kWh</th><th>w tym CO</th><th>w tym CWU</th><th>Koszt zł</th><th>PV kWh</th><th>PV − pompa kWh</th><th>PV / pompa</th><th>COP</th><th>Czas pracy (COP)</th></tr></thead><tbody>'+rows.map(r=>
     `<tr><td class="num">${lbl(r.k)}</td><td class="num"><b>${r.hp.toFixed(1)}</b></td><td class="num">${r.co.toFixed(1)}</td><td class="num">${r.cwu.toFixed(1)}</td><td class="num">${r.cost.toFixed(2)}</td><td class="num">${r.hasPv?r.pv.toFixed(1):'brak'}</td><td class="num">${bal(r.pv,r.hp,r.hasPv)}</td><td class="num">${r.hasPv&&r.hp>0?(r.pv/r.hp*100).toFixed(0)+'%':'—'}</td><td class="num"><b>${r.c&&r.c.Eh>0?'≈ '+(r.c.heat/r.c.Eh).toFixed(2):'—'}</b></td><td class="num">${r.c?fmtHM(r.c.h):'—'}</td></tr>`).join('')
     +`</tbody><tfoot><tr style="font-weight:700"><td>RAZEM</td><td class="num">${T.hp.toFixed(1)}</td><td class="num">${T.co.toFixed(1)}</td><td class="num">${T.cwu.toFixed(1)}</td><td class="num">${T.cost.toFixed(2)}</td><td class="num">${T.pv.toFixed(1)}</td><td class="num">${bal(T.pv,T.hp,true)}</td><td class="num">${T.hp>0?(T.pv/T.hp*100).toFixed(0)+'%':'—'}</td><td class="num">${T.Eh>0?'≈ '+(T.heat/T.Eh).toFixed(2):'—'}</td><td class="num">${T.h?fmtHM(T.h):'—'}</td></tr></tfoot></table>`:'<div class="empty">Brak danych.</div>';
   const cats=keys.map(lbl);
@@ -2127,9 +2256,9 @@ function renderDashboard(){
   $('dashCoWrap').innerHTML=keys.length?svgBars(cats,[{name:'CO',color:'#e0904f',values:rows.map(r=>+r.co.toFixed(2))},{name:'CWU',color:'#49b4cf',values:rows.map(r=>+r.cwu.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
   window.__chartW=0;
   const last=S.items.slice().sort((a,b)=>b.P.start.localeCompare(a.P.start)).slice(0,6);
-  $('dashPeriods').innerHTML=last.length?'<table><thead><tr><th>Start</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P:PP,r})=>`<tr><td class="num">${fmtY(PP.start)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${PP.mode==='CWU'?'cwu':'co'}">${PP.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP w tym okresie.</div>';
+  $('dashPeriods').innerHTML=last.length?'<table class="rc"><thead><tr><th>Start</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P:PP,r})=>`<tr><td class="num">${fmtY(PP.start)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${PP.mode==='CWU'?'cwu':'co'}">${PP.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP w tym okresie.</div>';
   const dd=[...new Set([...S.RR.map(r=>r.date),...S.PP.map(p=>p.date)])].sort().reverse().slice(0,7);
-  $('dashDays').innerHTML=dd.length?'<table><thead><tr><th>Dzień</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th></tr></thead><tbody>'+dd.map(d=>{ const rr=S.RR.filter(r=>r.date===d);
+  $('dashDays').innerHTML=dd.length?'<table class="rc"><thead><tr><th>Dzień</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th></tr></thead><tbody>'+dd.map(d=>{ const rr=S.RR.filter(r=>r.date===d);
     return `<tr><td class="num">${d}</td><td class="num">${sum(rr.filter(r=>r.type==='CO'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr.filter(r=>r.type==='CWU'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr,recCost).toFixed(2)}</td><td class="num">${S.PP.some(p=>p.date===d)?sum(S.PP.filter(p=>p.date===d),p=>p.kwh).toFixed(2):'—'}</td></tr>`; }).join('')+'</tbody></table>':'<div class="empty">Brak danych.</div>';
 }
 
@@ -2536,7 +2665,7 @@ function daySpan(days){ const a=[...days].sort(); if(!a.length) return 0; return
 function copFiltered(){
   migrateMeas();
   const mode=cpEl('ch_mode').value, from=cpEl('ch_from').value, to=cpEl('ch_to').value;
-  return M.filter(m=>m.start&&m.end&&(mode==='all'||m.mode===mode)&&(!from||m.end.slice(0,10)>=from)&&(!to||m.start.slice(0,10)<=to))
+  return M.filter(m=>m.start&&m.end&&(mode==='all'||m.mode===mode)&&(!from||m.end.slice(0,10)>=from)&&(!to||m.start.slice(0,10)<=to)&&wxPass(m.start.slice(0,10)))
     .sort((a,b)=>b.start.localeCompare(a.start)).map(m=>({P:m,r:calcPeriod(m,{noCompare:true})})).filter(x=>x.r.hours!=null);
 }
 function renderCopHist(){
@@ -2588,10 +2717,14 @@ function renderCopHist(){
     const fl=r.flags.filter(f=>f.lvl==='bad'||f.lvl==='warn');
     const flags=fl.length?`<div class="notecell2">${fl.map(f=>'⚠ '+xmlEsc(f.txt)).join('<br>')}</div>`:'<span style="color:var(--ok)">✓</span>';
     const rng=(r.lo!=null)?r.lo.toFixed(2)+' – '+r.hi.toFixed(2):'—';
-    return `<tr><td class="num">${fmtY(P.start)}</td><td class="num">${fmtY(P.end)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${P.mode==='CWU'?'cwu':'co'}">${P.mode}</span></td><td class="num">${r.rows.length} / ${r.nVal}</td>
-      <td class="num">${r.t04!=null?r.t04.toFixed(1)+' ('+r.t04min.toFixed(1)+'…'+r.t04max.toFixed(1)+') °C':'—'}</td><td class="num">${r.hz!=null?r.hz.toFixed(0)+' Hz':'—'}</td>
+    const dw=wxDay(P.start.slice(0,10));
+    return `<tr><td><span class="pill ${P.mode==='CWU'?'cwu':'co'}">${P.mode}</span></td><td class="num w2">${fmtY(P.start)}</td><td class="num w2">${fmtY(P.end)}</td><td class="num">${fmtHM(r.hours)}</td>
+      <td class="num cop"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td>
       <td class="num">${r.E!=null?r.E.toFixed(2)+' kWh':'—'}<div class="note">${xmlEsc(r.Esrc||'')}</div></td><td class="num">${r.pel!=null?'≈ '+r.pel.toFixed(2)+' kW':'—'}</td><td class="num">${r.q!=null?r.q.toFixed(2)+' kW':'—'}</td><td class="num">${r.heat!=null?r.heat.toFixed(1)+' kWh':'—'}</td>
-      <td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${rng}</td><td class="num">${r.pf!=null?r.pf.toFixed(2)+(r.pfSrc==='chwilowy'?'':'*'):'—'}</td><td class="notecell">${flags}</td>
+      <td class="num w2">${r.t04!=null?'<span class="tp"><i>śr.</i><b>'+r.t04.toFixed(1)+'°</b></span><span class="tp min"><i>min</i><b>'+r.t04min.toFixed(1)+'°</b></span><span class="tp max"><i>max</i><b>'+r.t04max.toFixed(1)+'°</b></span>':'—'}</td>
+      <td class="w2">${wxTempsHtml(dw?{tn:dw.tn,tm:dw.tm,tx:dw.tx}:null)}</td>
+      <td class="num">${r.hz!=null?r.hz.toFixed(0)+' Hz':'—'}</td><td class="num">${rng}</td><td class="num">${r.pf!=null?r.pf.toFixed(2)+(r.pfSrc==='chwilowy'?'':'*'):'—'}</td><td class="num">${r.rows.length} / ${r.nVal}</td>
+      <td class="notecell">${flags}</td>
       <td class="notecell">${P.note?xmlEsc(P.note):'—'}</td>
       <td><button class="btn2 edit" onclick="editCop('${P.id}')">Edytuj</button><button class="btn2 del" onclick="delCop('${P.id}')">Usuń</button></td></tr>`; }).join('');
 }
@@ -2712,14 +2845,302 @@ async function downloadCopTemplate(){
 }
 ensureCopDefaults(); resetCopForm(); syncCopSettingsUI();
 
+/* ===================== UKŁAD: szerokie tabele → karty, gdy się nie mieszczą ===================== */
+function fitRc(){
+  const wide=window.matchMedia('(min-width:1100px)').matches;
+  document.querySelectorAll('table.rc').forEach(t=>{
+    const w=t.parentElement; if(!w||!w.clientWidth) return;
+    if(t.classList.contains('big')){ t.classList.add('cards'); return; }
+    t.classList.remove('cards');
+    if(wide&&w.scrollWidth>w.clientWidth+2) t.classList.add('cards');
+  });
+}
+window.addEventListener('resize',()=>{ clearTimeout(window._fr); window._fr=setTimeout(fitRc,150); });
+
+/* ===================== POGODA (Open-Meteo) + SOLAX ===================== */
+const WX_KEY='hp_wx_v1', SX_KEY='hp_solax_v1', SXS_KEY='hp_solax_snap_v1';
+let WXC={lat:null,lon:null,days:{},hours:{},updated:0};
+const WXF={tmin:'',tmax:'',rmin:'',rmax:'',sky:'all'};
+let wxBusy=false, wxFoundPlaces=[];
+try{ const t=localStorage.getItem(WX_KEY); if(t) WXC=JSON.parse(t); }catch(e){}
+function wxSaveCache(){ try{ localStorage.setItem(WX_KEY,JSON.stringify(WXC)); return true; }catch(e){ return false; } }
+const $w=id=>document.getElementById(id);
+const wxEsc=t=>String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDaysS(s,n){ const d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return ymd(d); }
+function wxLoc(){ const la=parseFloat(SET.lat), lo=parseFloat(SET.lon); return (isFinite(la)&&isFinite(lo))?{lat:la,lon:lo}:null; }
+function wxEnsureCacheLoc(){
+  const L=wxLoc(); if(!L) return false;
+  if(WXC.lat!==L.lat||WXC.lon!==L.lon){ WXC={lat:L.lat,lon:L.lon,days:{},hours:{},updated:0}; wxSaveCache(); }
+  return true;
+}
+function wxDay(d){ return (WXC.days&&WXC.days[d])||null; }
+function wxSky(w){ if(!w||w.sf==null) return null; return w.sf>=0.6?'sun':(w.sf>=0.25?'part':'cloud'); }
+const WX_SKYI={sun:'☀️',part:'⛅',cloud:'☁️'}, WX_SKYT={sun:'słonecznie',part:'częściowo słonecznie',cloud:'pochmurno'};
+function wxPvEst(d){ const w=wxDay(d); if(!w||w.rad==null) return null; const kwp=+SET.pvPower||0, pr=+SET.wxPR||0.85; return w.rad*kwp*pr; }
+function wxPvCell(r){
+  const e=wxPvEst(r.date); if(e==null) return '—';
+  return '≈ '+e.toFixed(1)+' kWh'+(r.kwh>0&&e>0.5?' · rzecz. '+Math.round(r.kwh/e*100)+'%':'');
+}
+/* filtr pogodowy (wspólny dla: Dane, PV, COP historia, Raporty) */
+function wxActive(){ return WXF.tmin!==''||WXF.tmax!==''||WXF.rmin!==''||WXF.rmax!==''||WXF.sky!=='all'; }
+function wxPass(d){
+  if(!wxActive()) return true;
+  const w=wxDay(d); if(!w) return false;
+  if(WXF.tmin!==''&&!(w.tm>=+WXF.tmin)) return false;
+  if(WXF.tmax!==''&&!(w.tm<=+WXF.tmax)) return false;
+  if(WXF.rmin!==''&&!(w.rad>=+WXF.rmin)) return false;
+  if(WXF.rmax!==''&&!(w.rad<=+WXF.rmax)) return false;
+  if(WXF.sky!=='all'&&wxSky(w)!==WXF.sky) return false;
+  return true;
+}
+function wxSetF(k,v){ WXF[k]=v; wxSyncBars(); renderAll(); }
+function wxClearF(){ Object.assign(WXF,{tmin:'',tmax:'',rmin:'',rmax:'',sky:'all'}); wxSyncBars(); renderAll(); }
+function wxBarHtml(){
+  return `<b>🌦 Filtr wg pogody</b>
+  <label>Śr. temp. dnia od</label><input type="number" step="0.5" data-f="tmin" onchange="wxSetF('tmin',this.value)">
+  <label>do</label><input type="number" step="0.5" data-f="tmax" onchange="wxSetF('tmax',this.value)"><label>°C</label>
+  <label>Nasłon. od</label><input type="number" step="0.5" min="0" data-f="rmin" onchange="wxSetF('rmin',this.value)">
+  <label>do</label><input type="number" step="0.5" min="0" data-f="rmax" onchange="wxSetF('rmax',this.value)"><label>kWh/m²</label>
+  <label>Niebo</label><select data-f="sky" onchange="wxSetF('sky',this.value)"><option value="all">dowolne</option><option value="sun">☀️ słonecznie</option><option value="part">⛅ częściowo</option><option value="cloud">☁️ pochmurno</option></select>
+  <button class="btn2" onclick="wxClearF()">Wyczyść</button><span class="note" data-s></span>`;
+}
+function wxSyncBars(){
+  const n=Object.keys(WXC.days||{}).length;
+  document.querySelectorAll('[data-wxbar]').forEach(b=>{
+    if(!b.firstChild) b.innerHTML=wxBarHtml();
+    b.querySelectorAll('[data-f]').forEach(i=>{ if(i.value!==String(WXF[i.dataset.f])) i.value=WXF[i.dataset.f]; });
+    const s=b.querySelector('[data-s]');
+    if(s) s.textContent=!n?'Brak pobranych danych pogodowych — zakładka „Pogoda i API”.':(wxActive()?'Filtr aktywny: widać tylko dni spełniające warunki; dni bez danych pogodowych są ukryte.':'Filtr wyłączony ('+n+' dób z danymi pogodowymi).');
+  });
+}
+function wxInit(){
+  wxSyncBars();
+  const set=(id,v)=>{ const e=$w(id); if(e&&document.activeElement!==e) e.value=v==null?'':v; };
+  set('wx_lat',SET.lat); set('wx_lon',SET.lon); set('wx_place',SET.place); set('wx_pr',SET.wxPR!=null?SET.wxPR:0.85);
+  if($w('wx_q')&&!$w('wx_q').value) $w('wx_q').value=SET.place||'';
+  const c=sxGet(); set('sx_token',c.token); set('sx_sn',c.sn); set('sx_base',c.base||'https://www.eu.solaxcloud.com:9443/proxy/api/');
+  if($w('wx_to')&&!$w('wx_to').value) $w('wx_to').value=ymd(new Date());
+  if($w('wx_from')&&!$w('wx_from').value) wxRangeFromData(true);
+}
+/* lokalizacja */
+async function wxSearchPlace(){
+  const q=$w('wx_q').value.trim(), box=$w('wx_results'); if(!q) return;
+  box.textContent='Szukam…';
+  try{
+    const r=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(q)+'&count=6&language=pl&format=json');
+    const j=await r.json(); wxFoundPlaces=j.results||[];
+    box.innerHTML=wxFoundPlaces.length?wxFoundPlaces.map((x,i)=>`<button class="apibtn" onclick="wxPickPlace(${i})">${wxEsc(x.name)}${x.admin2?', '+wxEsc(x.admin2):''}${x.admin1?', '+wxEsc(x.admin1):''}, ${wxEsc(x.country||'')} <span style="color:var(--muted)">(${(+x.latitude).toFixed(3)}, ${(+x.longitude).toFixed(3)})</span></button>`).join(''):'Nic nie znaleziono — wpisz współrzędne ręcznie.';
+  }catch(e){ box.textContent='Błąd wyszukiwania: '+e.message; }
+}
+async function wxPickPlace(i){
+  const x=wxFoundPlaces[i]; if(!x) return;
+  SET.lat=+(+x.latitude).toFixed(4); SET.lon=+(+x.longitude).toFixed(4); SET.place=x.name;
+  $w('wx_results').innerHTML=''; await persist(); wxInit();
+}
+async function wxSaveLoc(){
+  const la=parseFloat($w('wx_lat').value), lo=parseFloat($w('wx_lon').value);
+  if(isFinite(la)&&isFinite(lo)){ SET.lat=la; SET.lon=lo; } else { delete SET.lat; delete SET.lon; }
+  SET.place=$w('wx_place').value.trim(); await persist();
+}
+/* pobieranie */
+async function wxFetchSeg(base,from,to){
+  const L=wxLoc();
+  const u=base+'?latitude='+L.lat+'&longitude='+L.lon+'&start_date='+from+'&end_date='+to
+    +'&daily=temperature_2m_mean,temperature_2m_min,temperature_2m_max,shortwave_radiation_sum,sunshine_duration,daylight_duration,precipitation_sum,wind_speed_10m_max'
+    +'&hourly=temperature_2m&timezone=Europe%2FWarsaw';
+  const r=await fetch(u);
+  if(!r.ok){ let m=''; try{ m=(await r.json()).reason||''; }catch(e){} throw new Error('HTTP '+r.status+(m?' — '+m:'')); }
+  const j=await r.json(), D=j.daily||{}, H=j.hourly||{};
+  const rd=(a,i,m,dg)=>{ const v=a&&a[i]; return v==null?null:+(v*m).toFixed(dg); };
+  (D.time||[]).forEach((d,i)=>{
+    const sun=D.sunshine_duration&&D.sunshine_duration[i], dl=D.daylight_duration&&D.daylight_duration[i];
+    WXC.days[d]={tm:rd(D.temperature_2m_mean,i,1,1),tn:rd(D.temperature_2m_min,i,1,1),tx:rd(D.temperature_2m_max,i,1,1),
+      rad:rd(D.shortwave_radiation_sum,i,1/3.6,2),sun:sun==null?null:+(sun/3600).toFixed(1),dl:dl==null?null:+(dl/3600).toFixed(1),
+      sf:(sun!=null&&dl>0)?+(sun/dl).toFixed(2):null,pr:rd(D.precipitation_sum,i,1,1),wd:rd(D.wind_speed_10m_max,i,1,0)};
+  });
+  (H.time||[]).forEach((t,i)=>{ const v=H.temperature_2m&&H.temperature_2m[i]; if(v!=null) WXC.hours[t.slice(0,13)]=+(+v).toFixed(1); });
+}
+async function wxFetchRange(from,to,onProg){
+  if(!wxEnsureCacheLoc()) throw new Error('Najpierw ustaw lokalizację.');
+  const today=ymd(new Date()); if(to>today) to=today; if(from>to) throw new Error('Zły zakres dat.');
+  const split=addDaysS(today,-8), segs=[];
+  if(from<=split){ let a=from; const e=to<split?to:split; while(a<=e){ const b=addDaysS(a,364)<e?addDaysS(a,364):e; segs.push(['https://archive-api.open-meteo.com/v1/archive',a,b]); a=addDaysS(b,1); } }
+  const ra=from>addDaysS(split,1)?from:addDaysS(split,1);
+  if(ra<=to) segs.push(['https://api.open-meteo.com/v1/forecast',ra,to]);
+  for(let i=0;i<segs.length;i++){ if(onProg) onProg(i+1,segs.length,segs[i][1],segs[i][2]); await wxFetchSeg(...segs[i]); }
+  WXC.updated=Date.now(); if(!wxSaveCache()) throw new Error('Pamięć przeglądarki pełna — zawęź zakres dat.');
+}
+async function wxFetchUI(){
+  if(wxBusy) return; const st=$w('wx_status'), btn=$w('wx_fetchBtn');
+  const from=$w('wx_from').value, to=$w('wx_to').value;
+  if(!from||!to){ st.textContent='Podaj zakres dat.'; return; }
+  wxBusy=true; btn.disabled=true;
+  try{
+    await wxFetchRange(from,to,(i,n,a,b)=>{ st.textContent='Pobieram '+i+'/'+n+': '+a+' … '+b; });
+    st.innerHTML='<span style="color:var(--ok)">✓ Pobrano pogodę za '+from+' … '+to+'.</span>';
+  }catch(e){ st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
+  wxBusy=false; btn.disabled=false; renderAll(); wxSyncBars();
+}
+function wxRangeFromData(quiet){
+  const ds=[...R.map(r=>r.date),...PV.map(r=>r.date),...M.map(m=>m.date)].filter(Boolean).sort();
+  if(!ds.length){ if(!quiet&&$w('wx_status')) $w('wx_status').textContent='Brak wpisów — wpisz daty ręcznie.'; return; }
+  $w('wx_from').value=ds[0]; $w('wx_to').value=ymd(new Date());
+}
+/* temperatura godzinowa */
+function wxTempAt(dt){
+  if(!dt||dt.length<13) return null;
+  const d=new Date(dt.length>=16?dt.slice(0,16):dt.slice(0,13)+':00'); if(isNaN(d)) return null;
+  if(d.getMinutes()>=30) d.setHours(d.getHours()+1);
+  const k=ymd(d)+'T'+String(d.getHours()).padStart(2,'0');
+  const v=WXC.hours&&WXC.hours[k]; return v==null?null:v;
+}
+async function wxEnsureAround(dateStr){
+  if(!wxLoc()) throw new Error('Ustaw lokalizację w zakładce „Pogoda i API”.');
+  wxEnsureCacheLoc();
+  if(wxDay(dateStr)&&Object.keys(WXC.hours).some(k=>k.startsWith(dateStr))) return;
+  await wxFetchRange(addDaysS(dateStr,-1),addDaysS(dateStr,1));
+}
+/* formularz PV */
+function wxPvInfoText(d){
+  const w=wxDay(d); if(!w) return null; const e=wxPvEst(d), k=wxSky(w);
+  return 'Open-Meteo: śr. '+w.tm+'°C ('+w.tn+'…'+w.tx+'), słońce '+(w.sun!=null?w.sun+' h z '+w.dl+' h':'—')+', promieniowanie '+w.rad+' kWh/m²'+(k?' — '+WX_SKYT[k]:'')+(e!=null?'. Szacunek produkcji ≈ '+e.toFixed(1)+' kWh (wsp. '+(+SET.wxPR||0.85)+')':'');
+}
+function wxPvFill(what){
+  const d=$w('pv_date').value, w=wxDay(d); if(!w){ alert('Brak danych pogodowych dla tej daty.'); return; }
+  if(what==='kwh'){ const e=wxPvEst(d); if(e!=null) $w('pv_kwh').value=e.toFixed(2); }
+  else { const k=wxSky(w), t=(k?WX_SKYT[k]+', ':'')+'śr. '+w.tm+'°C ('+w.tn+'…'+w.tx+'), słońce '+(w.sun!=null?w.sun+' h':'—')+', wiatr max '+(w.wd!=null?w.wd+' km/h':'—')+' [API]';
+    const n=$w('pv_note'); n.value=(n.value?n.value.replace(/\s+$/,'')+'\n':'')+t; }
+}
+function wxSavePR(){ const v=parseFloat($w('wx_pr').value); if(v>0){ SET.wxPR=+v.toFixed(2); persist(); } }
+function wxCalibStats(){
+  const kwp=+SET.pvPower||0, rat=[];
+  PV.forEach(r=>{ const w=wxDay(r.date); if(w&&w.rad>0.3&&kwp>0&&r.kwh>0) rat.push(r.kwh/(w.rad*kwp)); });
+  rat.sort((a,b)=>a-b); const n=rat.length;
+  return {n,med:n?(n%2?rat[(n-1)/2]:(rat[n/2-1]+rat[n/2])/2):null};
+}
+function wxCalibrate(){ const c=wxCalibStats(); if(!c.n){ alert('Brak dni z jednoczesnym wpisem PV i pobraną pogodą.'); return; } SET.wxPR=+c.med.toFixed(2); persist(); }
+/* widok zakładki */
+function renderApiTab(){
+  const t=$w('api'); if(!t) return;
+  const nd=Object.keys(WXC.days||{}).sort();
+  if($w('wx_cache')) $w('wx_cache').textContent=nd.length?'W pamięci: '+nd.length+' dób ('+nd[0]+' … '+nd[nd.length-1]+'), '+Object.keys(WXC.hours).length+' odczytów godzinowych'+(WXC.updated?'; ostatnie pobranie '+new Date(WXC.updated).toLocaleString('pl-PL'):'')+'.':'Pamięć pogody jest pusta.';
+  if($w('wx_calib')){ const c=wxCalibStats(); $w('wx_calib').textContent=c.n?'Z '+c.n+' dni (wpis PV + pogoda) wychodzi współczynnik ≈ '+c.med.toFixed(2)+'. Obecnie używany: '+(+SET.wxPR||0.85)+'.':'Brak dni z jednoczesnym wpisem PV i pogodą — pobierz pogodę za okres wpisów PV.'; }
+  { const e=$w('wx_pr'); if(e&&document.activeElement!==e) e.value=SET.wxPR!=null?SET.wxPR:0.85; }
+  renderSx();
+}
+/* SolaX Cloud */
+function sxGet(){ try{ return JSON.parse(localStorage.getItem(SX_KEY)||'{}'); }catch(e){ return {}; } }
+function sxSave(){ try{ localStorage.setItem(SX_KEY,JSON.stringify({token:$w('sx_token').value.trim(),sn:$w('sx_sn').value.trim(),base:$w('sx_base').value.trim()})); }catch(e){} }
+function sxSnaps(){ try{ return JSON.parse(localStorage.getItem(SXS_KEY)||'{}'); }catch(e){ return {}; } }
+async function sxFetch(){
+  sxSave(); const c=sxGet(), st=$w('sx_status');
+  if(!c.token||!c.sn){ st.textContent='Podaj tokenID i numer rejestracyjny (sn).'; return; }
+  let base=c.base||'https://www.eu.solaxcloud.com:9443/proxy/api/'; if(!base.endsWith('/')) base+='/';
+  st.textContent='Pobieram…';
+  try{
+    const r=await fetch(base+'getRealtimeInfo.do?tokenId='+encodeURIComponent(c.token)+'&sn='+encodeURIComponent(c.sn));
+    const j=await r.json();
+    if(!j.success||!j.result) throw new Error(j.exception||'Odpowiedź bez danych');
+    const x=j.result, day=(x.uploadTime||'').slice(0,10)||ymd(new Date()), sn=sxSnaps(), prev=sn[day];
+    sn[day]={yt:x.yieldtoday,ytot:x.yieldtotal,fi:x.feedinenergy,ce:x.consumeenergy,pw:x.acpower,up:x.uploadTime||'',max:Math.max(prev?prev.max||0:0,+x.yieldtoday||0)};
+    try{ localStorage.setItem(SXS_KEY,JSON.stringify(sn)); }catch(e){}
+    st.innerHTML='<span style="color:var(--ok)">✓ '+wxEsc(x.uploadTime||'')+' — dziś '+x.yieldtoday+' kWh, moc AC '+x.acpower+' W, suma '+x.yieldtotal+' kWh</span>';
+    renderSx();
+  }catch(e){
+    st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'.</span> Jeśli to „Failed to fetch”: przeglądarka mogła zablokować zapytanie (CORS) lub adres/token jest błędny — wtedy potrzebny jest mały proxy (np. Cloudflare Worker) i jego adres wpisz w polu „Adres API”.';
+  }
+}
+function sxToPv(day){
+  const x=sxSnaps()[day]; if(!x) return;
+  document.querySelector('nav button[data-tab="pv"]').click();
+  $w('pv_date').value=day; $w('pv_kwh').value=x.max||x.yt||''; $w('pv_note').value=((x.fi!=null?'oddano łącznie '+x.fi+' kWh; ':'')+'[SolaX]').trim(); wxAuto('pv');
+}
+function renderSx(){
+  const box=$w('sx_snaps'); if(!box) return; const sn=sxSnaps(), ks=Object.keys(sn).sort().reverse().slice(0,14);
+  box.innerHTML=ks.length?'<table class="rc"><thead><tr><th>Dzień</th><th>Produkcja dnia kWh</th><th>Suma kWh</th><th>Oddano (suma) kWh</th><th>Pobrano (suma) kWh</th><th>Ostatnie dane</th><th></th></tr></thead><tbody>'+ks.map(k=>{ const x=sn[k]; return '<tr><td class="num">'+k+'</td><td class="num">'+(x.max||x.yt)+'</td><td class="num">'+(x.ytot??'—')+'</td><td class="num">'+(x.fi??'—')+'</td><td class="num">'+(x.ce??'—')+'</td><td class="num">'+wxEsc((x.up||'').slice(11,16)||'—')+'</td><td class="btncell"><button class="btn2 edit" onclick="sxToPv(\''+k+'\')">→ wpis PV</button></td></tr>'; }).join('')+'</tbody></table>':'<div class="empty">Brak migawek — kliknij „Pobierz teraz”.</div>';
+}
+
+/* ===================== POGODA W FORMULARZACH (nowe wpisy; istniejących nie ruszamy) ===================== */
+const WXP={
+  co:{start:'co_start',end:'co_end',out:[['co_out1','start'],['co_out2','end']],ed:()=>editId,live:()=>liveCO(),seq:0},
+  w:{start:'w_start',end:null,out:[['w_out','start']],ed:()=>editId,live:()=>liveW(),seq:0},
+  pv:{start:'pv_date',end:null,out:[],ed:()=>pvEditId,live:()=>{},seq:0}
+};
+const WXK=[['tn','wtn'],['tm','wtm'],['tx','wtx'],['rad','wrad'],['sun','wsun']];
+const wxEl=(p,id)=>$w(p+'_'+id);
+['co_out1','co_out2','w_out'].forEach(id=>{ const e=$w(id); if(e) e.dataset.wxm='1'; });
+document.addEventListener('input',e=>{ const t=e.target; if(t&&t.dataset&&t.dataset.wxm){ t.dataset.manual='1'; delete t.dataset.auto; } });
+document.addEventListener('change',e=>{ const m={co_start:'co',co_end:'co',w_start:'w',pv_date:'pv'}[e.target&&e.target.id]; if(m) wxAuto(m); });
+function wxSetEl(e,v,auto){ e.value=(v==null?'':v); if(auto){ e.dataset.auto='1'; delete e.dataset.manual; } else { delete e.dataset.auto; delete e.dataset.manual; } }
+async function wxAuto(p,force){
+  const c=WXP[p]; if(!force&&c.ed()) return;                       // edycja istniejącego wpisu: nic nie podstawiamy
+  if(force&&c.ed()&&!confirm('To zastąpi pola pogody w edytowanym wpisie wartościami z API. Kontynuować?')) return;
+  const info=wxEl(p,'wxinfo'), st=$w(c.start).value, en=c.end?$w(c.end).value:'';
+  if(!st){ info.textContent=''; return; }
+  if(!wxLoc()){ info.textContent='Ustaw lokalizację w zakładce „Pogoda i API”, aby pogoda podstawiała się automatycznie. Możesz też wpisać wartości ręcznie.'; return; }
+  const seq=++c.seq; info.textContent='Pobieram pogodę z API…';
+  try{ await wxEnsureAround(st.slice(0,10)); if(en&&en.slice(0,10)!==st.slice(0,10)) await wxEnsureAround(en.slice(0,10)); }
+  catch(e){ info.textContent='Pogoda niedostępna ('+e.message+') — wpisz ręcznie.'; return; }
+  if(seq!==c.seq) return;
+  const d=st.slice(0,10), w=wxDay(d), vals={tn:w&&w.tn,tm:w&&w.tm,tx:w&&w.tx,rad:w&&w.rad,sun:w&&w.sun};
+  const put=(e,v)=>{ if(v==null) return; if(force||e.value===''||e.dataset.auto==='1'){ if(!(e.dataset.manual==='1'&&!force)) wxSetEl(e,v,true); } };
+  WXK.forEach(([k,id])=>put(wxEl(p,id),vals[k]));
+  c.out.forEach(([id,which])=>put($w(id),wxTempAt(which==='start'?st:en||null)));
+  c.live();
+  let t=w?'Z API (Open-Meteo) — możesz zmienić dowolną wartość ręcznie.':'Brak danych dla tej daty (archiwum ma kilka dni opóźnienia) — wpisz ręcznie.';
+  if(p==='pv'){ const e=wxPvEst(d); if(e!=null) t+=' Szacunek produkcji z nasłonecznienia ≈ '+e.toFixed(1)+' kWh.'; }
+  info.textContent=t; renderApiTab();
+}
+function wxRead(p){
+  const o={}; let any=false, auto=false, man=false;
+  WXK.forEach(([k,id])=>{ const e=wxEl(p,id), v=parseFloat(e.value); if(isNaN(v)) return; o[k]=v; any=true; if(e.dataset.manual==='1') man=true; else if(e.dataset.auto==='1') auto=true; });
+  if(!any) return null;
+  const ls=wxEl(p,'wx').dataset.loaded||'';
+  o.src=man?((auto||ls.includes('api'))?'api+ręcznie':'ręcznie'):(auto?'api':(ls||'ręcznie'));
+  return o;
+}
+function wxOutSrc(p){
+  let any=false,auto=false,man=false;
+  WXP[p].out.forEach(([id])=>{ const e=$w(id); if(e.value==='') return; any=true; if(e.dataset.manual==='1') man=true; else if(e.dataset.auto==='1') auto=true; });
+  const ls=wxEl(p,'wx').dataset.outsrc||''; if(!any) return undefined;
+  if(man) return (auto||ls.includes('api'))?'api+ręcznie':undefined;
+  return auto?'api':(ls||undefined);
+}
+function wxClearForm(p){
+  WXK.forEach(([k,id])=>wxSetEl(wxEl(p,id),''));
+  WXP[p].out.forEach(([id])=>{ const e=$w(id); delete e.dataset.auto; delete e.dataset.manual; });
+  const x=wxEl(p,'wx'); x.dataset.loaded=''; x.dataset.outsrc=''; wxEl(p,'wxinfo').textContent='';
+}
+function wxLoadForm(p,r){
+  wxClearForm(p); const w=r.wx||{};
+  WXK.forEach(([k,id])=>{ if(w[k]!=null) wxEl(p,id).value=w[k]; });
+  const x=wxEl(p,'wx'); x.dataset.loaded=w.src||''; x.dataset.outsrc=r.outSrc||'';
+  wxEl(p,'wxinfo').textContent=r.wx?'Zapisane przy wpisie (źródło: '+(w.src||'—')+'). Zmieni się tylko po ręcznej zmianie lub przyciskiem „Pobierz z API”.':'Ten wpis nie ma zapisanej pogody — pola zostają puste, dopóki ich nie uzupełnisz.';
+}
+/* wyświetlanie temperatur */
+function tmpF(v){ return (v==null||v===''||isNaN(+v))?'—':(+v).toFixed(1)+'°C'; }
+function tmpArrow(a,b){ return '<span class="tv">'+tmpF(a)+'</span><span class="ar">→</span><span class="tv">'+tmpF(b)+'</span>'; }
+function wxRec(r){
+  const w=r.wx; if(w&&(w.tn!=null||w.tm!=null||w.tx!=null||w.rad!=null)) return w;
+  const c=wxDay(r.date); return c?{tn:c.tn,tx:c.tx,tm:c.tm,rad:c.rad,sun:c.sun,src:'api'}:null;
+}
+function wxTempsHtml(w){
+  if(!w||(w.tn==null&&w.tm==null&&w.tx==null)) return '—';
+  const f=v=>v==null?'—':(+v).toFixed(1)+'°';
+  return '<span class="tp min"><i>min</i><b>'+f(w.tn)+'</b></span><span class="tp"><i>śr.</i><b>'+f(w.tm)+'</b></span><span class="tp max"><i>max</i><b>'+f(w.tx)+'</b></span>'+((w.src||'').includes('ręcz')?' <span class="note" title="wartość wpisana ręcznie">✎</span>':'');
+}
+function wxRadHtml(w){ if(!w||w.rad==null) return '—'; return (+w.rad).toFixed(1)+' kWh/m²'+(w.sun!=null?'<div class="note">'+w.sun+' h słońca</div>':''); }
+
 function labelRc(){
   document.querySelectorAll('table.rc').forEach(t=>{
     const hs=[...t.querySelectorAll('thead th')].map(h=>h.textContent.trim());
     t.querySelectorAll('tbody tr,tfoot tr').forEach(tr=>{ let i=0;
       [...tr.children].forEach(td=>{ const cs=td.colSpan||1; if(cs===1){ td.setAttribute('data-l',hs[i]||''); td.classList.toggle('nodata',/^[—\s]*$/.test(td.textContent)&&!td.querySelector('button')); if(!(hs[i]||'')&&td.querySelector('button')) td.classList.add('btncell'); } i+=cs; }); });
   });
+  fitRc();
 }
-function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); renderDiskInfo(); labelRc(); }
+function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); renderDiskInfo(); renderApiTab(); labelRc(); }
 renderAll();
 startupInit();
 { let lt=null; new MutationObserver(()=>{ clearTimeout(lt); lt=setTimeout(labelRc,0); }).observe(document.querySelector('main'),{childList:true,subtree:true}); }
