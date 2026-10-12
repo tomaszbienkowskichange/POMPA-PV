@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>pl.warmlink.sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/caffeinate</string><string>-i</string>
+    <string>/Library/Frameworks/Python.framework/Versions/3.14/bin/python3</string>
+    <string>/Users/macbookbt/warmlink/warmlink_sync.py</string>
+    <string>--data</string><string>SCIEZKA_DO_pompa_dane.json</string>
+    <string>--user</string><string>tomasz.bienkowski@icloud.com</string>
+    <string>--device-code</string><string>PELNY_KOD_URZADZENIA</string>
+  </array>
+  <key>WorkingDirectory</key><string>/Users/macbookbt/warmlink</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>60</integer>
+  <key>StandardOutPath</key><string>/Users/macbookbt/warmlink/sync.out.log</string>
+  <key>StandardErrorPath</key><string>/Users/macbookbt/warmlink/sync.err.log</string>
+</dict>
+</plist>
