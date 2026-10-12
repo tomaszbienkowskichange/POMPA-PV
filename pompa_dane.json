@@ -12,10 +12,18 @@
   "c2Name": "CWU",
   "dtOff": 0,
   "place": "DOM",
-  "updatedAt": 1791742647287,
+  "updatedAt": 1791757720426,
   "lat": 52.2031,
   "lon": 21.2719,
-  "wxPR": 0.69
+  "wxPR": 0.69,
+  "seller": "PGE Obrót S.A.",
+  "custNo": "10259120",
+  "ppe": "590543570800768142",
+  "tariff": "G11",
+  "meterNo": "98101207",
+  "contractPower": "13 kW (wg faktury z 2020)",
+  "addr": "Piękna 23, 05-462 Majdan (gm. Wiązowna)",
+  "diskNote": ""
  },
  "records": [
   {
@@ -5007,18 +5015,26 @@
    "type": "CO",
    "date": "2026-10-11",
    "start": "2026-10-11T17:47",
-   "end": "2026-10-11T23:50",
+   "end": "2026-10-12T07:47",
    "rad": "6",
    "out1": 11.9,
-   "out2": null,
+   "out2": 6.8,
    "slope": 0.2,
    "offset": 37,
    "target1": 34.62,
-   "target2": null,
-   "kwh": 15,
+   "target2": 35.64,
+   "kwh": 12.37,
    "price": 1.1,
    "note": "start 37/0,2= 34,8 - temp 11,9; drugi start 38/02=35,6-temp 9,1, dane spisywane z aplikacji i licznika pc, a mimo to system widzi ze to blad...- do weryfikacji, wartość, 1,33 nie skasowana wiec dane z zakonczenia grzania nalezy odjac . Pompa przestała grzac o 19:40, kolejne cykle nie weryfikowane-aż do wyłączenia pompy. dane kWh i temp zewn koniec do uzupełnienia",
-   "updatedAt": 1791743489687
+   "updatedAt": 1791784867924,
+   "wx": {
+    "tn": 7.1,
+    "tm": 11.4,
+    "tx": 14.4,
+    "rad": 2.38,
+    "sun": 1.5,
+    "src": "api"
+   }
   }
  ],
  "pv": [
@@ -9185,7 +9201,7 @@
   {
    "id": "mv419gtwmci3",
    "start": "2026-10-11T17:47",
-   "end": "2026-10-12T00:00",
+   "end": "2026-10-12T07:47",
    "date": "2026-10-11",
    "mode": "CO",
    "defMin": 0,
@@ -9237,19 +9253,34 @@
      "p": 1.33
     },
     {
-     "ts": "2026-10-12T00:00",
+     "ts": "2026-10-12T07:25",
      "c1": true,
      "c2": false,
      "def": false,
-     "k": 15,
-     "t01": 30.4,
-     "t02": 34.6,
-     "t04": 6,
+     "k": null,
+     "t01": 32.4,
+     "t02": 34.9,
+     "t04": 5.8,
+     "flow": 2.45,
+     "hz": 41,
+     "volt": 398,
+     "amp": 2.9,
+     "p": 10.6
+    },
+    {
+     "ts": "2026-10-12T07:47",
+     "c1": true,
+     "c2": false,
+     "def": false,
+     "k": 13.7,
+     "t01": 31.4,
+     "t02": 31,
+     "t04": 6.5,
      "flow": 0,
      "hz": 0,
-     "volt": null,
-     "amp": null,
-     "p": 15
+     "volt": 0,
+     "amp": 0,
+     "p": 13.7
     }
    ],
    "res": {
@@ -9262,9 +9293,9 @@
    "dtOff": 0,
    "useOff": false,
    "hzMax": 100,
-   "note": "start 37/0,2= 34,8 - temp 11,9; drugi start 38/02=35,6-temp 9,1, dane spisywane z aplikacji i licznika pc, a mimo to system widzi ze to blad...- do weryfikacji, wartość, 1,33 nie skasowana wiec dane z zakonczenia grzania nalezy odjac . Pompa przestała grzac o 19:40",
+   "note": "start 37/0,2= 34,8 - temp 11,9; drugi start 38/02=35,6-temp 9,1, dane spisywane z aplikacji i licznika pc, a mimo to system widzi ze to blad...- do weryfikacji, wartość, 1,33 nie skasowana wiec dane z zakonczenia grzania nalezy odjac . Pompa przestała grzac o 19:40. koniec o 7:47.",
    "src": "ręcznie",
-   "updatedAt": 1791740717153
+   "updatedAt": 1791785694643
   }
  ],
  "docs": [

@@ -268,6 +268,10 @@ table.rc.big .note{font-size:.72rem}
 .wxform-h .note{flex:1 1 220px}
 .wxform-btns{display:flex;gap:6px;flex-wrap:wrap}
 .wxform-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.howto{background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--cyan);border-radius:8px;padding:10px 14px;margin:14px 0}
+.howto summary{cursor:pointer;font-weight:700;font-size:.9rem}
+.howto ul{margin:8px 0 2px 18px;padding:0;font-size:.82rem;line-height:1.55;color:var(--text)}
+.howto li{margin-bottom:5px}
 </style>
 </head>
 <body>
@@ -686,11 +690,27 @@ table.rc.big .note{font-size:.72rem}
         <div class="finp"><input type="number" id="cp_defmin" step="1" min="0" placeholder="0"><span class="unit">min</span></div>
       </div>
       <div class="fld">
+        <div class="fhead"><span class="code nocode">praca</span><span class="fname">Czas faktycznej pracy sprężarki w okresie (opcjonalnie)</span><span class="src man">wpisz ręcznie</span></div>
+        <div class="fdesc">Jeśli pompa w tym okresie <b>nie pracowała bez przerwy</b> (np. grzała 2 h, a potem stała), wpisz łączny czas, gdy sprężarka faktycznie grzała. Ciepło = średnia moc grzewcza × ten czas. <b>Puste</b> = aplikacja sama oszacuje czas z licznika (jeśli podasz chwilowe moce), a w przeciwnym razie przyjmie cały okres i ostrzeże, gdy to się nie zgadza z licznikiem.</div>
+        <div class="finp"><input type="number" id="cp_runmin" step="1" min="0" placeholder="np. 112"><span class="unit">min</span></div>
+      </div>
+      <div class="fld">
         <div class="fhead"><span class="code nocode">korekta</span><span class="fname">Odjąć korektę ΔT z Ustawień?</span><span class="src man">wpisz ręcznie</span></div>
         <div class="fdesc">Domyślnie <b>NIE</b>. Korekta (kalibracja różnicy T01/T02 przy wyłączonej sprężarce) jest odejmowana od ΔT w każdym odczycie i potrafi mocno obniżyć Q i COP. Zaznacz tylko wtedy, gdy czujniki naprawdę pokazują różnicę przy postoju. Wynik z i bez korekty pokazują „Kontrole wiarygodności”.</div>
         <label class="chk"><input type="checkbox" id="cp_useoff"> odejmij korektę (<span id="cp_offval">0</span> K)</label>
       </div>
     </div>
+
+    <details class="howto" open>
+      <summary>Jak wpisywać dane — w skrócie</summary>
+      <ul>
+        <li><b>Odczyt = „zdjęcie” z jednej chwili.</b> Start, każdy odczyt pośredni i Stop to osobne momenty. Wartości z aplikacji (T01, T02, T04, T30, T34, T35, T39) i z licznika wpisuj z <b>tej samej minuty</b>.</li>
+        <li><b>Minimum do policzenia COP:</b> data/godzina startu i stopu, tryb, <b>zużycie</b> (stan licznika na Start i Stop <u>albo</u> kWh ręcznie) oraz T01, T02 i T39 z co najmniej jednego odczytu, gdy <b>sprężarka pracuje</b>.</li>
+        <li><b>Dane częściowe są OK</b> — puste pola zostaw puste. Odczyt bez T01/T02/T39 nie wchodzi do ciepła; odczyt bez stanu licznika nie tworzy segmentów. Start/Stop przy stojącej sprężarce (T30 = 0) są pomijane w cieple — to normalne.</li>
+        <li><b>Licznik (kWh) ≠ moc chwilowa (kW).</b> „Stan licznika” to liczba narastająca w kWh. „Moc chwilowa” to ile pompa pobiera <i>w tej sekundzie</i> (zwykle 0,5–5 kW). Nie wpisuj kWh w polu mocy ani odwrotnie. Sposób wpisywania zużycia wybierasz w sekcji 4.</li>
+        <li><b>Pompa stała przez część okresu?</b> Wpisz „Czas faktycznej pracy sprężarki”, inaczej ciepło zostanie policzone na cały okres i COP wyjdzie zawyżony.</li>
+      </ul>
+    </details>
 
     <div class="sech">Kiedy zrobiłeś odczyty (sekcje 2–5)</div>
     <div id="cp_rdtimes"></div>
@@ -703,6 +723,15 @@ table.rc.big .note{font-size:.72rem}
 
     <div class="sech">4. Zużycie energii — dedykowany licznik pompy (kWh i godziny)</div>
     <div class="fgrid">
+      <div class="fld" style="grid-column:1/-1;border-left:3px solid var(--cyan)">
+        <div class="fhead"><span class="code nocode">jak?</span><span class="fname">Co wpisujesz w polu „Licznik” przy odczytach?</span><span class="src man">wybierz</span></div>
+        <div class="finp"><select id="cp_kmode" onchange="liveCop()">
+          <option value="abs">Stan licznika — liczba narastająca (np. 1234,56) — zalecane</option>
+          <option value="since">Zużycie od uruchomienia (licznik/ekran pokazuje kWh od startu okresu)</option>
+          <option value="delta">Przyrost od poprzedniego odczytu (kWh między pomiarami)</option>
+        </select></div>
+        <div class="fdesc" id="cp_kmode_help" style="margin-top:6px"></div>
+      </div>
       <div class="fld">
         <div class="fhead"><span class="code nocode">kWh</span><span class="fname">Zużycie w okresie — wpisane ręcznie (zamiast stanów licznika)</span><span class="src lic">z licznika pompy</span></div>
         <div class="fdesc">Wypełnij <b>tylko</b>, jeśli nie masz stanów licznika na starcie i stopie (np. licznik pokazuje przyrost). Jeśli wpiszesz stany licznika poniżej, to one mają pierwszeństwo.</div>
@@ -733,6 +762,10 @@ table.rc.big .note{font-size:.72rem}
       <div class="calcbox"><div class="calcval" id="cp_Q" style="color:var(--amber)">—</div><div class="calclbl">Średnia moc grzewcza Q (ważona czasem)</div></div>
       <div class="calcbox"><div class="calcval" id="cp_Qe" style="color:var(--amber)">—</div><div class="calclbl">Ciepło oddane w okresie</div></div>
       <div class="calcbox"><div class="calcval" id="cp_cop" style="color:var(--ok)">—</div><div class="calclbl">Średni COP w okresie (ciepło ÷ E)</div></div>
+    </div>
+    <div class="calcrow">
+      <div class="calcbox"><div class="calcval" id="cp_run" style="font-size:1.05rem">—</div><div class="calclbl">Czas pracy sprężarki przyjęty do ciepła (źródło w nawiasie)</div></div>
+      <div class="calcbox"><div class="calcval" id="cp_copi" style="font-size:1.05rem">—</div><div class="calclbl">COP z odczytów chwilowych (Q ÷ moc z licznika, z tych samych chwil) — kontrola</div></div>
     </div>
     <div class="calcrow">
       <div class="calcbox"><div class="calcval" id="cp_range" style="font-size:1.05rem">—</div><div class="calclbl">Zakres COP z dokładności wpisanych liczb</div></div>
@@ -2349,6 +2382,27 @@ function calcPeriod(P,opt){
     else if(!(x.flow>0)) x.why='pominięty: przepływ = 0';
     else if(x.dt<=0) x.why=(c.off&&x.dtRaw>0)?'pominięty: po odjęciu korekty ΔT ≤ 0 (surowe '+x.dtRaw.toFixed(1)+' K)':'pominięty: ΔT ≤ 0 — woda jeszcze nie jest podgrzewana';
   });
+  /* --- moc chwilowa: odrzucanie wartości niemożliwych (najczęściej kWh wpisane w pole kW) --- */
+  rds.forEach(x=>{
+    if(x.p==null) return; let bad='';
+    if(x.k!=null&&x.p>0&&Math.abs(x.p-x.k)<0.0051) bad='jest równa stanowi licznika — to kWh, nie kW';
+    else if(x.p>10) bad='przekracza 10 kW';
+    else if(x.S!=null&&x.p>x.S*1.05) bad='jest większa niż moc pozorna z T34·T35 ('+x.S.toFixed(2)+' kVA), a tak być nie może';
+    else if(x.p<=0.05&&((x.hz!=null&&x.hz>0)||(x.S!=null&&x.S>0.3))) bad='to 0 kW, a T30/T35 wskazują, że pompa pracuje';
+    if(bad){ add('warn','Moc chwilowa przy odczycie „'+x.label+'” ('+x.p+' kW) została odrzucona: '+bad+'. Wpisz tam moc z licznika w kW (np. 1,77), nie stan licznika w kWh.'); x.pBad=x.p; x.p=null; x.pf1=null; }
+  });
+  /* --- licznik: sprowadzenie do stanu narastającego (zależnie od wybranego sposobu wpisywania) --- */
+  { const km=P.kmode||'abs'; let acc=0, gap=false;
+    rds.forEach(x=>{
+      if(km==='delta'){ if(x.role==='S'){ x.kAbs=0; acc=0; } else if(x.k!=null){ acc+=x.k; x.kAbs=acc; } else { x.kAbs=null; if(x.role==='M') gap=true; } }
+      else if(km==='since') x.kAbs=(x.role==='S'&&x.k==null)?0:x.k;
+      else x.kAbs=x.k;
+    });
+    if(km==='delta'&&gap&&rds.some(x=>x.role!=='S'&&x.k!=null)) add('warn','W trybie „przyrost od poprzedniego odczytu” każdy odczyt z licznika musi mieć wartość — brak jednej przerywa sumowanie i zaniża zużycie.');
+    const kr0=rds.filter(x=>x.kAbs!=null);
+    for(let i=1;i<kr0.length;i++) if(kr0[i].kAbs<kr0[i-1].kAbs-1e-9){
+      add('bad','Stan licznika maleje: '+kr0[i-1].label+' = '+f2(kr0[i-1].kAbs,2)+' → '+kr0[i].label+' = '+f2(kr0[i].kAbs,2)+' kWh. Licznik narastający nie może się cofać. Jeśli wpisujesz kWh zużyte między pomiarami, wybierz w sekcji 4 „Przyrost od poprzedniego odczytu”; jeśli to moc chwilowa — wpisz ją w wierszu „moc chwil.” (kW).'); break; }
+  }
   const excl=rds.filter(x=>!x.valid&&x.q!=null&&!x.def);
   if(excl.length) add('info','Pominięte w obliczeniu ciepła: '+excl.map(x=>x.label+' ('+x.why.replace('pominięty: ','')+')').join('; ')+'. To normalne tuż po starcie lub tuż przed stopem, gdy sprężarka jeszcze/już nie oddaje ciepła. Średnia Q opiera się wtedy na pozostałych odczytach i obowiązuje w całym okresie (lekko zawyża COP) — poniżej podano dolne oszacowanie.');
   rds.filter(x=>x.def).forEach(x=>add('info',x.label+': oznaczony jako odszranianie — pominięty w obliczeniu ciepła.'));
@@ -2357,8 +2411,8 @@ function calcPeriod(P,opt){
 
   /* --- zużycie energii --- */
   let rE=res.E;
-  if(S&&Z&&S.k!=null&&Z.k!=null){
-    const dk=Z.k-S.k;
+  if(S&&Z&&S.kAbs!=null&&Z.kAbs!=null){
+    const dk=Z.kAbs-S.kAbs;
     if(dk>0){ r.E=dk; r.Esrc='licznik (stop − start)'; }
     else add('bad','Stan licznika na końcu musi być większy niż na początku okresu.');
   } else if(P.kwh>0){ r.E=P.kwh; r.Esrc='wpisane ręcznie'; rE=res.E/2; }
@@ -2374,17 +2428,26 @@ function calcPeriod(P,opt){
       const dt=(x.t02-x.t01)-off, ok=dt>0&&x.hz!==0&&x.flow>0;
       if(ok) pts.push({t:x.t,v:x.flow*c.rho*c.cpw*dt/3600}); else if(zeroEx) pts.push({t:x.t,v:0}); });
     if(!pts.length||defH>=r.hours) return null;
-    const q=twAvg(pts,t0,t1), heat=q*(r.hours-defH); return {q,heat,cop:r.E>0?heat/r.E:null};
+    const q=twAvg(pts,t0,t1), heat=q*(r.runH!=null?r.runH:(r.hours-defH)); return {q,heat,cop:r.E>0?heat/r.E:null};
   };
   r.alt={};
   if(vp.length){
     r.q=twAvg(vp,t0,t1);
     if(defH>=r.hours) add('bad','Czas odszraniania nie może być dłuższy niż okres pracy.');
-    else r.heat=r.q*(r.hours-defH);
+    else {
+      const activeH=r.hours-defH; let runH=null, runSrc='';
+      if(P.runMin>0){ runH=P.runMin/60; runSrc='wpisany ręcznie'; if(runH>r.hours){ add('warn','Czas pracy sprężarki ('+fmtHM(runH)+') jest dłuższy niż okres ('+fmtHM(r.hours)+') — ograniczono do długości okresu.'); runH=r.hours; } }
+      const pv=rds.filter(x=>x.valid&&x.p!=null&&x.p>0);
+      if(pv.length){ r.pRun=pv.reduce((a,x)=>a+x.p,0)/pv.length; r.copInst=pv.reduce((a,x)=>a+x.q,0)/pv.reduce((a,x)=>a+x.p,0); r.nInst=pv.length; }
+      r.copFull=(r.E>0)?r.q*activeH/r.E:null;
+      if(runH==null&&r.E>0&&r.pRun>0){ const est=r.E/r.pRun; if(est<0.8*activeH){ runH=est; runSrc='oszacowany z licznika: E ÷ średnia moc chwilowa'; r.runAuto=true; } }
+      r.runH=runH!=null?runH:activeH; r.runSrc=runSrc||(defH>0?'cały okres bez odszraniania':'cały okres');
+      r.heat=r.q*r.runH;
+    }
     if(r.E>0&&!(defH>=r.hours)){
       if(c.dtOff){ const o=heatFor(c.useOff?0:c.dtOff,false); if(o&&o.cop!=null) r.alt.other={cop:o.cop,label:c.useOff?'bez korekty ΔT':'z korektą ΔT '+c.dtOff+' K'}; }
       if(excl.length){ const z=heatFor(c.off,true); if(z&&z.cop!=null) r.alt.zero=z.cop; }
-      const qm=Math.max(...vp.map(p=>p.v)); if(vp.length>=2&&qm>0) r.alt.steady=qm*(r.hours-defH)/r.E;
+      const qm=Math.max(...vp.map(p=>p.v)); if(vp.length>=2&&qm>0) r.alt.steady=qm*(r.runH!=null?r.runH:(r.hours-defH))/r.E;
     }
     if(r.heat!=null&&r.E>0){
       r.cop=r.heat/r.E;
@@ -2404,17 +2467,27 @@ function calcPeriod(P,opt){
     else if(r.pel>0&&r.Savg>0){ r.pf=r.pel/r.Savg; r.pfSrc='średni'; } }
 
   /* --- segmenty między odczytami licznika --- */
-  const kr=rds.filter(x=>x.k!=null);
+  const kr=rds.filter(x=>x.kAbs!=null);
   if(kr.length>2){
     for(let i=1;i<kr.length;i++){
-      const a=kr[i-1], b=kr[i], h=(b.t-a.t)/36e5, E=b.k-a.k;
+      const a=kr[i-1], b=kr[i], h=(b.t-a.t)/36e5, E=b.kAbs-a.kAbs;
       const qp=vp.length?twAvg(vp,a.t,b.t):null, t4=p4.length?twAvg(p4,a.t,b.t):null;
-      r.segs.push({a,b,h,E,pel:h>0?E/h:null,q:qp,cop:(qp!=null&&E>0)?qp*h/E:null,t04:t4});
+      /* pobór podczas pracy na końcach segmentu (moc chwilowa albo ~0,9·S); gdy licznik pokazuje znacznie mniej, pompa nie pracowała cały segment */
+      const refs=[a,b].filter(x=>x.hz!==0).map(x=>x.p>0?x.p:(x.S>0?x.S*0.9:null)).filter(v=>v!=null), ref=refs.length?refs.reduce((u,v)=>u+v,0)/refs.length:null;
+      let cop=(qp!=null&&E>0)?qp*h/E:null, adj=false;
+      if(cop!=null&&ref>0&&h>0&&(E/h)/ref<0.8){ cop=qp/ref; adj=true; }
+      r.segs.push({a,b,h,E,pel:h>0?E/h:null,q:qp,cop,adj,t04:t4});
       if(E<0) add('bad','Segment '+a.label+' → '+b.label+': stan licznika maleje — sprawdź odczyty licznika.');
     }
   }
 
   /* --- kontrole wiarygodności --- */
+  if(r.heat!=null&&r.E>0){
+    if(r.runAuto) add('warn','Licznik pokazuje średni pobór '+r.pel.toFixed(2)+' kW, a przy odczytach pompa pobierała średnio '+r.pRun.toFixed(2)+' kW — więc sprężarka pracowała tylko ok. '+fmtHM(r.runH)+' z '+fmtHM(r.hours)+'. Ciepło policzono dla tego czasu (COP '+r.cop.toFixed(2)+' zamiast '+r.copFull.toFixed(2)+' przy założeniu pracy bez przerwy). Jeśli znasz faktyczny czas pracy, wpisz go w sekcji 1.');
+    else if(!(P.runMin>0)&&r.Savg>0&&r.pRun==null){ const f=r.pel/(r.Savg*0.9); if(f<0.6) add('warn','Średni pobór z licznika ('+r.pel.toFixed(2)+' kW) to zaledwie ok. '+Math.round(f*100)+'% poboru podczas pracy (S ≈ '+r.Savg.toFixed(2)+' kVA z T34·T35). Prawdopodobnie sprężarka pracowała tylko ok. '+fmtHM(r.hours*f)+' z '+fmtHM(r.hours)+', a ciepło liczone jest na cały okres — COP wychodzi zawyżony. Wpisz w sekcji 1 „Czas faktycznej pracy sprężarki” (sugestia: ok. '+Math.round(r.hours*f*60)+' min) albo podaj chwilowe moce z licznika.'); }
+    if(r.copInst!=null){ add('info','COP z odczytów chwilowych (Q ÷ moc z licznika, '+r.nInst+' odczyt'+(r.nInst>1?'y':'')+'): '+r.copInst.toFixed(2)+'. To kontrola — dotyczy chwil pracy, nie całego okresu.');
+      if(!r.runAuto&&!(P.runMin>0)&&r.cop>r.copInst*1.35) add('warn','COP z całego okresu ('+r.cop.toFixed(2)+') jest o '+Math.round((r.cop/r.copInst-1)*100)+'% wyższy niż z odczytów chwilowych ('+r.copInst.toFixed(2)+'). Zwykle znaczy to, że ciepło liczone jest za długo (pompa stała) albo zużycie z licznika jest za małe. Sprawdź czas pracy sprężarki i daty.'); }
+  }
   if(r.cop!=null){
     const al=[]; if(r.alt.other) al.push('COP '+r.alt.other.label+': '+r.alt.other.cop.toFixed(2)); if(r.alt.zero!=null) al.push('COP gdy pominięte odczyty liczyć jako 0 kW: '+r.alt.zero.toFixed(2)); if(r.alt.steady!=null) al.push('COP przy stałej mocy równej najwyższemu odczytowi Q (stan ustalony): '+r.alt.steady.toFixed(2));
     { const qs2=vp.map(p=>p.v), qx=Math.max(...qs2), low=rds.filter(x=>x.valid&&x.q<0.6*qx&&(x.role!=='M'));
@@ -2468,8 +2541,8 @@ const PARAMS={
  3:[
   {key:'flow',code:'T39',name:'Water Flow',src:'app',unit:'m³/h',step:0.1,min:0,desc:'Przepływ wody w obiegu grzewczym. Odczytuj <b>gdy sprężarka pracuje</b>, nie w trakcie odszraniania (zaznacz wtedy „odszranianie” poniżej). Przepływ zależy od liczby otwartych obiegów (zawory Afriso) — dlatego poniżej zaznaczasz, które były otwarte.'}],
  4:[
-  {key:'k',code:'',short:'licznik',name:'Stan licznika energii pompy',src:'lic',unit:'kWh',step:0.01,min:0,desc:'Stan <b>dedykowanego licznika pompy</b> (kWh) w chwili odczytu. <b>Start i Stop są potrzebne</b> do obliczenia zużycia w okresie (Stop − Start). Odczyt pośredni jest opcjonalny — pozwala sprawdzić zużycie i COP w segmentach okresu (tabela „Segmenty”).'},
-  {key:'p',code:'',short:'moc chwil.',name:'Chwilowa moc pobierana — wskazanie licznika',src:'lic',unit:'kW',step:0.01,min:0,desc:'<b>Opcjonalne.</b> Moc chwilowa, którą pokazuje licznik pompy w momencie odczytu (kW). Wpisuj ją <b>w tej samej chwili</b>, co T34 i T35 — wtedy system liczy rzetelny cos φ = moc z licznika ÷ (√3·T34·T35) osobno dla każdego odczytu. Bez tego cos φ jest tylko orientacyjny.'}],
+  {key:'k',code:'',short:'licznik',name:'Stan licznika energii pompy',src:'lic',unit:'kWh',step:0.01,min:0,desc:'Wartość z <b>licznika energii</b> (<b>kWh</b>) — tak, jak wybrano wyżej. Domyślnie to <b>stan narastający</b>: aplikacja sama odejmuje (zużycie = Stop − Start), więc <b>nie wpisuj różnic</b>. Start i Stop są potrzebne do zużycia; odczyty pośrednie są opcjonalne i dają segmenty (tabela „Segmenty”), ale wtedy wpisz je w <b>każdym</b> odczycie, w którym masz licznik.'},
+  {key:'p',code:'',short:'moc chwil.',name:'Chwilowa moc pobierana — wskazanie licznika',src:'lic',unit:'kW',step:0.01,min:0,desc:'<b>Opcjonalne.</b> Moc, którą licznik pokazuje <b>w tej chwili</b> (<b>kW</b>, zwykle 0,5–5 kW) — <u>nie</u> kWh. Wpisuj ją razem z T34, T35 i T30. Dzięki temu aplikacja liczy rzetelny cos φ oraz <b>COP chwilowy = Q ÷ moc</b> i sama sprawdza, czy pompa pracowała przez cały okres. Wartości niemożliwe (większe niż moc pozorna z T34·T35, równe stanowi licznika, 0 kW przy pracującej sprężarce) są odrzucane z ostrzeżeniem.'}],
  5:[
   {key:'hz',code:'T30',name:'Compressor Frequency',src:'app',unit:'Hz',step:1,min:0,desc:'Częstotliwość sprężarki (modulacja). <b>Nie wpływa na COP</b> — pokazuje średnie obciążenie (T30 ÷ T32) i służy do porównań z innymi okresami. Pompa dobiera ją sama, dlatego liczy się średnia z odczytów, a nie przedziały.'},
   {key:'volt',code:'T34',name:'AC Input Voltage Value',src:'app',unit:'V',step:1,min:0,desc:'Napięcie zasilania. Około 400 V to napięcie <b>międzyfazowe</b> (3 fazy) — tak ma być. Razem z T35 służy do <b>kontroli</b>: wyliczony cos φ = średnia moc z licznika ÷ średnia moc pozorna (√3·T34·T35).'},
@@ -2527,12 +2600,12 @@ function readCopForm(){
   const kd=Math.max(1,...RDS.map(x=>decs(x.k,1)), decs(cpEl('cp_kwh').value,1));
   return {id:copEditId,start,end,mode:cpEl('cp_mode').value,defMin:num(cpEl('cp_defmin').value)||0,kwh:num(cpEl('cp_kwh').value),rd,
     res:{T:Math.pow(10,-mx(['t01','t02'],1)),F:Math.pow(10,-mx(['flow'],1)),E:Math.pow(10,-kd)},
-    rho:c.rho,cpw:c.cpw,dtOff:c.dtOff,useOff:uo,hzMax:SET.hzMax,note:cpEl('cp_note').value.trim()};
+    rho:c.rho,cpw:c.cpw,dtOff:c.dtOff,useOff:uo,hzMax:SET.hzMax,note:cpEl('cp_note').value.trim(),kmode:(cpEl('cp_kmode')||{}).value||'abs',runMin:num(cpEl('cp_runmin').value)||0};
 }
 function rdTableHtml(r){
   const cols=r.rows; if(!cols.length) return '';
   const S=cols[0], Z=cols[cols.length-1];
-  const defs=[['Czas',null,0],['T01 wlot (°C)','t01',1],['T02 wylot (°C)','t02',1],['ΔT surowe T02 − T01 (K)','dtRaw',2],['ΔT użyte w obliczeniu (K)','dt',2],['T39 przepływ (m³/h)','flow',2],['Q moc grzewcza (kW)','q',2],['T04 zewn. (°C)','t04',1],['T30 sprężarka (Hz)','hz',0],['S = √3·T34·T35 (kVA)','S',2],['Stan licznika (kWh)','k',2],['Moc chwilowa z licznika (kW)','p',2],['cos φ chwilowy = moc ÷ S','pf1',2],['Status odczytu w obliczeniu Q','why',0],['Otwarte obiegi',null,0],['Odszranianie',null,0]];
+  const defs=[['Czas',null,0],['T01 wlot (°C)','t01',1],['T02 wylot (°C)','t02',1],['ΔT surowe T02 − T01 (K)','dtRaw',2],['ΔT użyte w obliczeniu (K)','dt',2],['T39 przepływ (m³/h)','flow',2],['Q moc grzewcza (kW)','q',2],['T04 zewn. (°C)','t04',1],['T30 sprężarka (Hz)','hz',0],['S = √3·T34·T35 (kVA)','S',2],['Stan licznika narastająco (kWh)','kAbs',2],['Moc chwilowa z licznika (kW)','p',2],['cos φ chwilowy = moc ÷ S','pf1',2],['Status odczytu w obliczeniu Q','why',0],['Otwarte obiegi',null,0],['Odszranianie',null,0]];
   let h='<thead><tr><th>Parametr</th>'+cols.map(x=>`<th>${xmlEsc(x.label)}</th>`).join('')+'<th>Zmiana (Stop − Start)</th><th>Średnia ważona czasem</th></tr></thead><tbody>';
   defs.forEach(([lab,k,d])=>{
     h+=`<tr><td>${lab}</td>`;
@@ -2541,14 +2614,14 @@ function rdTableHtml(r){
     else if(lab==='Otwarte obiegi') h+=cols.map(x=>`<td class="num">${[x.c1===false?null:SET.c1Name,x.c2===false?null:SET.c2Name].filter(Boolean).map(xmlEsc).join(' + ')||'—'}</td>`).join('')+'<td>—</td><td>—</td>';
     else if(lab==='Odszranianie') h+=cols.map(x=>`<td class="num">${x.def?'tak':'nie'}</td>`).join('')+'<td>—</td><td>—</td>';
     else { const dv=(S[k]!=null&&Z[k]!=null&&S!==Z)?Z[k]-S[k]:null;
-      h+=cols.map(x=>`<td class="num">${f2(x[k],d)}</td>`).join('')+`<td class="num">${dv==null?'—':(dv>=0?'+':'')+dv.toFixed(d)}</td><td class="num">${(k==='k'||k==='pf1')?(k==='pf1'&&r.pfSrc==='chwilowy'?f2(r.pf,2):'—'):f2(r.avg[k],d)}</td>`; }
+      h+=cols.map(x=>`<td class="num">${(k==='p'&&x.pBad!=null)?'<s title="odrzucona">'+f2(x.pBad,2)+'</s>':f2(x[k],d)}</td>`).join('')+`<td class="num">${dv==null?'—':(dv>=0?'+':'')+dv.toFixed(d)}</td><td class="num">${(k==='kAbs'||k==='pf1')?(k==='pf1'&&r.pfSrc==='chwilowy'?f2(r.pf,2):'—'):f2(r.avg[k],d)}</td>`; }
     h+='</tr>';
   });
   return h+'</tbody>';
 }
 function segTableHtml(r){
   return '<thead><tr><th>Od → do</th><th>Czas</th><th>E (kWh)</th><th>Śr. moc pobierana Pel (kW) = E ÷ czas</th><th>Śr. moc grzewcza Q (kW)</th><th>COP</th><th>T04 temp. zewn. śr. (°C)</th></tr></thead><tbody>'
-   +r.segs.map(s=>`<tr><td class="num">${xmlEsc(s.a.label)} → ${xmlEsc(s.b.label)} (${fmtDT(toLocalStr(s.a.t))} → ${fmtDT(toLocalStr(s.b.t))})</td><td class="num">${fmtHM(s.h)}</td><td class="num">${f2(s.E,2)}</td><td class="num">${f2(s.pel,2)}</td><td class="num">${f2(s.q,2)}</td><td class="num"><b>${s.cop==null?'—':'≈ '+s.cop.toFixed(2)}</b></td><td class="num">${f2(s.t04,1)}</td></tr>`).join('')+'</tbody>';
+   +r.segs.map(s=>`<tr><td class="num">${xmlEsc(s.a.label)} → ${xmlEsc(s.b.label)} (${fmtDT(toLocalStr(s.a.t))} → ${fmtDT(toLocalStr(s.b.t))})</td><td class="num">${fmtHM(s.h)}</td><td class="num">${f2(s.E,2)}</td><td class="num">${f2(s.pel,2)}</td><td class="num">${f2(s.q,2)}</td><td class="num"><b>${s.cop==null?'—':'≈ '+s.cop.toFixed(2)}</b>${s.adj?'<div class="note">pompa nie pracowała cały segment — COP z poboru podczas pracy</div>':''}</td><td class="num">${f2(s.t04,1)}</td></tr>`).join('')+'</tbody>';
 }
 function flagsHtml(r){
   const ic={bad:'⚠',warn:'⚠',good:'✓',info:'ℹ'}, cl={bad:'bad',warn:'',good:'good',info:'info'};
@@ -2566,6 +2639,9 @@ function liveCop(){
   cpEl('cp_Q').textContent=r.q==null?'—':r.q.toFixed(2)+' kW';
   cpEl('cp_Qe').textContent=r.heat==null?'—':r.heat.toFixed(1)+' kWh';
   cpEl('cp_cop').textContent=r.cop==null?'≈ —':'≈ '+r.cop.toFixed(2);
+  cpEl('cp_run').textContent=r.runH==null?'—':fmtHM(r.runH)+' ('+r.runSrc+')';
+  cpEl('cp_copi').textContent=r.copInst==null?'— (brak chwilowej mocy z licznika)':'≈ '+r.copInst.toFixed(2);
+  { const h={abs:'Przykład: Start 1234,50 → Stop 1246,87 kWh, czyli zużycie 12,37 kWh. Odczyty pośrednie też wpisujesz jako stan (liczby rosnące, np. 1236,27). Nie wpisuj różnic.',since:'Przykład: licznik pokazuje zużycie od startu — Start 0, po 40 min 1,77, Stop 12,37 ⇒ zużycie 12,37 kWh. Liczby muszą rosnąć. Start możesz zostawić pusty (= 0).',delta:'Przykład: Odczyt 1 = 1,77 (zużycie od startu do odczytu 1), Odczyt 2 = 1,33 (od odczytu 1 do 2), Stop = 9,27 (od ostatniego odczytu do stopu). Start zostaw pusty. Zużycie = suma. Każdy odczyt musi mieć wartość.'}; cpEl('cp_kmode_help').textContent=h[cpEl('cp_kmode').value]||''; }
   cpEl('cp_range').textContent=r.lo==null?'—':r.lo.toFixed(2)+' – '+r.hi.toFixed(2);
   cpEl('cp_t04').textContent=r.t04==null?'—':r.t04.toFixed(1)+' °C ('+r.t04min.toFixed(1)+' … '+r.t04max.toFixed(1)+')';
   cpEl('cp_hz').textContent=r.hz==null?'—':r.hz.toFixed(0)+' Hz'+(r.load!=null?' ('+r.load.toFixed(0)+'%)':'');
@@ -2609,7 +2685,7 @@ async function applyCal(){
 async function clearCal(){ SET.dtOff=0; await persist(); syncCopSettingsUI(); }
 function resetCopForm(){
   RDS=newRds();
-  ['cp_start','cp_defmin','cp_kwh','cp_note'].forEach(id=>cpEl(id).value='');
+  ['cp_start','cp_defmin','cp_runmin','cp_kwh','cp_note'].forEach(id=>cpEl(id).value=''); cpEl('cp_kmode').value='abs';
   cpEl('cp_end').value=nowLocal(); cpEl('cp_mode').value='CO'; cpEl('cp_useoff').checked=false;
   buildRdUi(); liveCop();
 }
@@ -2620,7 +2696,7 @@ function editCop(id){
   copEditId=id; copCtx={rho:m.rho,cpw:m.cpw,dtOff:m.dtOff||0}; cpEl('cp_useoff').checked=!!m.useOff;
   cpEl('copEditBar').style.display='flex'; cpEl('copSubmitBtn').textContent='Zapisz zmiany okresu';
   cpEl('cp_start').value=m.start; cpEl('cp_end').value=m.end; cpEl('cp_mode').value=m.mode;
-  cpEl('cp_defmin').value=m.defMin||''; cpEl('cp_kwh').value=m.kwh==null?'':m.kwh; cpEl('cp_note').value=m.note||'';
+  cpEl('cp_defmin').value=m.defMin||''; cpEl('cp_runmin').value=m.runMin||''; cpEl('cp_kmode').value=m.kmode||'abs'; cpEl('cp_kwh').value=m.kwh==null?'':m.kwh; cpEl('cp_note').value=m.note||'';
   const s=v=>v==null?'':String(v);
   RDS=m.rd.map(x=>({ts:x.ts||'',v:Object.fromEntries(COPK.map(k=>[k,s(x[k])])),k:s(x.k),c1:x.c1!==false,c2:x.c2!==false,def:!!x.def}));
   if(RDS.length<2) RDS=newRds();
@@ -2632,7 +2708,7 @@ async function addCop(){
   if(bad.length){ alert('Nie zapisuję — popraw dane:\n• '+bad.map(f=>f.txt).join('\n• ')); return; }
   if(!(r.E>0)){ alert('Podaj zużycie energii: stany licznika (Start i Stop) albo zużycie okresu w kWh.'); return; }
   if(!r.hasHeat && !confirm('Brak poprawnego odczytu cieplnego (T01, T02, T39) — zapisać sam okres bez COP? Możesz dopisać odczyty później przyciskiem „Edytuj”.')) return;
-  const rec={start:P.start,end:P.end,date:P.start.slice(0,10),mode:P.mode,defMin:P.defMin,kwh:P.kwh,rd:P.rd,res:P.res,rho:P.rho,cpw:P.cpw,dtOff:P.dtOff,useOff:P.useOff,hzMax:P.hzMax,note:P.note,src:'ręcznie'};
+  const rec={start:P.start,end:P.end,date:P.start.slice(0,10),mode:P.mode,defMin:P.defMin,kwh:P.kwh,rd:P.rd,res:P.res,rho:P.rho,cpw:P.cpw,dtOff:P.dtOff,useOff:P.useOff,hzMax:P.hzMax,note:P.note,kmode:P.kmode,runMin:P.runMin,src:'ręcznie'};
   const wasEdit=!!copEditId;
   if(wasEdit){ const i=M.findIndex(x=>x.id===copEditId); if(i>-1) M[i]={...M[i],...rec}; }
   else M.push({id:uid(),...rec});
