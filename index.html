@@ -1432,7 +1432,7 @@ function renderPv(){
   document.getElementById('pvEmptyMsg').style.display = rows.length?'none':'block';
   document.getElementById('pvTbody').innerHTML = rows.map(r=>`<tr>
       <td>${r.date}</td><td class="num">${r.kwh.toFixed(2)}</td><td class="num">${((r.creditKwh??r.kwh)||0).toFixed(2)}</td><td class="num">${r.price.toFixed(3)}</td>
-      <td class="num">${r.value.toFixed(2)} zł</td><td class="w2">${wxTempsHtml(wxRec(r))}</td><td class="num">${wxRadHtml(wxRec(r))}</td><td class="num">${wxPvCell(r)}</td><td class="notecell">${xmlEsc(r.note||'—')}</td>
+      <td class="num">${r.value.toFixed(2)} zł</td><td class="w2">${wxTempsHtml(wxRec(r))}</td><td class="num">${wxRadHtml(wxRec(r))}</td><td class="num">${wxPvCell(r)}</td><td class="notecell">${r.src==='solax'?'<span class="src app" title="wpis dodany automatycznie ze Solax; po edycji przestaje się aktualizować">☁ Solax</span> ':''}${xmlEsc(r.note||'—')}</td>
       <td><button class="btn2 edit" onclick="editPv('${r.id}')">Edytuj</button><button class="btn2 del" onclick="delPv('${r.id}')">Usuń</button></td></tr>`).join('');
   document.getElementById('pvTblFoot').innerHTML = rows.length ? `<tr><td style="text-align:right;color:var(--muted)">Razem (${rows.length}):</td><td class="num">${totKwh.toFixed(2)}</td><td class="num">${totCredit.toFixed(2)}</td><td></td><td class="num">${totVal.toFixed(2)} zł</td><td colspan="5"></td></tr>` : '';
 }
@@ -2768,7 +2768,9 @@ function renderCopHist(){
     let t='<b>Porównanie z zakładką „Dane” (ten sam zakres i tryb):</b> w „Dane” cykle mają razem <b>'+Rk.toFixed(1)+' kWh</b>, w okresach COP <b>'+E.toFixed(1)+' kWh</b>.';
     if(onlyDane.length) t+='<br>Nie ma w okresach COP: <b>'+onlyDane.length+' cykli ('+Ok.toFixed(1)+' kWh)</b> — to wpisy z „Dane” bez odczytów temperatur i przepływu, dlatego nie liczą się do COP (nie są błędem). '+list(onlyDane,r=>fmtDT(r.start)+' '+r.type+' '+r.kwh+' kWh');
     if(onlyCop.length) t+='<br>Tylko w COP (brak w „Dane”): <b>'+onlyCop.length+'</b>. '+list(onlyCop,x=>fmtY(x.P.start)+' '+x.P.mode+' '+f2(x.r.E,2)+' kWh');
-    cpEl('ch_recon').innerHTML=items.length||onlyDane.length?t:''; }
+    const api=items.filter(x=>(x.P.src||'').includes('api')), apiNo=api.filter(x=>!(x.P.kwh>0));
+    if(api.length) t+='<br>☁ Z Warmlink API: <b>'+api.length+'</b> okresów'+(apiNo.length?', w tym <b>'+apiNo.length+'</b> bez kWh (dostaną je automatycznie, gdy dodasz cykl z licznika z tą samą porą — albo wpisz ręcznie w „Edytuj”).':'.');
+    cpEl('ch_recon').innerHTML=items.length||onlyDane.length||api.length?t:''; }
   const colorOf=m=>m.mode==='CWU'?'#49b4cf':'#e0904f', rad=h=>Math.max(3,Math.min(11,2.5+Math.sqrt(h)*0.7));
   const cp=withH.filter(x=>x.r.cop!=null);
   const pT=cp.map(x=>({x:(Date.parse(x.P.start)+Date.parse(x.P.end))/2,y:x.r.cop,color:colorOf(x.P),r:rad(x.r.hours),t:`${fmtY(x.P.start)} → ${fmtY(x.P.end)} (${fmtHM(x.r.hours)}) ${x.P.mode}: COP ${x.r.cop.toFixed(2)}`}));
