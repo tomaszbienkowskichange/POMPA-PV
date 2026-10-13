@@ -3446,16 +3446,25 @@ async function hubPrefetchSx(){
 }
 /* --- zakładka „Na żywo” --- */
 function hubSaveUrl(){ SET.hubUrl=($w('hub_url').value||'').replace(/\s+/g,'').replace(/^["'„“]+|["'”“]+$/g,''); $w('hub_url').value=SET.hubUrl; persist(); HUBC.sxTo=''; HUBC.liveAt=0; hubTest(); }
-function hubBfShow(bf,note){
+function hubBfShow(bf,note,data){
   const el=$w('hub_bf'); if(!el) return; if(!bf){ el.innerHTML=''; return; }
-  const started=!!(bf.stat||bf.day);
-  el.innerHTML='<b>Historia SolaX (jak w aplikacji mobilnej):</b> '+(bf.done?'<span style="color:var(--ok)">✓ pobrana w całości</span> (sumy dzienne od startu instalacji, krzywa mocy co 5 min do roku wstecz).':(started?'w toku — kolejne do pobrania: sumy dzienne od '+wxEsc(bf.stat||'—')+' wstecz, krzywa 5 min od '+wxEsc(bf.day||'—')+' wstecz.':'jeszcze nie pobrana.'))
-    +(bf.err?' <span style="color:var(--danger)">Ostatni błąd: '+wxEsc(bf.err)+'</span>':'')+(note&&!bf.done?' <span class="note">'+wxEsc(note)+'</span>':'');
+  const started=!!(bf.stat||bf.day), E=wxEsc;
+  let t='<b>Historia SolaX (jak w aplikacji mobilnej):</b> ';
+  if(bf.done) t+='<span style="color:var(--ok)">✓ pobrana w całości</span> (ostatni rok: sumy dzienne i krzywa mocy co 5 min).';
+  else if(!started) t+='jeszcze nie pobrana — kliknij „⬇ Pobierz historię SolaX”.';
+  else t+='w toku (to normalne — dociąga się porcjami). Sumy dzienne: '+(bf.statDone?'<span style="color:var(--ok)">✓ komplet</span>':'od '+E(bf.stat||'—')+' wstecz')+' · krzywa 5 min: '+(bf.dayDone?'<span style="color:var(--ok)">✓ komplet</span>':'pobrano do '+E(bf.day||'—')+(bf.minDay?' (cel: '+E(bf.minDay)+')':''))+'.';
+  if(bf.err) t+=' <span style="color:var(--danger)">Ostatni błąd: '+E(bf.err)+'</span>';
+  if(note&&!bf.done&&!bf.err) t+=' <span class="note">'+E(note)+'</span>';
+  if(data){ const d=data.dni||{}, x=data.sx||{};
+    t+='<br><span class="note">W arkuszu: dni (DNI) — '+(d.err?E(d.err):(d.n||0)+(d.n?' (od '+E(d.from)+' do '+E(d.to)+', z produkcją: '+(d.withY||0)+')':''))+' · próbki 5 min (SX) — '+(x.err?E(x.err):(x.n||0)+(x.n?' (od '+E(x.from)+' do '+E(x.to)+')':''))+'</span>'; }
+  el.innerHTML=t;
 }
 async function hubBfRun(){
   if(!hubCfg()||HUBC.bfBusy) return; HUBC.bfBusy=true; const el=$w('hub_bf'); if(el) el.textContent='Pobieram historię z SolaX… (może potrwać kilka minut, nie zamykaj karty)';
-  try{ let j,n=0; do{ j=await hubGet('bfrun',{n:12},70000); n++; hubBfShow(j.bf,j.msg); if(j.bf&&j.bf.err) break; }while(!j.done&&n<12);
-    if(j&&j.done){ HUBC.bfFull=true; } HUBC.sxTo=''; hubSave(); hubPrefetchSx(); hubRefreshLive(false); }
+  try{ let j,n=0; do{ j=await hubGet('bfrun',{n:12},70000); n++; hubBfShow(j.bf,'pobieram… (porcja '+n+')'); if(j.bf&&j.bf.err) break; }while(!j.done&&n<60);
+    if(j&&j.done){ HUBC.bfFull=true; } HUBC.sxTo=''; hubSave();
+    try{ const pj=await hubGet('ping'); hubBfShow(pj.bf,'',pj.data); }catch(e){}
+    hubPrefetchSx(); hubRefreshLive(false); }
   catch(e){ if(el) el.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
   HUBC.bfBusy=false;
 }
@@ -3464,7 +3473,7 @@ async function hubTest(){
   if(!hubCfg()){ st.innerHTML='<span style="color:var(--danger)">Adres huba musi zawierać klucz (…/exec?t=…) — skopiuj go z menu „3. Pokaż link do aplikacji”.</span>'; return; }
   st.textContent='Łączę…';
   try{ const j=await hubGet('ping'); st.innerHTML='<span style="color:var(--ok)">✓ Hub działa (v'+wxEsc(j.version)+').</span> Warmlink: '+(j.wl?(j.errWl?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errWl)+'</span>':'skonfigurowany'):'nieskonfigurowany')+' · SolaX: '+(j.sx?(j.errSx?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errSx)+'</span>':'skonfigurowany'):'nieskonfigurowany')+(parseFloat(j.version)<1.1?' <span style="color:var(--danger)">· to stara wersja skryptu — wklej nowy Code.gs i wdróż „Nową wersję”, żeby działała historia SolaX i T32.</span>':'');
-    hubBfShow(j.sx&&j.bf?j.bf:null); if(j.bf&&j.bf.done&&!HUBC.bfFull){ HUBC.bfFull=true; HUBC.sxTo=''; hubSave(); }
+    hubBfShow(j.sx&&j.bf?j.bf:null,'',j.data); if(j.bf&&j.bf.done&&!HUBC.bfFull){ HUBC.bfFull=true; HUBC.sxTo=''; hubSave(); }
     hubRefreshLive(true); hubPrefetchSx(); }
   catch(e){ st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
 }
