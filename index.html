@@ -3316,6 +3316,8 @@ function hubUrlProblem(u){
   return '';
 }
 async function hubExplainFetchFail(base){      // „Failed to fetch” → ustal, czy to brak sieci, czy blokada po stronie Google
+  const idm=base.match(/\/macros\/s\/([^\/]+)\/exec/), shortId=idm&&idm[1].length<64;
+  if(shortId) return 'Identyfikator wdrożenia w adresie ma tylko '+idm[1].length+' znaków — wygląda na ucięty (prawidłowy ma zwykle ok. 70–80). Google odpowiada na taki adres błędem 404, który przeglądarka pokazuje jako „CORS”. Skopiuj link ponownie z menu Arkusza „3. Pokaż link do aplikacji” (okno z przyciskiem Kopiuj) albo z Wdróż → Zarządzaj wdrożeniami.';
   try{ await fetch(base+'?a=ping',{mode:'no-cors',cache:'no-store',credentials:'omit'}); return 'Google odpowiedział, ale przeglądarka zablokowała odpowiedź. To prawie zawsze znaczy, że wdrożenie nie ma dostępu „Każdy” (Anyone) — w Apps Script: Wdróż → Zarządzaj wdrożeniami → ołówek → „Kto ma dostęp: Każdy” → Wersja: Nowa wersja → Wdróż. Drugi możliwy powód: link jest nieaktualny albo wdrożenie zostało usunięte.'; }
   catch(e){ return 'Nie ma połączenia z script.google.com (brak internetu, VPN/DNS, blokada reklam lub rozszerzenie prywatności).'; }
 }
