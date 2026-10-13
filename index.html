@@ -913,8 +913,10 @@ table.rc.big .note{font-size:.72rem}
     <div class="apirow">
       <div style="flex:3 1 320px"><label>Adres huba (zawiera klucz dostępu)</label><input id="hub_url" type="password" autocomplete="off" onchange="hubSaveUrl()"></div>
       <div style="flex:0 0 auto"><button class="apibtn pri" onclick="hubTest()">Test połączenia</button></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubBfRun()">⬇ Pobierz historię SolaX</button></div>
     </div>
     <div id="hub_status" class="note" style="margin-top:8px"></div>
+    <div id="hub_bf" class="note" style="margin-top:6px"></div>
   </div>
   <div class="card"><h2>🔥 Pompa — teraz (Warmlink)</h2><div id="live_wl"></div><div class="apirow"><div style="flex:0 0 auto"><button class="apibtn" onclick="hubRefreshLive(true)">↻ Odśwież teraz</button></div></div></div>
   <div class="card"><h2>☀️ Falownik — teraz (SolaX)</h2><div id="live_sx"></div></div>
@@ -3300,16 +3302,35 @@ function wxSavePvWin(){
 const HUBK='hp_hub_v1'; let HUBC={sx:{},sxTo:'',days:{},live:null,liveAt:0,wl24:null,busy:false,sxAt:0}; var HUBMSG=''; let HUBSEQ={co:0,w:0,pv:0};
 try{ const t=localStorage.getItem(HUBK); if(t) Object.assign(HUBC,JSON.parse(t)); }catch(e){}
 HUBC.busy=false;
-function hubSave(){ try{ localStorage.setItem(HUBK,JSON.stringify({sx:HUBC.sx,sxTo:HUBC.sxTo,days:HUBC.days})); }catch(e){} }
+function hubSave(){ try{ localStorage.setItem(HUBK,JSON.stringify({sx:HUBC.sx,sxTo:HUBC.sxTo,days:HUBC.days,bfFull:HUBC.bfFull})); }catch(e){} }
 function hubCfg(){ const u=(SET.hubUrl||'').trim(); if(!u) return null; try{ const x=new URL(u), t=x.searchParams.get('t'); if(!t) return null; x.search=''; return {base:x.toString(),t}; }catch(e){ return null; } }
+/* adres huba: wykrywa typowe błędy (zły link, /dev, link do Arkusza) zanim cokolwiek poleci do sieci */
+function hubUrlProblem(u){
+  u=(u||'').trim(); if(!u) return '';
+  let x; try{ x=new URL(u); }catch(e){ return 'To nie jest poprawny adres — wklej cały link (https://script.google.com/macros/s/…/exec?t=…).'; }
+  if(/docs\.google\.com$/.test(x.hostname)) return 'To link do Arkusza Google, a potrzebny jest link do wdrożenia skryptu: w Arkuszu menu „Monitor PC+PV → 3. Pokaż link do aplikacji” (zaczyna się od https://script.google.com/macros/s/…).';
+  if(!/(^|\.)script\.google(usercontent)?\.com$/.test(x.hostname)) return 'Adres nie wygląda na wdrożenie Google Apps Script (powinien zaczynać się od https://script.google.com/macros/s/…).';
+  if(/\/dev$/.test(x.pathname)) return 'To adres testowy (…/dev), który działa tylko po zalogowaniu na Twoje konto. Potrzebny jest adres kończący się na /exec — z „Wdróż → Nowe wdrożenie → Aplikacja internetowa”.';
+  if(!/\/exec$/.test(x.pathname)) return 'Adres powinien kończyć się na /exec (a dalej ?t=…). Prawdopodobnie link jest ucięty lub skopiowany z paska edytora.';
+  if(!x.searchParams.get('t')) return 'W adresie brakuje klucza dostępu (?t=…). Skopiuj link z menu Arkusza „3. Pokaż link do aplikacji” — jest w całości.';
+  return '';
+}
+async function hubExplainFetchFail(base){      // „Failed to fetch” → ustal, czy to brak sieci, czy blokada po stronie Google
+  try{ await fetch(base+'?a=ping',{mode:'no-cors',cache:'no-store',credentials:'omit'}); return 'Google odpowiedział, ale przeglądarka zablokowała odpowiedź. To prawie zawsze znaczy, że wdrożenie nie ma dostępu „Każdy” (Anyone) — w Apps Script: Wdróż → Zarządzaj wdrożeniami → ołówek → „Kto ma dostęp: Każdy” → Wersja: Nowa wersja → Wdróż. Drugi możliwy powód: link jest nieaktualny albo wdrożenie zostało usunięte.'; }
+  catch(e){ return 'Nie ma połączenia z script.google.com (brak internetu, VPN/DNS, blokada reklam lub rozszerzenie prywatności).'; }
+}
 async function hubGet(a,params,ms){
   const c=hubCfg(); if(!c) throw new Error('Hub nie jest skonfigurowany (zakładka „📡 Na żywo”).');
   const q=new URLSearchParams(Object.assign({t:c.t,a},params||{})), ac=new AbortController(), to=setTimeout(()=>ac.abort(),ms||25000);
-  try{ const r=await fetch(c.base+'?'+q.toString(),{signal:ac.signal}); if(!r.ok) throw new Error('HTTP '+r.status); const j=await r.json(); if(!j.ok) throw new Error(j.error==='token'?'zły klucz dostępu w adresie huba':(j.error||'błąd huba')); return j; }
+  try{
+    let r; try{ r=await fetch(c.base+'?'+q.toString(),{signal:ac.signal,cache:'no-store',credentials:'omit',redirect:'follow',referrerPolicy:'no-referrer'}); }
+    catch(e){ if(e.name==='AbortError') throw e; throw new Error(await hubExplainFetchFail(c.base)); }
+    const txt=await r.text(); let j; try{ j=JSON.parse(txt); }catch(e){ throw new Error('hub nie zwrócił danych (HTTP '+r.status+'): zwykle wdrożenie wymaga logowania albo ma starą wersję kodu — zrób „Nowa wersja → Wdróż”'); }
+    if(!j.ok) throw new Error(j.error==='token'?'zły klucz dostępu w adresie huba':(j.error||'błąd huba')); return j; }
   catch(e){ throw new Error(e.name==='AbortError'?'hub nie odpowiada (timeout)':e.message); } finally{ clearTimeout(to); }
 }
 const hubN=v=>{ if(v==null||v==='') return null; const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
-function hubVals(v){ const o={}; ['T01','T02','T04','T30','T34','T35','T39','T08','Mode','Power'].forEach(k=>o[k]=hubN(v&&v[k])); return o; }
+function hubVals(v){ const o={}; ['T01','T02','T04','T30','T32','T34','T35','T39','T08','Mode','Power'].forEach(k=>o[k]=hubN(v&&v[k])); return o; }
 /* najbliższe dane dla chwili ts: dla „teraz” — odczyt na żywo, dla przeszłości — najbliższa próbka z historii huba */
 async function hubNear(ts){
   const t=Date.parse(ts);
@@ -3342,8 +3363,21 @@ async function hubFillAll(manual){
     }
     let filled=0, got=0; const last=RDS.length-1;
     RDS.forEach((x,i)=>{ const ts=i===0?s:(i===last?e:x.ts), r=ts?near(ts,10):null; if(r){ got++; filled+=hubFillRd(i,r,false); } });
+    /* czas pracy sprężarki i odszranianie z próbek co 5 min; T32 (maks. częstotliwość) do ustawień */
+    const s16=s.slice(0,16), e16=e.slice(0,16), win=rows.filter(r=>r.ts>=s16&&r.ts<=e16).sort((a,b)=>a.ts<b.ts?-1:1);
+    let runMin=0, defMin=0, extra=[];
+    win.forEach((r,i)=>{ const t=Date.parse(r.ts), tn=i+1<win.length?Date.parse(win[i+1].ts):t+5*60000, dt=Math.min(10,Math.max(0,(tn-t)/60000));
+      if(r.T30>0){ runMin+=dt; if(r.T01!=null&&r.T02!=null&&r.T02<r.T01-1) defMin+=dt; } });
+    const spanMin=(Date.parse(e)-Date.parse(s))/60000, covMin=win.length*5, cover=spanMin>0?Math.min(1,covMin/spanMin):0;
+    if(win.length&&cover>=0.8){
+      const rm=cpEl('cp_runmin'), dm=cpEl('cp_defmin');
+      if(rm&&!rm.value&&runMin>0){ rm.value=Math.round(runMin); extra.push('czas pracy sprężarki '+Math.round(runMin)+' min'); }
+      if(dm&&!dm.value&&defMin>0){ dm.value=Math.round(defMin); extra.push('odszranianie ok. '+Math.round(defMin)+' min'); }
+    } else if(win.length) extra.push('hub ma dane tylko z '+Math.round(cover*100)+'% okresu — czasów pracy i odszraniania nie wypełniono');
+    const t32=[...win].reverse().map(r=>hubN(r.T32)).find(x=>x>0);
+    if(t32&&t32!==SET.hzMax){ SET.hzMax=t32; persist(); const hz=cpEl('set_hzmax'); if(hz) hz.value=t32; extra.push('T32 = '+t32+' Hz zapisane w Ustawieniach'); }
     buildRdUi(); liveCop();
-    hubMsgSet('Z Warmlink: '+got+' z '+RDS.length+' odczytów, uzupełniono '+filled+' pól (puste; niczego nie nadpisano). Sprawdź i popraw. Licznik pompy (kWh, moc) wpisz ręcznie.');
+    hubMsgSet('Z Warmlink: '+got+' z '+RDS.length+' odczytów, uzupełniono '+filled+' pól (puste; niczego nie nadpisano)'+(extra.length?'; '+extra.join('; '):'')+'. Sprawdź i popraw. Licznik pompy (kWh, moc) i otwarte obiegi wpisz ręcznie — nie ma ich w Warmlinku.');
   }catch(err){ hubMsgSet('Błąd huba: '+err.message); } finally{ HUBC.fillBusy=false; }
 }
 /* --- Dodaj CO/CWU: stan PV, produkcja dnia, temperatura zewnętrzna z pompy --- */
@@ -3380,8 +3414,8 @@ async function hubPvAuto(force){
   try{
     let y=null, txt='';
     if(d===ymd(new Date())){ const j=await hubGet('live',{}); y=j.sx&&j.sx.yt; txt='dotychczasowa produkcja dziś (dzień jeszcze trwa)'; }
-    else { let row=HUBC.days[d]; if(!row){ const j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; if(row){ HUBC.days[d]=row; hubSave(); } } if(row){ y=row.y; txt='szczyt '+(row.pk!=null?(row.pk/1000).toFixed(2)+' kW':'—')+(row.h0?', praca '+row.h0+'–'+row.h1:''); } }
-    if(y==null){ info.textContent='Hub nie ma danych falownika z tego dnia (zbiera od chwili uruchomienia). Wpisz ręcznie.'; return; }
+    else { let row=HUBC.days[d]; if(!row){ let j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; if(!row){ try{ await hubGet('sxfill',{d},45000); j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; }catch(e){} } if(row){ HUBC.days[d]=row; hubSave(); } } if(row){ y=row.y; txt='szczyt '+(row.pk!=null?(row.pk/1000).toFixed(2)+' kW':'—')+(row.h0?', praca '+row.h0+'–'+row.h1:''); } }
+    if(y==null){ info.textContent='Nie udało się pobrać produkcji z tego dnia z SolaX (krzywa mocy sięga roku wstecz, sumy dzienne — od startu instalacji). Wpisz ręcznie.'; return; }
     hubPut($w('pv_kwh'),y,force); info.textContent='Z huba (SolaX): '+y+' kWh — '+txt+'. Możesz zmienić ręcznie.';
   }catch(err){ info.textContent='Hub: '+err.message+' — wpisz ręcznie.'; }
 }
@@ -3400,7 +3434,7 @@ function pvsHtml(r){
 async function hubPrefetchSx(){
   if(!hubCfg()||HUBC.busy) return; HUBC.busy=true;
   try{
-    const today=ymd(new Date()); let from=HUBC.sxTo||addDaysS(today,-60); if(from>today) from=today;
+    const today=ymd(new Date()); let from=HUBC.sxTo||addDaysS(today,-(HUBC.bfFull?364:60)); if(from>today) from=today;
     while(from<=today){ const to=addDaysS(from,19)<today?addDaysS(from,19):today, j=await hubGet('sx',{from,to},40000), byDay={};
       (j.rows||[]).forEach(r=>{ const d=String(r[0]).slice(0,10), m=parseInt(String(r[0]).slice(11,13),10)*60+parseInt(String(r[0]).slice(14,16),10); (byDay[d]=byDay[d]||[]).push([m,r[3]?1:0]); });
       Object.keys(byDay).forEach(d=>{ const a=byDay[d], t=[]; let prev=-1; a.forEach(([m,on])=>{ if(on!==prev){ t.push([m,on]); prev=on; } }); HUBC.sx[d]={c:[a[0][0],a[a.length-1][0]],t}; });
@@ -3409,12 +3443,28 @@ async function hubPrefetchSx(){
   }catch(err){ HUBC.sxErr=err.message; } finally{ HUBC.busy=false; }
 }
 /* --- zakładka „Na żywo” --- */
-function hubSaveUrl(){ SET.hubUrl=$w('hub_url').value.trim(); persist(); HUBC.sxTo=''; HUBC.liveAt=0; hubTest(); }
+function hubSaveUrl(){ SET.hubUrl=($w('hub_url').value||'').replace(/\s+/g,'').replace(/^["'„“]+|["'”“]+$/g,''); $w('hub_url').value=SET.hubUrl; persist(); HUBC.sxTo=''; HUBC.liveAt=0; hubTest(); }
+function hubBfShow(bf,note){
+  const el=$w('hub_bf'); if(!el) return; if(!bf){ el.innerHTML=''; return; }
+  const started=!!(bf.stat||bf.day);
+  el.innerHTML='<b>Historia SolaX (jak w aplikacji mobilnej):</b> '+(bf.done?'<span style="color:var(--ok)">✓ pobrana w całości</span> (sumy dzienne od startu instalacji, krzywa mocy co 5 min do roku wstecz).':(started?'w toku — kolejne do pobrania: sumy dzienne od '+wxEsc(bf.stat||'—')+' wstecz, krzywa 5 min od '+wxEsc(bf.day||'—')+' wstecz.':'jeszcze nie pobrana.'))
+    +(bf.err?' <span style="color:var(--danger)">Ostatni błąd: '+wxEsc(bf.err)+'</span>':'')+(note&&!bf.done?' <span class="note">'+wxEsc(note)+'</span>':'');
+}
+async function hubBfRun(){
+  if(!hubCfg()||HUBC.bfBusy) return; HUBC.bfBusy=true; const el=$w('hub_bf'); if(el) el.textContent='Pobieram historię z SolaX… (może potrwać kilka minut, nie zamykaj karty)';
+  try{ let j,n=0; do{ j=await hubGet('bfrun',{n:12},70000); n++; hubBfShow(j.bf,j.msg); if(j.bf&&j.bf.err) break; }while(!j.done&&n<12);
+    if(j&&j.done){ HUBC.bfFull=true; } HUBC.sxTo=''; hubSave(); hubPrefetchSx(); hubRefreshLive(false); }
+  catch(e){ if(el) el.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
+  HUBC.bfBusy=false;
+}
 async function hubTest(){
-  const st=$w('hub_status'); if(!hubCfg()){ st.innerHTML='<span style="color:var(--danger)">Adres huba musi zawierać klucz (…/exec?t=…) — skopiuj go z menu „3. Pokaż link do aplikacji”.</span>'; return; }
+  const st=$w('hub_status'), pr=hubUrlProblem(SET.hubUrl); if(pr){ st.innerHTML='<span style="color:var(--danger)">'+wxEsc(pr)+'</span>'; return; }
+  if(!hubCfg()){ st.innerHTML='<span style="color:var(--danger)">Adres huba musi zawierać klucz (…/exec?t=…) — skopiuj go z menu „3. Pokaż link do aplikacji”.</span>'; return; }
   st.textContent='Łączę…';
-  try{ const j=await hubGet('ping'); st.innerHTML='<span style="color:var(--ok)">✓ Hub działa (v'+wxEsc(j.version)+').</span> Warmlink: '+(j.wl?(j.errWl?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errWl)+'</span>':'skonfigurowany'):'nieskonfigurowany')+' · SolaX: '+(j.sx?(j.errSx?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errSx)+'</span>':'skonfigurowany'):'nieskonfigurowany'); hubRefreshLive(true); hubPrefetchSx(); }
-  catch(e){ st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span> (sprawdź, czy wdrożenie ma dostęp „Wszyscy” i czy link jest pełny).'; }
+  try{ const j=await hubGet('ping'); st.innerHTML='<span style="color:var(--ok)">✓ Hub działa (v'+wxEsc(j.version)+').</span> Warmlink: '+(j.wl?(j.errWl?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errWl)+'</span>':'skonfigurowany'):'nieskonfigurowany')+' · SolaX: '+(j.sx?(j.errSx?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errSx)+'</span>':'skonfigurowany'):'nieskonfigurowany')+(parseFloat(j.version)<1.1?' <span style="color:var(--danger)">· to stara wersja skryptu — wklej nowy Code.gs i wdróż „Nową wersję”, żeby działała historia SolaX i T32.</span>':'');
+    hubBfShow(j.sx&&j.bf?j.bf:null); if(j.bf&&j.bf.done&&!HUBC.bfFull){ HUBC.bfFull=true; HUBC.sxTo=''; hubSave(); }
+    hubRefreshLive(true); hubPrefetchSx(); }
+  catch(e){ st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
 }
 async function hubRefreshLive(fresh){
   if(HUBC.liveBusy||!hubCfg()) return; HUBC.liveBusy=true; HUBC.liveAt=Date.now();
@@ -3448,7 +3498,7 @@ function renderLive(){
   else if(L&&L.wl){ const v=hubVals(L.wl.v), run=v.T30>0, dt=(v.T01!=null&&v.T02!=null)?v.T02-v.T01:null, q=(run&&dt!=null&&v.T39!=null)?v.T39*(+SET.rho||1000)*(+SET.cpw||4.186)*dt/3600:null, S=(v.T34&&v.T35)?Math.sqrt(3)*v.T34*v.T35/1000:null;
     $w('live_wl').innerHTML=`<div class="balGrid" style="margin-bottom:8px"><div class="balBox"><div class="v" style="color:${run?'var(--ok)':'var(--muted)'}">${run?'pracuje':'stoi'}</div><div class="l">sprężarka${run?' · '+v.T30+' Hz':''} · dane ${age(L.wl.ts)}</div></div></div>`
       +lk('T01 — wlot do pompy',v.T01!=null?v.T01+' °C':'—')+lk('T02 — wylot z pompy',v.T02!=null?v.T02+' °C':'—')+lk('ΔT (T02 − T01)',dt!=null?dt.toFixed(1)+' K':'—')+lk('T04 — temp. zewnętrzna',v.T04!=null?v.T04+' °C':'—')+lk('T39 — przepływ',v.T39!=null?v.T39+' m³/h':'—')
-      +lk('Moc grzewcza Q (szac. z T39·ΔT)',q!=null?q.toFixed(2)+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?v.T34+' V':'—')+' / '+(v.T35!=null?v.T35+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?S.toFixed(2)+' kVA':'—')+lk('T08 — temp. CWU',v.T08!=null?v.T08+' °C':'—')
+      +lk('Moc grzewcza Q (szac. z T39·ΔT)',q!=null?q.toFixed(2)+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?v.T34+' V':'—')+' / '+(v.T35!=null?v.T35+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?S.toFixed(2)+' kVA':'—')+lk('T32 — maks. częstotliwość',v.T32!=null?v.T32+' Hz':'—')+lk('T08 — temp. CWU',v.T08!=null?v.T08+' °C':'—')
       +(L.errWl?`<div class="warnline bad">Ostatni błąd odczytu Warmlink: ${wxEsc(L.errWl)}</div>`:''); }
   else $w('live_wl').innerHTML='<div class="empty">Brak odczytów Warmlink'+(L&&L.errWl?': '+wxEsc(L.errWl):' (hub zbiera dane co 5 min)')+'.</div>';
   if(L&&L.sx){ const s=L.sx; $w('live_sx').innerHTML=`<div class="balGrid" style="margin-bottom:8px"><div class="balBox"><div class="v" style="color:${s.on?'var(--pv)':'var(--muted)'}">${s.on?'produkuje':'nie produkuje'}</div><div class="l">PV${s.pw!=null?' · '+(s.pw/1000).toFixed(2)+' kW':''} · dane ${age(s.ts)}</div></div></div>`
@@ -3457,7 +3507,7 @@ function renderLive(){
   $w('live_chart').innerHTML=svgLive(HUBC.wl24);
   const rg=parseInt(($w('live_range')||{}).value,10)||30, from=addDaysS(ymd(new Date()),-rg), ds=Object.keys(HUBC.days).filter(d=>d>=from).sort().reverse();
   const sumR=(d)=>R.filter(r=>r.date===d).reduce((s,r)=>s+(r.kwh||0),0);
-  $w('live_days').innerHTML=ds.length?`<table class="rc big cards"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=HUBC.days[d], W=wxRec({date:d}), pk=sumR(d); return `<tr><td class="num">${d}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${pk?pk.toFixed(1):'—'}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="empty">Brak dni w historii huba za ten okres (hub zbiera dane od chwili uruchomienia).</div>';
+  $w('live_days').innerHTML=ds.length?`<table class="rc big cards"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Import z sieci (kWh)</th><th>Eksport do sieci (kWh)</th><th>Zużycie domu (kWh)</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=HUBC.days[d], W=wxRec({date:d}), pk=sumR(d); return `<tr><td class="num">${d}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${x.im!=null?(+x.im).toFixed(1):'—'}</td><td class="num">${x.ex!=null?(+x.ex).toFixed(1):'—'}</td><td class="num">${x.ld!=null?(+x.ld).toFixed(1):'—'}</td><td class="num">${pk?pk.toFixed(1):'—'}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="empty">Brak dni w historii za ten okres — kliknij „Pobierz historię SolaX” powyżej albo uruchom w Arkuszu: Monitor PC+PV → 4. Pobierz historię SolaX.</div>';
 }
 setInterval(()=>{ const t=$w('live'); if(t&&t.classList.contains('on')&&hubCfg()&&!HUBC.liveBusy&&Date.now()-HUBC.liveAt>60000) hubRefreshLive(false); },15000);
 function hubInit(){ if(hubCfg()&&Date.now()-(HUBC.sxAt||0)>10*60000) setTimeout(hubPrefetchSx,1200); }
