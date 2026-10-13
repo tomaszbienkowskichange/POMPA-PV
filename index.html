@@ -356,7 +356,7 @@ table.rc.big .note{font-size:.72rem}
       </div>
       <div class="full wxform" id="co_hub" style="border-left-color:var(--pv)">
         <div class="wxform-h"><b>☀️ Falownik i pompa (hub)</b><span class="note" id="co_hubinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('co',true)">↻ Pobierz z huba</button></span></div>
-        <div class="wxform-g"><div><label>PV w chwili startu</label><select id="co_pvon"><option value="">—</option><option value="1">pracuje</option><option value="0">nie pracuje</option></select></div><div><label>Moc PV (kW)</label><input type="number" step="0.01" id="co_pvkw"></div><div><label>Produkcja PV dziś do tej chwili (kWh)</label><input type="number" step="0.1" id="co_pvday"></div></div>
+        <div class="wxform-g"><div><label>PV w chwili startu</label><select id="co_pvon"><option value="">—</option><option value="1">pracuje</option><option value="0">nie pracuje</option></select></div><div><label>Moc PV (kW)</label><input type="number" step="0.01" id="co_pvkw"></div><div><label>Produkcja PV dziś do tej chwili (kWh)</label><input type="number" step="0.1" id="co_pvday"></div><div><label>PV w całym okresie pracy (kWh)</label><input type="number" step="0.01" id="co_pvwin"></div><div><label>PV, gdy pracowała sprężarka (kWh)</label><input type="number" step="0.01" id="co_pvrun"></div></div>
       </div>
       <div class="full"><label>Notatka</label><textarea id="co_note" rows="3"></textarea></div>
     </div>
@@ -385,7 +385,7 @@ table.rc.big .note{font-size:.72rem}
       </div>
       <div class="full wxform" id="w_hub" style="border-left-color:var(--pv)">
         <div class="wxform-h"><b>☀️ Falownik i pompa (hub)</b><span class="note" id="w_hubinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('w',true)">↻ Pobierz z huba</button></span></div>
-        <div class="wxform-g"><div><label>PV w chwili startu</label><select id="w_pvon"><option value="">—</option><option value="1">pracuje</option><option value="0">nie pracuje</option></select></div><div><label>Moc PV (kW)</label><input type="number" step="0.01" id="w_pvkw"></div><div><label>Produkcja PV dziś do tej chwili (kWh)</label><input type="number" step="0.1" id="w_pvday"></div></div>
+        <div class="wxform-g"><div><label>PV w chwili startu</label><select id="w_pvon"><option value="">—</option><option value="1">pracuje</option><option value="0">nie pracuje</option></select></div><div><label>Moc PV (kW)</label><input type="number" step="0.01" id="w_pvkw"></div><div><label>Produkcja PV dziś do tej chwili (kWh)</label><input type="number" step="0.1" id="w_pvday"></div><div><label>PV w całym okresie pracy (kWh)</label><input type="number" step="0.01" id="w_pvwin"></div><div><label>PV, gdy pracowała sprężarka (kWh)</label><input type="number" step="0.01" id="w_pvrun"></div></div>
       </div>
       <div class="full"><label>Notatka</label><textarea id="w_note" rows="3"></textarea></div>
     </div>
@@ -3398,17 +3398,23 @@ async function hubAuto(p,force){
     else msg.push('brak próbki falownika dla tej chwili');
     c.out.forEach(([id,which])=>{ const w=which==='start'?a.wl:(b&&b.wl); if(w&&w.T04!=null){ hubPut($w(id),w.T04,force,'wl'); } });
     if(a.wl&&a.wl.T04!=null) msg.push('T04 z pompy '+a.wl.T04+'°C'); else msg.push('brak odczytu pompy dla tej chwili');
+    if(en&&Date.parse(en)>Date.parse(st)){
+      try{ const w=await hubGet('pvwin',{from:st.slice(0,16),to:en.slice(0,16)},60000); if(seq!==HUBSEQ[p]) return;
+        if(w.n>0){ hubPut($w(p+'_pvwin'),w.kwh,force); if(w.runKwh!=null) hubPut($w(p+'_pvrun'),w.runKwh,force);
+          msg.push('PV w okresie '+(w.kwh!=null?w.kwh+' kWh':'—')+' (szczyt '+(w.peakW/1000).toFixed(2)+' kW, powyżej progu '+w.onMin+' min'+(w.covPct<80?', dane tylko z '+w.covPct+'% okresu':'')+')'+(w.runKwh!=null?'; podczas pracy sprężarki ('+w.runMin+' min) '+w.runKwh+' kWh':'')); }
+        else msg.push('brak próbek falownika w okresie pracy'); }
+      catch(e2){ msg.push('PV w okresie: '+e2.message); } }
     c.live(); info.textContent='Z huba: '+msg.join('; ')+'. Możesz zmienić ręcznie.'; renderApiTab();
   }catch(err){ info.textContent='Hub: '+err.message+' — wpisz ręcznie.'; }
 }
 function hubRead(p){
-  const on=$w(p+'_pvon'), kw=$w(p+'_pvkw'), dy=$w(p+'_pvday'); let any=false, auto=false, man=false; const o={};
-  [[on,'on'],[kw,'kw'],[dy,'day']].forEach(([e,k])=>{ if(e.value==='') return; any=true; o[k]=k==='on'?e.value==='1':parseFloat(e.value); if(e.dataset.manual==='1') man=true; else if(e.dataset.auto==='1') auto=true; });
+  const on=$w(p+'_pvon'), kw=$w(p+'_pvkw'), dy=$w(p+'_pvday'), wn=$w(p+'_pvwin'), rn=$w(p+'_pvrun'); let any=false, auto=false, man=false; const o={};
+  [[on,'on'],[kw,'kw'],[dy,'day'],[wn,'win'],[rn,'run']].forEach(([e,k])=>{ if(e.value==='') return; any=true; o[k]=k==='on'?e.value==='1':parseFloat(e.value); if(e.dataset.manual==='1') man=true; else if(e.dataset.auto==='1') auto=true; });
   if(!any) return null; const ls=$w(p+'_hub').dataset.loaded||'';
   o.src=man?((auto||ls.includes('solax'))?'solax+ręcznie':'ręcznie'):(auto?'solax':(ls||'ręcznie')); return o;
 }
-function hubClear(p){ ['pvon','pvkw','pvday'].forEach(k=>{ const e=$w(p+'_'+k); e.value=''; delete e.dataset.auto; delete e.dataset.manual; }); const x=$w(p+'_hub'); x.dataset.loaded=''; $w(p+'_hubinfo').textContent=''; }
-function hubLoadForm(p,r){ hubClear(p); const w=r.pvs||{}; if(w.on!=null) $w(p+'_pvon').value=w.on?'1':'0'; if(w.kw!=null) $w(p+'_pvkw').value=w.kw; if(w.day!=null) $w(p+'_pvday').value=w.day; $w(p+'_hub').dataset.loaded=w.src||''; $w(p+'_hubinfo').textContent=r.pvs?'Zapisane przy wpisie (źródło: '+(w.src||'—')+').':''; }
+function hubClear(p){ ['pvon','pvkw','pvday','pvwin','pvrun'].forEach(k=>{ const e=$w(p+'_'+k); e.value=''; delete e.dataset.auto; delete e.dataset.manual; }); const x=$w(p+'_hub'); x.dataset.loaded=''; $w(p+'_hubinfo').textContent=''; }
+function hubLoadForm(p,r){ hubClear(p); const w=r.pvs||{}; if(w.on!=null) $w(p+'_pvon').value=w.on?'1':'0'; if(w.kw!=null) $w(p+'_pvkw').value=w.kw; if(w.day!=null) $w(p+'_pvday').value=w.day; if(w.win!=null) $w(p+'_pvwin').value=w.win; if(w.run!=null) $w(p+'_pvrun').value=w.run; $w(p+'_hub').dataset.loaded=w.src||''; $w(p+'_hubinfo').textContent=r.pvs?'Zapisane przy wpisie (źródło: '+(w.src||'—')+').':''; }
 /* --- PV: produkcja dnia z falownika --- */
 async function hubPvAuto(force){
   if(!hubCfg()) return; if(!force&&pvEditId) return; const d=$w('pv_date').value, info=$w('pv_hubinfo'); if(!d){ info.textContent=''; return; }
@@ -3423,14 +3429,14 @@ async function hubPvAuto(force){
 }
 function hubPvSrc(){ const e=$w('pv_kwh'); return (e.dataset.auto==='1'&&e.dataset.manual!=='1')?'solax':undefined; }
 ['pv_kwh'].forEach(id=>{ const e=$w(id); if(e) e.dataset.wxm='1'; });
-['co_pvon','co_pvkw','co_pvday','w_pvon','w_pvkw','w_pvday'].forEach(id=>{ const e=$w(id); if(e) e.dataset.wxm='1'; });
+['co_pvon','co_pvkw','co_pvday','co_pvwin','co_pvrun','w_pvon','w_pvkw','w_pvday','w_pvwin','w_pvrun'].forEach(id=>{ const e=$w(id); if(e) e.dataset.wxm='1'; });
 document.addEventListener('change',e=>{ const id=e.target&&e.target.id, m={co_start:'co',co_end:'co',w_start:'w'}[id];
   if(m) hubAuto(m); else if(id==='pv_date') hubPvAuto(); else if(id==='cp_end'&&!copEditId&&hubCfg()){ const s=cpEl('cp_start').value, en=cpEl('cp_end').value; if(s&&en&&Date.parse(en)>Date.parse(s)) hubFillAll(false); } });
 /* --- wyświetlanie stanu PV przy wpisie --- */
 function pvsHtml(r){
-  const p=r.pvs; if(!p||(p.on==null&&p.kw==null&&p.day==null)) return '—';
+  const p=r.pvs; if(!p||(p.on==null&&p.kw==null&&p.day==null&&p.win==null&&p.run==null)) return '—';
   return (p.on===true?'<span class="tp"><b style="color:var(--pv)">☀ pracuje</b></span>':p.on===false?'<span class="tp"><b style="color:var(--muted)">🌙 nie pracuje</b></span>':'')
-    +(p.kw!=null?'<span class="tp"><i>moc</i><b>'+(+p.kw).toFixed(2)+' kW</b></span>':'')+(p.day!=null?'<span class="tp"><i>dziś</i><b>'+(+p.day).toFixed(1)+' kWh</b></span>':'')+((p.src||'').includes('ręcz')?' <span class="note" title="wartość poprawiona ręcznie">✎</span>':'');
+    +(p.kw!=null?'<span class="tp"><i>moc</i><b>'+(+p.kw).toFixed(2)+' kW</b></span>':'')+(p.day!=null?'<span class="tp"><i>dziś</i><b>'+(+p.day).toFixed(1)+' kWh</b></span>':'')+(p.win!=null?'<span class="tp"><i>PV w okresie</i><b>'+(+p.win).toFixed(2)+' kWh</b></span>':'')+(p.run!=null?'<span class="tp"><i>PV przy sprężarce</i><b>'+(+p.run).toFixed(2)+' kWh</b></span>':'')+((p.src||'').includes('ręcz')?' <span class="note" title="wartość poprawiona ręcznie">✎</span>':'');
 }
 /* --- historia próbek falownika → przedziały pracy PV (do bilansu PV − pompa) --- */
 async function hubPrefetchSx(){
@@ -3472,7 +3478,7 @@ async function hubTest(){
   const st=$w('hub_status'), pr=hubUrlProblem(SET.hubUrl); if(pr){ st.innerHTML='<span style="color:var(--danger)">'+wxEsc(pr)+'</span>'; return; }
   if(!hubCfg()){ st.innerHTML='<span style="color:var(--danger)">Adres huba musi zawierać klucz (…/exec?t=…) — skopiuj go z menu „3. Pokaż link do aplikacji”.</span>'; return; }
   st.textContent='Łączę…';
-  try{ const j=await hubGet('ping'); st.innerHTML='<span style="color:var(--ok)">✓ Hub działa (v'+wxEsc(j.version)+').</span> Warmlink: '+(j.wl?(j.errWl?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errWl)+'</span>':'skonfigurowany'):'nieskonfigurowany')+' · SolaX: '+(j.sx?(j.errSx?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errSx)+'</span>':'skonfigurowany'):'nieskonfigurowany')+(parseFloat(j.version)<1.1?' <span style="color:var(--danger)">· to stara wersja skryptu — wklej nowy Code.gs i wdróż „Nową wersję”, żeby działała historia SolaX i T32.</span>':'');
+  try{ const j=await hubGet('ping'); st.innerHTML='<span style="color:var(--ok)">✓ Hub działa (v'+wxEsc(j.version)+').</span> Warmlink: '+(j.wl?(j.errWl?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errWl)+'</span>':'skonfigurowany'):'nieskonfigurowany')+' · SolaX: '+(j.sx?(j.errSx?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errSx)+'</span>':'skonfigurowany'+(j.sxEvery?' (odczyt co '+j.sxEvery+' min)':''):'nieskonfigurowany')+(parseFloat(j.version)<1.1?' <span style="color:var(--danger)">· to stara wersja skryptu — wklej nowy Code.gs i wdróż „Nową wersję”, żeby działała historia SolaX i T32.</span>':'');
     hubBfShow(j.sx&&j.bf?j.bf:null,'',j.data); if(j.bf&&j.bf.done&&!HUBC.bfFull){ HUBC.bfFull=true; HUBC.sxTo=''; hubSave(); }
     hubRefreshLive(true); hubPrefetchSx(); }
   catch(e){ st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
@@ -3483,7 +3489,7 @@ async function hubRefreshLive(fresh){
     HUBC.live=await hubGet('live',fresh?{fresh:'1'}:{},35000); HUBC.liveErr=null;
     const now=nowLocal(), from=toLocalStr(Date.now()-24*3600000), rg=parseInt(($w('live_range')||{}).value,10)||30;
     try{ HUBC.wl24=(await hubGet('wl',{from,to:now,step:10},40000)).rows||[]; }catch(e){}
-    try{ ((await hubGet('days',{from:addDaysS(ymd(new Date()),-rg),to:ymd(new Date())},40000)).rows||[]).forEach(r=>HUBC.days[r.d]=r); hubSave(); }catch(e){}
+    try{ const dj=await hubGet('days',{from:addDaysS(ymd(new Date()),-rg),to:ymd(new Date())},40000), rows=dj.rows||[]; rows.forEach(r=>HUBC.days[r.d]=r); HUBC.daysInfo={n:rows.length,from:rows.length?rows[0].d:'',to:rows.length?rows[rows.length-1].d:'',rg}; HUBC.daysErr=null; hubSave(); }catch(e){ HUBC.daysErr=e.message; }
   }catch(e){ HUBC.liveErr=e.message; }
   HUBC.liveBusy=false; renderLive();
 }
@@ -3518,7 +3524,7 @@ function renderLive(){
   $w('live_chart').innerHTML=svgLive(HUBC.wl24);
   const rg=parseInt(($w('live_range')||{}).value,10)||30, from=addDaysS(ymd(new Date()),-rg), ds=Object.keys(HUBC.days).filter(d=>d>=from).sort().reverse();
   const sumR=(d)=>R.filter(r=>r.date===d).reduce((s,r)=>s+(r.kwh||0),0);
-  $w('live_days').innerHTML=ds.length?`<table class="rc big cards"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Import z sieci (kWh)</th><th>Eksport do sieci (kWh)</th><th>Zużycie domu (kWh)</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=HUBC.days[d], W=wxRec({date:d}), pk=sumR(d); return `<tr><td class="num">${d}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${x.im!=null?(+x.im).toFixed(1):'—'}</td><td class="num">${x.ex!=null?(+x.ex).toFixed(1):'—'}</td><td class="num">${x.ld!=null?(+x.ld).toFixed(1):'—'}</td><td class="num">${pk?pk.toFixed(1):'—'}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="empty">Brak dni w historii za ten okres — kliknij „Pobierz historię SolaX” powyżej albo uruchom w Arkuszu: Monitor PC+PV → 4. Pobierz historię SolaX.</div>';
+  $w('live_days').innerHTML=ds.length?`<table class="rc big cards"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Import z sieci (kWh)</th><th>Eksport do sieci (kWh)</th><th>Zużycie domu (kWh)</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=HUBC.days[d], W=wxRec({date:d}), pk=sumR(d); return `<tr><td class="num">${d}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${x.im!=null?(+x.im).toFixed(1):'—'}</td><td class="num">${x.ex!=null?(+x.ex).toFixed(1):'—'}</td><td class="num">${x.ld!=null?(+x.ld).toFixed(1):'—'}</td><td class="num">${pk?pk.toFixed(1):'—'}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table>`+(HUBC.daysErr?`<div class="warnline bad">Odświeżenie dni z huba nie powiodło się: ${wxEsc(HUBC.daysErr)} — pokazuję dane zapamiętane wcześniej.</div>`:(HUBC.daysInfo&&HUBC.daysInfo.n<rg*0.5&&HUBC.daysInfo.rg===rg?`<div class="note" style="margin-top:6px">Hub zwrócił ${HUBC.daysInfo.n} dni (${wxEsc(HUBC.daysInfo.from)} → ${wxEsc(HUBC.daysInfo.to)}) z ${rg} żądanych — brakujące dni dociągnij przyciskiem „⬇ Pobierz historię SolaX”.</div>`:'')):'<div class="empty">Brak dni w historii za ten okres'+(HUBC.daysErr?' — błąd pobierania z huba: '+wxEsc(HUBC.daysErr):(HUBC.daysInfo&&HUBC.daysInfo.n===0?' — hub nie zwrócił żadnego dnia (arkusz DNI jest pusty albo ma uszkodzone daty: w Arkuszu uruchom Monitor PC+PV → 5. Napraw daty, potem „Wdróż → Nowa wersja”)':''))+'. Kliknij „Pobierz historię SolaX” powyżej albo uruchom w Arkuszu: Monitor PC+PV → 4. Pobierz historię SolaX.</div>';
 }
 setInterval(()=>{ const t=$w('live'); if(t&&t.classList.contains('on')&&hubCfg()&&!HUBC.liveBusy&&Date.now()-HUBC.liveAt>60000) hubRefreshLive(false); },15000);
 function hubInit(){ if(hubCfg()&&Date.now()-(HUBC.sxAt||0)>10*60000) setTimeout(hubPrefetchSx,1200); }
