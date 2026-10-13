@@ -74,6 +74,8 @@ table.rc td{display:block;white-space:normal;overflow-wrap:anywhere;border:0;pad
 table.rc td[data-l]::before{content:attr(data-l);display:block;font-size:.6rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;margin-bottom:1px}
 table.rc td[data-l=""]::before{display:none}
 table.rc td.notecell,table.rc td[colspan],table.rc td.btncell{grid-column:1/-1}
+tr.pg-hide{display:none!important}
+.pgbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0 2px}.pgbar .pgi{color:var(--muted);font-size:12.5px;margin:0 6px}.pgbar button[disabled]{opacity:.4;cursor:default}
 table.rc td.nodata{display:none}
 table.rc td.btncell{display:flex;gap:6px;flex-wrap:wrap}
 table.rc td .note{white-space:normal}
@@ -3364,18 +3366,19 @@ async function hubFillAll(manual){
       add.filter(ts=>!RDS.some(x=>x.ts===ts)).forEach(ts=>RDS.splice(RDS.length-1,0,{ts,v:{},k:'',c1:RDS[0].c1,c2:RDS[0].c2,def:false}));
     }
     let filled=0, got=0; const last=RDS.length-1;
-    RDS.forEach((x,i)=>{ const ts=i===0?s:(i===last?e:x.ts), r=ts?near(ts,10):null; if(r){ got++; filled+=hubFillRd(i,r,false); } });
+    RDS.forEach((x,i)=>{ const ts=i===0?s:(i===last?e:x.ts), r=ts?near(ts,12):null; if(r){ got++; filled+=hubFillRd(i,r,false); } });
     /* czas pracy sprężarki i odszranianie z próbek co 5 min; T32 (maks. częstotliwość) do ustawień */
     const s16=s.slice(0,16), e16=e.slice(0,16), win=rows.filter(r=>r.ts>=s16&&r.ts<=e16).sort((a,b)=>a.ts<b.ts?-1:1);
     let runMin=0, defMin=0, extra=[];
-    win.forEach((r,i)=>{ const t=Date.parse(r.ts), tn=i+1<win.length?Date.parse(win[i+1].ts):t+5*60000, dt=Math.min(10,Math.max(0,(tn-t)/60000));
+    win.forEach((r,i)=>{ const t=Date.parse(r.ts), tn=i+1<win.length?Date.parse(win[i+1].ts):t+5*60000, dt=Math.min(15,Math.max(0,(tn-t)/60000));
       if(r.T30>0){ runMin+=dt; if(r.T01!=null&&r.T02!=null&&r.T02<r.T01-1) defMin+=dt; } });
-    const spanMin=(Date.parse(e)-Date.parse(s))/60000, covMin=win.length*5, cover=spanMin>0?Math.min(1,covMin/spanMin):0;
-    if(win.length&&cover>=0.8){
+    const pts=[Date.parse(s16+':00Z'),...win.map(r=>Date.parse(String(r.ts).slice(0,16)+':00Z')),Date.parse(e16+':00Z')].filter(x=>!isNaN(x)); let maxGap=0; for(let i=1;i<pts.length;i++) maxGap=Math.max(maxGap,(pts[i]-pts[i-1])/60000);
+    const cover=maxGap<=75?1:0;      /* hub zapisuje tylko pracę + 1 wiersz/h w postoju: przerwa >75 min = brak danych (awaria huba), a nie postój */
+    if(win.length&&cover){
       const rm=cpEl('cp_runmin'), dm=cpEl('cp_defmin');
       if(rm&&!rm.value&&runMin>0){ rm.value=Math.round(runMin); extra.push('czas pracy sprężarki '+Math.round(runMin)+' min'); }
       if(dm&&!dm.value&&defMin>0){ dm.value=Math.round(defMin); extra.push('odszranianie ok. '+Math.round(defMin)+' min'); }
-    } else if(win.length) extra.push('hub ma dane tylko z '+Math.round(cover*100)+'% okresu — czasów pracy i odszraniania nie wypełniono');
+    } else if(win.length) extra.push('w danych huba jest przerwa '+Math.round(maxGap)+' min (hub nie zbierał) — czasów pracy i odszraniania nie wypełniono');
     const t32=[...win].reverse().map(r=>hubN(r.T32)).find(x=>x>0);
     if(t32&&t32!==SET.hzMax){ SET.hzMax=t32; persist(); const hz=cpEl('set_hzmax'); if(hz) hz.value=t32; extra.push('T32 = '+t32+' Hz zapisane w Ustawieniach'); }
     buildRdUi(); liveCop();
@@ -3478,7 +3481,7 @@ async function hubTest(){
   const st=$w('hub_status'), pr=hubUrlProblem(SET.hubUrl); if(pr){ st.innerHTML='<span style="color:var(--danger)">'+wxEsc(pr)+'</span>'; return; }
   if(!hubCfg()){ st.innerHTML='<span style="color:var(--danger)">Adres huba musi zawierać klucz (…/exec?t=…) — skopiuj go z menu „3. Pokaż link do aplikacji”.</span>'; return; }
   st.textContent='Łączę…';
-  try{ const j=await hubGet('ping'); st.innerHTML='<span style="color:var(--ok)">✓ Hub działa (v'+wxEsc(j.version)+').</span> Warmlink: '+(j.wl?(j.errWl?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errWl)+'</span>':'skonfigurowany'):'nieskonfigurowany')+' · SolaX: '+(j.sx?(j.errSx?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errSx)+'</span>':'skonfigurowany'+(j.sxEvery?' (odczyt co '+j.sxEvery+' min)':''):'nieskonfigurowany')+(parseFloat(j.version)<1.1?' <span style="color:var(--danger)">· to stara wersja skryptu — wklej nowy Code.gs i wdróż „Nową wersję”, żeby działała historia SolaX i T32.</span>':'');
+  try{ const j=await hubGet('ping'); st.innerHTML='<span style="color:var(--ok)">✓ Hub działa (v'+wxEsc(j.version)+').</span> Warmlink: '+(j.wl?(j.errWl?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errWl)+'</span>':'skonfigurowany'):'nieskonfigurowany')+(j.wl&&j.wlRun?' (praca co '+j.wlRun+' min, postój: sprawdzanie co '+j.wlIdle+' min bez zapisu)':'')+' · SolaX: '+(j.sx?(j.errSx?'<span style="color:var(--danger)">błąd — '+wxEsc(j.errSx)+'</span>':'skonfigurowany'+(j.sxEvery?' (odczyt co '+j.sxEvery+' min)':'')):'nieskonfigurowany')+(parseFloat(j.version)<1.1?' <span style="color:var(--danger)">· to stara wersja skryptu — wklej nowy Code.gs i wdróż „Nową wersję”, żeby działała historia SolaX i T32.</span>':'');
     hubBfShow(j.sx&&j.bf?j.bf:null,'',j.data); if(j.bf&&j.bf.done&&!HUBC.bfFull){ HUBC.bfFull=true; HUBC.sxTo=''; hubSave(); }
     hubRefreshLive(true); hubPrefetchSx(); }
   catch(e){ st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
@@ -3530,12 +3533,32 @@ setInterval(()=>{ const t=$w('live'); if(t&&t.classList.contains('on')&&hubCfg()
 function hubInit(){ if(hubCfg()&&Date.now()-(HUBC.sxAt||0)>10*60000) setTimeout(hubPrefetchSx,1200); }
 function hubClearPv(){ const i=$w('pv_hubinfo'); if(i) i.textContent=''; const e=$w('pv_kwh'); if(e){ delete e.dataset.auto; delete e.dataset.manual; } }
 
+/* --- stronicowanie: w każdej tabeli max 31 wpisów na stronę (tyle, ile ma najdłuższy miesiąc) --- */
+const PG_SIZE=31, PGSTATE={};
+function paginateTables(){
+  document.querySelectorAll('main table.rc').forEach(t=>{
+    const tb=t.tBodies[0]; if(!tb) return;
+    const rows=[...tb.rows].filter(r=>!(r.cells.length===1&&r.cells[0].classList.contains('empty'))), n=rows.length;
+    const tab=t.closest('.tab'), key=(tab?tab.id:'')+'#'+[...(tab||document).querySelectorAll('table.rc')].indexOf(t);
+    let bar=t.nextElementSibling&&t.nextElementSibling.classList.contains('pgbar')?t.nextElementSibling:null;
+    if(n<=PG_SIZE){ rows.forEach(r=>r.classList.remove('pg-hide')); if(bar) bar.remove(); return; }
+    const pages=Math.ceil(n/PG_SIZE), p=Math.min(Math.max(PGSTATE[key]||0,0),pages-1); PGSTATE[key]=p;
+    rows.forEach((r,i)=>r.classList.toggle('pg-hide',Math.floor(i/PG_SIZE)!==p));
+    const a=p*PG_SIZE, b=Math.min(n,a+PG_SIZE), d0=(rows[a].cells[0]||{}).textContent||'', d1=(rows[b-1].cells[0]||{}).textContent||'', dr=/^\d{4}-\d{2}-\d{2}/.test(d0.trim())&&/^\d{4}-\d{2}-\d{2}/.test(d1.trim())?' · '+d0.trim().slice(0,10)+' → '+d1.trim().slice(0,10):'';
+    const sig=key+'|'+p+'|'+pages+'|'+n+'|'+dr;
+    if(!bar){ bar=document.createElement('div'); bar.className='pgbar'; t.after(bar); }
+    if(bar.dataset.sig!==sig){ bar.dataset.sig=sig; bar.dataset.key=key;
+      bar.innerHTML=`<button class="btn2" data-pg="0" ${p===0?'disabled':''}>« Najnowsze</button><button class="btn2" data-pg="${p-1}" ${p===0?'disabled':''}>‹ Poprzednia</button><span class="pgi">Strona ${p+1} z ${pages} · wpisy ${a+1}–${b} z ${n}${dr}</span><button class="btn2" data-pg="${p+1}" ${p>=pages-1?'disabled':''}>Następna ›</button><button class="btn2" data-pg="${pages-1}" ${p>=pages-1?'disabled':''}>Najstarsze »</button>`; }
+  });
+}
+document.addEventListener('click',e=>{ const b=e.target.closest&&e.target.closest('.pgbar button[data-pg]'); if(!b||b.disabled) return; const bar=b.closest('.pgbar'); PGSTATE[bar.dataset.key]=+b.dataset.pg; paginateTables(); const t=bar.previousElementSibling; if(t&&t.scrollIntoView) t.scrollIntoView({block:'start',behavior:'smooth'}); });
 function labelRc(){
   document.querySelectorAll('table.rc').forEach(t=>{
     const hs=[...t.querySelectorAll('thead th')].map(h=>h.textContent.trim());
     t.querySelectorAll('tbody tr,tfoot tr').forEach(tr=>{ let i=0;
       [...tr.children].forEach(td=>{ const cs=td.colSpan||1; if(cs===1){ td.setAttribute('data-l',hs[i]||''); td.classList.toggle('nodata',/^[—\s]*$/.test(td.textContent)&&!td.querySelector('button')); if(!(hs[i]||'')&&td.querySelector('button')) td.classList.add('btncell'); } i+=cs; }); });
   });
+  paginateTables();
   fitRc();
 }
 function renderAll(){ renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); renderDiskInfo(); renderApiTab(); renderLive(); labelRc(); }
