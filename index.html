@@ -313,6 +313,7 @@ details.card[open]>summary{margin-bottom:12px}
 .statusrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .statusrow .big{font-size:1.05rem;font-weight:700}
 @media(min-width:1100px){table.rc:not(.cards) th,table.rc:not(.cards) td{padding:8px 10px;font-size:.84rem}table.rc:not(.cards) td.num{white-space:nowrap}}
+.tps{display:inline-flex;flex-wrap:wrap;gap:2px 12px}.tps .tp{margin-right:0}table.rc:not(.cards) .tps{flex-wrap:nowrap}
 </style>
 </head>
 <body>
@@ -749,9 +750,7 @@ details.card[open]>summary{margin-bottom:12px}
 
   <div class="card">
     <h2>⚡ Okres pracy pompy: zużycie, ciepło i średnie COP od uruchomienia do zatrzymania</h2>
-    <p class="note"><b>Jak to działa.</b> Jeden <b>okres</b> = czas od uruchomienia do zatrzymania (zimą zwykle całe grzanie CO aż do podgrzewu CWU). Zużycie bierzesz z licznika pompy. Ciepło liczone jest z odczytów T01, T02 i T39 zrobionych na <b>starcie</b>, na <b>stopie</b> i — dla długich okresów — w <b>odczytach pośrednich</b>; aplikacja liczy z nich średnie ważone czasem (interpolacja liniowa między odczytami).</p>
-    <p class="note" style="margin-top:6px"><b>Odszranianie nie jest osobnym trybem.</b> Pompa robi je sama w trakcie pracy, więc licznik już je wlicza w zużycie. Nie rób odczytów T01/T02/T39 w trakcie odszraniania (jeśli się zdarzy — zaznacz to przy odczycie). Opcjonalnie możesz wpisać łączny czas odszraniania w okresie (pole w sekcji 1).</p>
-    <p class="note" style="margin-top:6px">Odczyty z Warmlinka: zakładka <b>„T”</b> (ostatnia litera w pasku u góry). Wynik jest <b>przybliżony</b> — przy wyniku jest zakres z dokładności wpisanych liczb oraz lista kontroli spójności danych.</p>
+    <p class="note"><b>Jak to działa.</b> Podaj <b>uruchomienie</b> (i <b>zatrzymanie</b>, jeśli już jest) — odczyty z Warmlinka (T01, T02, T04, T39, T30, T34, T35, czas pracy i odszranianie) podstawiają się same. <b>Ty uzupełniasz tylko zużycie energii z licznika pompy.</b> Okres bez zatrzymania można zapisać jako „w toku”. Wynik jest przybliżony — zobacz „Kontrole wiarygodności” niżej.</p>
     <div class="legendsrc">Znaczniki przy polach:
       <span class="src app">z aplikacji Warmlink</span>
       <span class="src lic">z licznika pompy</span>
@@ -780,7 +779,7 @@ details.card[open]>summary{margin-bottom:12px}
         <div class="fdesc"><b>CO</b> = ogrzewanie domu, <b>CWU</b> = podgrzew ciepłej wody. Dla CWU i CO zrób osobne okresy.</div>
         <div class="finp"><select id="cp_mode"><option value="CO">CO — ogrzewanie domu</option><option value="CWU">CWU — ciepła woda</option></select></div>
       </div>
-      <div class="fld">
+      <div class="fld" style="grid-column:1/-1"><details><summary>Dodatkowe — podstawiane z Warmlinka (zwykle nie trzeba ruszać)</summary><div class="fgrid"><div class="fld">
         <div class="fhead"><span class="code nocode">odszr.</span><span class="fname">Łączny czas odszraniania w okresie (opcjonalnie)</span><span class="src man">wpisz ręcznie</span></div>
         <div class="fdesc">Jeśli znasz sumę minut odszraniania w tym okresie — wpisz. Wtedy ciepło oddane = średnia moc grzewcza × (czas okresu − czas odszraniania). Puste = bez korekty (zużycie z licznika i tak zawiera odszranianie).</div>
         <div class="finp"><input type="number" id="cp_defmin" step="1" min="0" placeholder="0"><span class="unit">min</span></div>
@@ -794,30 +793,25 @@ details.card[open]>summary{margin-bottom:12px}
         <div class="fhead"><span class="code nocode">korekta</span><span class="fname">Odjąć korektę ΔT z Ustawień?</span><span class="src man">wpisz ręcznie</span></div>
         <div class="fdesc">Domyślnie <b>NIE</b>. Korekta (kalibracja różnicy T01/T02 przy wyłączonej sprężarce) jest odejmowana od ΔT w każdym odczycie i potrafi mocno obniżyć Q i COP. Zaznacz tylko wtedy, gdy czujniki naprawdę pokazują różnicę przy postoju. Wynik z i bez korekty pokazują „Kontrole wiarygodności”.</div>
         <label class="chk"><input type="checkbox" id="cp_useoff"> odejmij korektę (<span id="cp_offval">0</span> K)</label>
-      </div>
+      </div></div></details></div>
     </div>
 
-    <details class="howto" open>
-      <summary>Jak wpisywać dane — w skrócie</summary>
-      <ul>
-        <li><b>Odczyt = „zdjęcie” z jednej chwili.</b> Start, każdy odczyt pośredni i Stop to osobne momenty. Wartości z aplikacji (T01, T02, T04, T30, T34, T35, T39) i z licznika wpisuj z <b>tej samej minuty</b>.</li>
-        <li><b>Minimum do policzenia COP:</b> data/godzina startu i stopu, tryb, <b>zużycie</b> (stan licznika na Start i Stop <u>albo</u> kWh ręcznie) oraz T01, T02 i T39 z co najmniej jednego odczytu, gdy <b>sprężarka pracuje</b>.</li>
-        <li><b>Dane częściowe są OK</b> — puste pola zostaw puste. Odczyt bez T01/T02/T39 nie wchodzi do ciepła; odczyt bez stanu licznika nie tworzy segmentów. Start/Stop przy stojącej sprężarce (T30 = 0) są pomijane w cieple — to normalne.</li>
-        <li><b>Licznik (kWh) ≠ moc chwilowa (kW).</b> „Stan licznika” to liczba narastająca w kWh. „Moc chwilowa” to ile pompa pobiera <i>w tej sekundzie</i> (zwykle 0,5–5 kW). Nie wpisuj kWh w polu mocy ani odwrotnie. Sposób wpisywania zużycia wybierasz w sekcji 4.</li>
-        <li><b>Pompa stała przez część okresu?</b> Wpisz „Czas faktycznej pracy sprężarki”, inaczej ciepło zostanie policzone na cały okres i COP wyjdzie zawyżony.</li>
-      </ul>
-    </details>
+    <div class="warnline good" id="cp_need" style="margin-top:12px">Do wpisania zostaje tylko zużycie energii (sekcja „Zużycie” niżej).</div>
 
-    <div class="sech">Kiedy zrobiłeś odczyty (sekcje 2–5)</div>
+    <div class="sech">Odczyty z Warmlinka</div>
     <div id="cp_rdtimes"></div>
 
-    <div class="sech">2. Temperatury wody i powietrza (Warmlink → zakładka „T”)</div>
+    <details class="howto"><summary>Szczegóły odczytów (T01, T02, T04, T39, T30, T34, T35) — podstawione z Warmlinka; kliknij, by sprawdzić lub poprawić</summary>
+    <div class="sech">2. Temperatury wody i powietrza</div>
     <div class="fgrid" id="cp_sec2"></div>
 
-    <div class="sech">3. Przepływ wody i otwarte obiegi</div>
+    <div class="sech">3. Przepływ wody (T39) i otwarte obiegi</div>
     <div class="fgrid" id="cp_sec3"></div>
+    <div class="sech">4. Częstotliwość sprężarki i prąd (T30, T34, T35)</div>
+    <div class="fgrid" id="cp_sec5"></div>
+    </details>
 
-    <div class="sech">4. Zużycie energii — dedykowany licznik pompy (kWh i godziny)</div>
+    <div class="sech" style="color:var(--amber)">⚠ Zużycie energii — to wpisujesz Ty (licznik pompy)</div>
     <div class="fgrid">
       <div class="fld" style="grid-column:1/-1;border-left:3px solid var(--cyan)">
         <div class="fhead"><span class="code nocode">jak?</span><span class="fname">Co wpisujesz w polu „Licznik” przy odczytach?</span><span class="src man">wybierz</span></div>
@@ -836,8 +830,6 @@ details.card[open]>summary{margin-bottom:12px}
     </div>
     <div class="fgrid" id="cp_sec4" style="margin-top:12px"></div>
 
-    <div class="sech">5. Odczyty kontrolne z aplikacji: T30, T34, T35 (start, stop, w trakcie)</div>
-    <div class="fgrid" id="cp_sec5"></div>
 
     <div class="sech">6. Notatka</div>
     <div class="fgrid"><div class="fld" style="grid-column:1/-1">
@@ -1007,7 +999,7 @@ details.card[open]>summary{margin-bottom:12px}
     <div id="hub_status" class="note" style="margin-top:8px"></div>
     <div id="hub_bf" class="note" style="margin-top:6px"></div>
   </div>
-  <div class="card"><h2>🔥 Pompa — teraz (Warmlink)</h2><div id="live_wl"></div><div class="apirow"><div style="flex:0 0 auto"><button class="apibtn" onclick="hubRefreshLive(true)">↻ Odśwież teraz</button></div></div></div>
+  <div class="card"><h2>🔥 Pompa — teraz (Warmlink)</h2><div id="live_wl"></div><div class="apirow"><div style="flex:0 0 auto"><button class="apibtn" id="live_btn" onclick="hubRefreshLive(true)">↻ Odśwież teraz</button></div><div style="flex:1 1 200px"><span class="note" id="live_msg"></span></div></div></div>
   <div class="card"><h2>☀️ Falownik — teraz (SolaX)</h2><div id="live_sx"></div></div>
   <div class="card"><h2>📈 Pompa — ostatnie 24 h</h2><div id="live_chart"></div></div>
   <div class="card tbl-wrap"><h2>🗓 Historia falownika (dni)</h2>
@@ -2003,6 +1995,7 @@ function editRecord(id){
     document.getElementById('w_note').value=r.note||''; liveW(); wxLoadForm('w',r); hubLoadForm('w',r); wlLoadForm('w',r);
     document.getElementById('cwuSubmitBtn').textContent='Zapisz zmiany (CWU)';
   }
+  if(hubCfg()) hubAuto(r.type==='CO'?'co':'w',false,'end');      /* edycja: dosyp z huba tylko puste pola (nic nie nadpisuje) */
 }
 
 async function addCO(){
@@ -2694,7 +2687,7 @@ function buildRdUi(){
     else if(i===n-1) t+=`<div class="rdcell"><label>Stop (= zatrzymanie)</label><div class="mono" id="rdtxt${i}">—</div></div>`;
     else t+=`<div class="rdcell"><label>Odczyt ${i} — data i godzina</label><input type="datetime-local" id="rd${i}_ts" value="${xmlEsc(x.ts||'')}"><button class="btn2 del" type="button" onclick="rdDel(${i})" style="margin:4px 0 0">Usuń ten odczyt</button></div>`;
   });
-  t+='</div><div style="margin-top:8px"><button class="btn2" type="button" onclick="rdAdd()" style="color:var(--text);padding:6px 12px">+ Dodaj odczyt pośredni (w trakcie pracy)</button> <button class="btn2" type="button" onclick="hubFillAll(true)" style="color:var(--text);padding:6px 12px;border-color:var(--cyan)">☁ Wypełnij odczyty z Warmlink</button> <span class="note" id="cp_hubinfo">'+xmlEsc(HUBMSG)+'</span></div><p class="note" style="margin-top:6px">Odczyt pośredni jest zalecany dla długich okresów (np. co kilka godzin albo przy zmianie pogody). Im więcej odczytów, tym dokładniejsza średnia Q.</p>';
+  t+='</div><div style="margin-top:8px"><button class="btn2" type="button" onclick="rdAdd()" style="color:var(--text);padding:6px 12px">+ Dodaj odczyt pośredni (w trakcie pracy)</button> <button class="btn2" type="button" onclick="hubFillAll(true)" style="color:var(--text);padding:6px 12px;border-color:var(--cyan)">☁ Wypełnij z Warmlink</button> <button class="btn2" type="button" onclick="cpSnap()" style="color:var(--text);padding:6px 12px;border-color:var(--cyan)">⏱ Dopasuj czasy do pracy sprężarki</button> <span class="note" id="cp_hubinfo">'+xmlEsc(HUBMSG)+'</span></div><p class="note" style="margin-top:6px">Odczyt pośredni jest zalecany dla długich okresów (np. co kilka godzin albo przy zmianie pogody). Im więcej odczytów, tym dokładniejsza średnia Q.</p>';
   cpEl('cp_rdtimes').innerHTML=t;
   cpEl('cp_sec2').innerHTML=PARAMS[2].map(fldHtml).join('');
   const valves=RDS.map((x,i)=>`<div class="rdcell"><label>${rdLabel(i)}</label><label class="chk"><input type="checkbox" id="rd${i}_c1" ${x.c1?'checked':''}> ${xmlEsc(SET.c1Name)} — zawór otwarty</label><label class="chk"><input type="checkbox" id="rd${i}_c2" ${x.c2?'checked':''}> ${xmlEsc(SET.c2Name)} — zawór otwarty</label></div>`).join('');
@@ -2760,6 +2753,7 @@ function flagsHtml(r){
 function liveCop(){
   if(!cpEl('cp_E')) return;
   const P=readCopForm(), r=calcPeriod(P,{}), c={rho:P.rho,cpw:P.cpw,dtOff:P.dtOff};
+  { const nd=cpEl('cp_need'); if(nd){ const noE=!(r.E>0); nd.className='warnline '+(noE?'':'good'); nd.innerHTML=noE?'⚠ <b>Uzupełnij zużycie energii</b>: stan licznika na Start i Stop (sekcja „Zużycie” niżej) albo kWh całego okresu. Wszystko inne pochodzi z Warmlinka.':'✓ Zużycie wpisane — reszta pochodzi z Warmlinka.'; } }
   cpEl('cp_hours').textContent=r.hours==null?((P.start&&!P.end)?'w toku (brak zatrzymania)':'—'):hhd(r.hours);
   const t0=cpEl('rdtxt0'); if(t0) t0.textContent=P.start?fmtY(P.start):'(wpisz uruchomienie)';
   const tl=cpEl('rdtxt'+(RDS.length-1)); if(tl) tl.textContent=P.end?fmtY(P.end):'(wpisz zatrzymanie)';
@@ -3318,7 +3312,7 @@ function wxRec(r){
 function wxTempsHtml(w){
   if(!w||(w.tn==null&&w.tm==null&&w.tx==null)) return '—';
   const f=v=>v==null?'—':(+v).toFixed(1)+'°';
-  return '<span class="tp min"><i>min</i><b>'+f(w.tn)+'</b></span><span class="tp"><i>śr.</i><b>'+f(w.tm)+'</b></span><span class="tp max"><i>max</i><b>'+f(w.tx)+'</b></span>'+((w.src||'').includes('ręcz')?' <span class="note" title="wartość wpisana ręcznie">✎</span>':'');
+  return '<span class="tps"><span class="tp min"><i>min</i><b>'+f(w.tn)+'</b></span><span class="tp"><i>śr.</i><b>'+f(w.tm)+'</b></span><span class="tp max"><i>max</i><b>'+f(w.tx)+'</b></span></span>'+((w.src||'').includes('ręcz')?' <span class="note" title="wartość wpisana ręcznie">✎</span>':'');
 }
 function wxRadHtml(w){ if(!w||w.rad==null) return '—'; return (+w.rad).toFixed(1)+' kWh/m²'+(w.sun!=null?'<div class="note">'+w.sun+' h słońca</div>':''); }
 
@@ -3397,12 +3391,14 @@ async function hubGet(a,params,ms){
   catch(e){ throw new Error(e.name==='AbortError'?'hub nie odpowiada (timeout)':e.message); } finally{ clearTimeout(to); }
 }
 const hubN=v=>{ if(v==null||v==='') return null; const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
-function hubVals(v){ const o={}; ['T01','T02','T04','T30','T32','T34','T35','T39','T08','Mode','Power'].forEach(k=>o[k]=hubN(v&&v[k])); return o; }
+const HUB_RNG={T01:[-20,95],T02:[-20,95],T04:[-45,60],T30:[0,130],T32:[0,130],T34:[0,520],T35:[0,80],T39:[0,40],T08:[0,95]};
+function hubSane(k,v){ const r=HUB_RNG[k]; return (v==null||!r)?v:((v<r[0]||v>r[1])?null:v); }   // odrzuca wartości niemożliwe (np. rok 2026 w polu T04 po błędzie kolumn w arkuszu)
+function hubVals(v){ const o={}; ['T01','T02','T04','T30','T32','T34','T35','T39','T08','Mode','Power'].forEach(k=>o[k]=hubSane(k,hubN(v&&v[k]))); return o; }
 /* najbliższe dane dla chwili ts: dla „teraz” — odczyt na żywo, dla przeszłości — najbliższa próbka z historii huba */
 async function hubNear(ts){
   const t=Date.parse(ts);
   if(!isNaN(t)&&Math.abs(Date.now()-t)<4*60000){ const j=await hubGet('live',{fresh:'1'},35000); return {live:true,wl:j.wl?Object.assign({ts:j.wl.ts},hubVals(j.wl.v)):null,sx:j.sx||null}; }
-  const j=await hubGet('near',{ts:ts.slice(0,16)},30000); return {live:false,wl:j.wl||null,sx:j.sx||null};
+  const j=await hubGet('near',{ts:ts.slice(0,16)},30000); return {live:false,wl:j.wl?Object.assign({},j.wl,hubVals(j.wl)):null,sx:j.sx||null};
 }
 /* --- odczyty COP z Warmlink --- */
 const WLMAP={t01:'T01',t02:'T02',t04:'T04',flow:'T39',hz:'T30',volt:'T34',amp:'T35'};
@@ -3421,34 +3417,41 @@ async function hubFillAll(manual){
   const e=e0||nowLocal(); if(Date.parse(e)<=Date.parse(s)){ if(manual) hubMsgSet('Zatrzymanie musi być późniejsze niż uruchomienie.'); return; }
   hubMsgSet('Pobieram odczyty z Warmlink…'); HUBC.fillBusy=true;
   try{
-    const j=await hubGet('wl',{from:s,to:e,step:5}), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r)));
-    if(!rows.length){ hubMsgSet('Hub nie ma odczytów Warmlink z tego przedziału (zbiera dane od chwili uruchomienia). Wpisz ręcznie.'); return; }
-    const near=(ts,tol)=>{ const t=Date.parse(ts); let b=null,bd=1e18; rows.forEach(r=>{ const d=Math.abs(Date.parse(r.ts)-t); if(d<bd){ bd=d; b=r; } }); return b&&bd<=tol*60000?b:null; };
-    if(RDS.length===2&&Date.parse(e)-Date.parse(s)<=48*3600000){                                       // brak odczytów pośrednich → dodaj co ~60 min, gdy sprężarka pracuje
+    const ext0=toLocalStr(Date.parse(s)-3*3600000), ext1=toLocalStr(Math.min(Date.now(),Date.parse(e)+90*60000));
+    const j=await hubGet('wl',{from:ext0,to:ext1,step:5},60000), all=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1);
+    if(!all.length){ hubMsgSet('Hub nie ma odczytów Warmlink z tego przedziału. Wpisz ręcznie.'); return; }
+    const T=ts=>Date.parse(ts), rows=all.filter(r=>r.ts>=s.slice(0,16)&&r.ts<=e.slice(0,16));
+    const near=(ts,tol)=>{ const t=T(ts); let b=null,bd=1e18; rows.forEach(r=>{ const d=Math.abs(T(r.ts)-t); if(d<bd){ bd=d; b=r; } }); return b&&bd<=tol*60000?b:null; };
+    /* odczyt Start/Stop: jeśli w tej minucie pompa stoi, bierz pierwszy (ostatni) odczyt z pracującą sprężarką — tylko wtedy T01/T02/T39 mają sens */
+    const runNear=(ts,dir)=>{ const t=T(ts), c=rows.filter(r=>r.T30>0&&(dir>0?(T(r.ts)>=t&&T(r.ts)<=t+90*60000):(T(r.ts)<=t&&T(r.ts)>=t-90*60000))); return c.length?(dir>0?c[0]:c[c.length-1]):null; };
+    const pick=(ts,dir)=>{ const r=near(ts,12); return (r&&r.T30>0)?r:(runNear(ts,dir)||r); };
+    if(RDS.length===2&&Date.parse(e)-Date.parse(s)<=48*3600000){
       const t0=Date.parse(s), t1=Date.parse(e), add=[]; let nx=t0+3600000;
       while(nx<t1-20*60000&&add.length<8){ const r=near(toLocalStr(nx),12); if(r&&r.T30>0) add.push(r.ts); nx+=3600000; }
       add.filter(ts=>!RDS.some(x=>x.ts===ts)).forEach(ts=>RDS.splice(RDS.length-1,0,{ts,v:{},k:'',c1:RDS[0].c1,c2:RDS[0].c2,def:false}));
     }
     let filled=0, got=0; const last=RDS.length-1;
-    RDS.forEach((x,i)=>{ const ts=i===0?s:(i===last?(open?'':e):x.ts), r=ts?near(ts,12):null; if(r){ got++; filled+=hubFillRd(i,r,false); } });
-    /* czas pracy sprężarki i odszranianie z próbek co 5 min; T32 (maks. częstotliwość) do ustawień */
-    const s16=s.slice(0,16), e16=e.slice(0,16), win=rows.filter(r=>r.ts>=s16&&r.ts<=e16).sort((a,b)=>a.ts<b.ts?-1:1);
-    let runMin=0, defMin=0, extra=[];
-    win.forEach((r,i)=>{ const t=Date.parse(r.ts), tn=i+1<win.length?Date.parse(win[i+1].ts):t+5*60000, dt=Math.min(15,Math.max(0,(tn-t)/60000));
-      if(r.T30>0){ runMin+=dt; if(r.T01!=null&&r.T02!=null&&r.T02<r.T01-1) defMin+=dt; } });
-    const pts=[Date.parse(s16+':00Z'),...win.map(r=>Date.parse(String(r.ts).slice(0,16)+':00Z')),Date.parse(e16+':00Z')].filter(x=>!isNaN(x)); let maxGap=0; for(let i=1;i<pts.length;i++) maxGap=Math.max(maxGap,(pts[i]-pts[i-1])/60000);
-    const cover=maxGap<=75?1:0;      /* hub zapisuje tylko pracę + 1 wiersz/h w postoju: przerwa >75 min = brak danych (awaria huba), a nie postój */
-    if(win.length&&cover){
-      const rm=cpEl('cp_runmin'), dm=cpEl('cp_defmin');
-      if(rm&&!rm.value&&runMin>0){ rm.value=Math.round(runMin); extra.push('czas pracy sprężarki '+Math.round(runMin)+' min'); }
-      if(dm&&!dm.value&&defMin>0){ dm.value=Math.round(defMin); extra.push('odszranianie ok. '+Math.round(defMin)+' min'); }
-    } else if(win.length) extra.push('w danych huba jest przerwa '+Math.round(maxGap)+' min (hub nie zbierał) — czasów pracy i odszraniania nie wypełniono');
-    const t32=[...win].reverse().map(r=>hubN(r.T32)).find(x=>x>0);
+    RDS.forEach((x,i)=>{ if(i===last&&open) return; const ts=i===0?s:(i===last?e:x.ts), r=ts?(i===0?pick(ts,1):i===last?pick(ts,-1):near(ts,12)):null; if(r){ got++; filled+=hubFillRd(i,r,false); } });
+    const S=hubWlSummary(all,s,e), extra=[]; const rm=cpEl('cp_runmin'), dm=cpEl('cp_defmin');
+    if(S.n&&S.cover){
+      if(rm&&!rm.value&&S.runMin>0){ rm.value=Math.round(S.runMin); extra.push('czas pracy sprężarki '+Math.round(S.runMin)+' min'); }
+      if(dm&&!dm.value&&S.defMin>0){ dm.value=Math.round(S.defMin); extra.push('odszranianie ok. '+Math.round(S.defMin)+' min'); }
+    } else if(S.n) extra.push('w danych huba brakuje odczytów podczas pracy (przerwa '+Math.round(S.maxGap)+' min) — czasów pracy nie wypełniono');
+    /* faktyczny start/stop sprężarki wg Warmlinka */
+    const runs=all.filter(r=>r.T30>0), near0=runs.filter(r=>T(r.ts)>=T(s)-3*3600000&&T(r.ts)<=T(e)+90*60000);
+    HUBC.snap=null;
+    if(near0.length){ const a=near0[0].ts, z=near0[near0.length-1].ts, zEnd=toLocalStr(T(z)+5*60000);
+      HUBC.snap={s:a.slice(0,16),e:open?'':zEnd};
+      const ds=Math.abs(T(a)-T(s))/60000, de=open?0:Math.abs(T(zEnd)-T(e))/60000;
+      if(ds>10||de>10) extra.push('Warmlink: sprężarka ruszyła o '+a.slice(11,16)+(open?'':' i stanęła ok. '+zEnd.slice(11,16))+' — użyj „Dopasuj czasy do pracy sprężarki”'); }
+    if(S.first&&(T(S.first)-T(s))/60000>30) extra.push('hub ma dane dopiero od '+S.first.slice(11,16));
+    const t32=[...rows].reverse().map(r=>hubN(r.T32)).find(x=>x>0);
     if(t32&&t32!==SET.hzMax){ SET.hzMax=t32; persist(); const hz=cpEl('set_hzmax'); if(hz) hz.value=t32; extra.push('T32 = '+t32+' Hz zapisane w Ustawieniach'); }
     buildRdUi(); liveCop();
-    hubMsgSet('Z Warmlink: '+got+' z '+RDS.length+' odczytów, uzupełniono '+filled+' pól (puste; niczego nie nadpisano)'+(extra.length?'; '+extra.join('; '):'')+'. '+(open?'Okres w toku — odczyty z Warmlinka policzono do teraz. ':'')+'Sprawdź i popraw. Licznik pompy (kWh, moc) i otwarte obiegi wpisz ręcznie — nie ma ich w Warmlinku.');
+    hubMsgSet('Z Warmlink: '+got+' z '+RDS.length+' odczytów'+(filled?', uzupełniono '+filled+' pól':', nic nowego do uzupełnienia')+(extra.length?' · '+extra.join(' · '):'')+(open?' · okres w toku — policzono do teraz':'')+'. Do wpisania zostaje tylko zużycie energii (licznik).');
   }catch(err){ hubMsgSet('Błąd huba: '+err.message); } finally{ HUBC.fillBusy=false; }
 }
+async function cpSnap(){ if(!HUBC.snap){ await hubFillAll(true); } if(!HUBC.snap){ return; } cpEl('cp_start').value=HUBC.snap.s; if(HUBC.snap.e) cpEl('cp_end').value=HUBC.snap.e; HUBC.snap=null; liveCop(); await hubFillAll(true); }
 /* --- Dodaj CO/CWU: stan PV, produkcja dnia, temperatura zewnętrzna z pompy --- */
 const HUBF=[['pvon','pvon'],['pvkw','pvkw'],['pvday','pvday']];
 function hubPut(e,v,force,src){ if(v==null||v==='') return; if(force||e.value===''||e.dataset.auto==='1'){ if(e.dataset.manual==='1'&&!force) return; e.value=v; e.dataset.auto='1'; delete e.dataset.manual; if(src) e.dataset.src=src; } }
@@ -3480,12 +3483,12 @@ function hubCover(p){ const e=$w(p+'_pvcov'); if(!e) return; const kwh=parseFloa
 document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if(/^(co|w)_(kwh|pvrun)$/.test(id)) hubCover(id.split('_')[0]); });
 function hubWlSummary(rows,s,e){
   const s16=s.slice(0,16), e16=e.slice(0,16), win=rows.map(r=>Object.assign({},r,hubVals(r),{ts:r.ts})).filter(r=>r.ts>=s16&&r.ts<=e16).sort((a,b)=>a.ts<b.ts?-1:1);
-  let runMin=0,defMin=0,hz=0,t4s=0,t4t=0,t4n=0,t4a=null,t4b=null;
-  win.forEach((r,i)=>{ const t=Date.parse(r.ts), tn=i+1<win.length?Date.parse(win[i+1].ts):t+5*60000, dt=Math.min(15,Math.max(0,(tn-t)/60000));
+  let runMin=0,defMin=0,hz=0,t4s=0,t4t=0,t4n=0,t4a=null,t4b=null,badGap=0,maxGap=0;
+  win.forEach((r,i)=>{ const t=Date.parse(r.ts), tn=i+1<win.length?Date.parse(win[i+1].ts):t+5*60000, gap=(tn-t)/60000, dt=Math.min(15,Math.max(0,gap));
+    if(i+1<win.length){ maxGap=Math.max(maxGap,gap); if((r.T30>0&&gap>25)||gap>200) badGap=Math.max(badGap,gap); }      /* przerwa w danych liczy się tylko podczas pracy (hub w postoju zapisuje rzadko) */
     if(r.T30>0){ runMin+=dt; hz=Math.max(hz,r.T30); if(r.T01!=null&&r.T02!=null&&r.T02<r.T01-1) defMin+=dt; }
     if(r.T04!=null){ t4s+=r.T04*dt; t4t+=dt; t4n++; t4a=t4a==null?r.T04:Math.min(t4a,r.T04); t4b=t4b==null?r.T04:Math.max(t4b,r.T04); } });
-  const pts=[Date.parse(s16+':00Z'),...win.map(r=>Date.parse(String(r.ts).slice(0,16)+':00Z')),Date.parse(e16+':00Z')].filter(x=>!isNaN(x)); let maxGap=0; for(let i=1;i<pts.length;i++) maxGap=Math.max(maxGap,(pts[i]-pts[i-1])/60000);
-  return {n:win.length,runMin,defMin,hz,t04:t4n?(t4t>0?t4s/t4t:null):null,t04min:t4a,t04max:t4b,maxGap,cover:maxGap<=75};
+  return {n:win.length,runMin,defMin,hz,t04:t4n?(t4t>0?t4s/t4t:null):null,t04min:t4a,t04max:t4b,maxGap:badGap||maxGap,cover:badGap===0,first:win.length?win[0].ts:null,win};
 }
 async function hubAuto(p,force,trig){
   const c=WXP[p]; if(!c||!hubCfg()) return; if(!force&&c.ed()&&trig!=='end') return;
@@ -3513,7 +3516,7 @@ async function hubAuto(p,force,trig){
       catch(e2){ msg.push('PV w okresie: '+e2.message); }
       try{ const j=await hubGet('wl',{from:st.slice(0,16),to:to.slice(0,16),step:5},60000); if(seq!==HUBSEQ[p]) return; const S=hubWlSummary(j.rows||[],st,to);
         if(!S.n) wmsg.push('hub nie ma odczytów Warmlink z tego przedziału');
-        else if(!S.cover) wmsg.push('w danych huba jest przerwa '+Math.round(S.maxGap)+' min — czasów pracy nie wypełniono');
+        else if(!S.cover) wmsg.push('w danych huba brakuje odczytów podczas pracy (przerwa '+Math.round(S.maxGap)+' min) — czasów pracy nie wypełniono');
         else { hubPut($w(p+'_wlrun'),Math.round(S.runMin),force,'wl'); hubPut($w(p+'_wldef'),Math.round(S.defMin),force,'wl'); if(S.t04!=null) hubPut($w(p+'_wlt04'),+S.t04.toFixed(1),force,'wl'); if(S.hz>0) hubPut($w(p+'_wlhz'),S.hz,force,'wl');
           wmsg.push('w całym okresie'+lbl+' sprężarka pracowała '+Math.round(S.runMin)+' min'+(S.defMin>0?' (w tym odszranianie ok. '+Math.round(S.defMin)+' min)':'')+(S.t04!=null?', T04 śr. '+S.t04.toFixed(1)+' °C':'')); } }
       catch(e3){ wmsg.push('Warmlink: '+e3.message); }
@@ -3609,26 +3612,33 @@ async function hubTest(){
     hubRefreshLive(true); hubPrefetchSx(); }
   catch(e){ st.innerHTML='<span style="color:var(--danger)">Błąd: '+wxEsc(e.message)+'</span>'; }
 }
+function hubLiveMsg(t){ const e=$w('live_msg'); if(e) e.textContent=t||''; }
 async function hubRefreshLive(fresh){
-  if(HUBC.liveBusy||!hubCfg()) return; HUBC.liveBusy=true; HUBC.liveAt=Date.now();
-  try{
-    HUBC.live=await hubGet('live',fresh?{fresh:'1'}:{},35000); HUBC.liveErr=null;
-    const now=nowLocal(), from=toLocalStr(Date.now()-24*3600000), rg=parseInt(($w('live_range')||{}).value,10)||30;
-    try{ HUBC.wl24=(await hubGet('wl',{from,to:now,step:10},40000)).rows||[]; }catch(e){}
-    try{ const dj=await hubGet('days',{from:addDaysS(ymd(new Date()),-rg),to:ymd(new Date())},40000), rows=dj.rows||[]; rows.forEach(r=>HUBC.days[r.d]=r); HUBC.daysInfo={n:rows.length,from:rows.length?rows[0].d:'',to:rows.length?rows[rows.length-1].d:'',rg}; HUBC.daysErr=null; hubSave(); }catch(e){ HUBC.daysErr=e.message; }
-  }catch(e){ HUBC.liveErr=e.message; }
-  HUBC.liveBusy=false; renderLive();
+  if(!hubCfg()) return;
+  if(HUBC.liveBusy&&Date.now()-(HUBC.liveBusyAt||0)<60000){ if(fresh) hubLiveMsg('Odświeżanie już trwa…'); return; }
+  HUBC.liveBusy=true; HUBC.liveBusyAt=Date.now(); HUBC.liveAt=Date.now();
+  const btn=$w('live_btn'); if(btn){ btn.disabled=true; btn.textContent='Odświeżam…'; } if(fresh) hubLiveMsg('');
+  try{ HUBC.live=await hubGet('live',fresh?{fresh:'1'}:{},45000); HUBC.liveErr=null;
+    if(fresh) hubLiveMsg('Odświeżono '+nowLocal().slice(11,16)+(HUBC.live&&HUBC.live.wl?' · odczyt pompy z '+String(HUBC.live.wl.ts).slice(11,16):' · hub nie zwrócił odczytu pompy')); }
+  catch(e){ HUBC.liveErr=e.message; if(fresh) hubLiveMsg('Błąd odświeżania: '+e.message); }
+  renderLive();
+  const now=nowLocal(), from=toLocalStr(Date.now()-24*3600000), rg=parseInt(($w('live_range')||{}).value,10)||30;
+  await Promise.all([
+    hubGet('wl',{from,to:now,step:10},40000).then(j=>{ HUBC.wl24=j.rows||[]; }).catch(()=>{}),
+    hubGet('days',{from:addDaysS(ymd(new Date()),-rg),to:ymd(new Date())},40000).then(dj=>{ const rows=dj.rows||[]; rows.forEach(r=>HUBC.days[r.d]=r); HUBC.daysInfo={n:rows.length,from:rows.length?rows[0].d:'',to:rows.length?rows[rows.length-1].d:'',rg}; HUBC.daysErr=null; hubSave(); }).catch(e=>{ HUBC.daysErr=e.message; })
+  ]);
+  HUBC.liveBusy=false; if(btn){ btn.disabled=false; btn.textContent='↻ Odśwież teraz'; } renderLive();
 }
 function svgLive(rows){
   if(!rows||rows.length<2) return '<div class="empty">Brak odczytów z ostatnich 24 h (hub zbiera dane co 5 min).</div>';
-  const w=chartWidth(),h=240,pl=38,pr=14,pt=12,pb=30, t0=Date.parse(rows[0].ts), t1=Date.parse(rows[rows.length-1].ts)||t0+1, X=ts=>pl+(Date.parse(ts)-t0)/Math.max(1,t1-t0)*(w-pl-pr);
+  const w=Math.min(chartWidth(),880),h=210,pl=38,pr=14,pt=12,pb=30, t0=Date.parse(rows[0].ts), t1=Date.parse(rows[rows.length-1].ts)||t0+1, X=ts=>pl+(Date.parse(ts)-t0)/Math.max(1,t1-t0)*(w-pl-pr);
   const tv=[]; rows.forEach(r=>['T01','T02','T04'].forEach(k=>{ const v=hubN(r[k]); if(v!=null) tv.push(v); }));
   const mn=Math.floor(Math.min(0,...tv)/5)*5, mx=Math.ceil(Math.max(10,...tv)/5)*5, Y=v=>pt+(1-(v-mn)/(mx-mn))*(h-pt-pb), hzMax=Math.max(60,...rows.map(r=>hubN(r.T30)||0)), YH=v=>pt+(1-v/hzMax)*(h-pt-pb);
-  const line=(k,c)=>{ const pts=rows.filter(r=>hubN(r[k])!=null).map(r=>X(r.ts).toFixed(1)+','+Y(hubN(r[k])).toFixed(1)).join(' '); return pts?`<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.6"/>`:''; };
-  const bw=Math.max(1.5,(w-pl-pr)/rows.length*0.9), bars=rows.map(r=>{ const z=hubN(r.T30); return z>0?`<rect x="${(X(r.ts)-bw/2).toFixed(1)}" y="${YH(z).toFixed(1)}" width="${bw.toFixed(1)}" height="${(h-pb-YH(z)).toFixed(1)}" fill="#49b4cf" opacity=".22"/>`:''; }).join('');
+  const line=(k,c,sw)=>{ const pts=rows.filter(r=>hubN(r[k])!=null).map(r=>X(r.ts).toFixed(1)+','+Y(hubN(r[k])).toFixed(1)).join(' '); return pts?`<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="${sw||1.8}" stroke-linejoin="round"/>`:''; };
+  const bw=Math.max(1.5,(w-pl-pr)/rows.length*0.9), bars=rows.map(r=>{ const z=hubN(r.T30); return z>0?`<rect x="${(X(r.ts)-bw/2).toFixed(1)}" y="${YH(z).toFixed(1)}" width="${bw.toFixed(1)}" height="${(h-pb-YH(z)).toFixed(1)}" fill="#9aa8b5" opacity=".16"/>`:''; }).join('');
   let grid=''; for(let v=mn;v<=mx;v+=5) grid+=`<line x1="${pl}" y1="${Y(v).toFixed(1)}" x2="${w-pr}" y2="${Y(v).toFixed(1)}" stroke="#2a343e" stroke-dasharray="2 3"/><text x="2" y="${(Y(v)+3).toFixed(1)}" font-size="11" fill="#9aa8b5">${v}°</text>`;
   let xl=''; for(let i=0;i<=6;i++){ const t=t0+(t1-t0)*i/6, d=new Date(t); xl+=`<text x="${(pl+(w-pl-pr)*i/6).toFixed(1)}" y="${h-10}" font-size="11" fill="#9aa8b5" text-anchor="middle">${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}</text>`; }
-  return `<div class="legend" style="margin-bottom:4px"><span><i class="dotc" style="background:#e0904f"></i>T01 wlot</span><span><i class="dotc" style="background:#e8c547"></i>T02 wylot</span><span><i class="dotc" style="background:#8fbf7f"></i>T04 zewn.</span><span><i class="dotc" style="background:#49b4cf;opacity:.5"></i>sprężarka (Hz, tło)</span></div><svg viewBox="0 0 ${w} ${h}" style="display:block;width:100%;height:auto">${grid}${bars}${line('T01','#e0904f')}${line('T02','#e8c547')}${line('T04','#8fbf7f')}${xl}</svg>`;
+  return `<div class="legend" style="margin-bottom:4px"><span><i class="dotc" style="background:#4ea8ff"></i>T01 wlot</span><span><i class="dotc" style="background:#ff7a59"></i>T02 wylot</span><span><i class="dotc" style="background:#8fbf7f"></i>T04 zewn.</span><span><i class="dotc" style="background:#9aa8b5;opacity:.5"></i>sprężarka (Hz, tło)</span></div><div style="max-width:900px"><svg viewBox="0 0 ${w} ${h}" style="display:block;width:100%;height:auto">${grid}${bars}${line('T04','#8fbf7f',1.6)}${line('T02','#ff7a59',3.4)}${line('T01','#4ea8ff',1.8)}${xl}</svg></div>`;
 }
 function renderLive(){
   const tab=$w('live'); if(!tab) return;
