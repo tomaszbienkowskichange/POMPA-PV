@@ -327,6 +327,9 @@ details.card[open]>summary{margin-bottom:12px}
 .tiles.pvt .tile{border-left:3px solid var(--pv)}.tiles.wxt .tile{border-left:3px solid var(--cyan)}
 .dayGrid h3{font-size:.9rem!important;color:var(--text)!important}
 #pvChartCard h2{font-size:.9rem}
+.wft{width:100%;border-collapse:collapse;margin:10px 0 4px}.wft td{padding:7px 8px;border-bottom:1px solid var(--line);font-size:.86rem;vertical-align:top}.wft td.n{width:26px;color:var(--muted);font-family:'IBM Plex Mono',monospace}.wft td.num{text-align:right;white-space:nowrap;font-family:'IBM Plex Mono',monospace}
+.wft tr.key td{background:rgba(95,184,122,.10)}.wft tr.pv td.num{color:var(--pv)}.wft tr.ok td.num{color:var(--ok)}.wft tr.bad td.num{color:var(--danger)}
+.todo{border-left:4px solid var(--amber)}.todo .it{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:6px 0;border-bottom:1px dashed var(--line);font-size:.86rem}
 </style>
 </head>
 <body>
@@ -383,6 +386,7 @@ details.card[open]>summary{margin-bottom:12px}
 </div>
 
 <div class="tab" id="dodaj">
+  <div class="todoBox"></div>
   <div id="cancelEditBar" style="display:none;margin-bottom:10px;align-items:center;gap:8px">
     <span style="color:var(--ok);font-size:.82rem">✎ Tryb edycji wpisu</span>
     <button onclick="cancelEdit()" style="background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.78rem">Anuluj edycję</button>
@@ -514,6 +518,7 @@ details.card[open]>summary{margin-bottom:12px}
 </div>
 
 <div class="tab" id="dane">
+  <div class="todoBox"></div>
   <div class="wxbar" data-wxbar></div>
   <div class="toolbar">
     <label>Typ</label><select id="filterType" onchange="renderTable()">
@@ -1531,7 +1536,7 @@ async function addPv(){
   document.getElementById('pv_price').value=SET.pvPrice;
   await persist(); alert(wasEdit?'Zaktualizowano wpis PV.':'Zapisano wpis PV na dysku.');
 }
-async function delPv(id){ if(!confirm('Usunąć wpis PV?')) return; PV=PV.filter(r=>r.id!==id); await persist(); }
+async function delPv(id){ if(!confirm('Usunąć wpis PV?')) return; const r=PV.find(x=>x.id===id); if(r&&r.src==='hub-auto'){ SET.pvNoAuto=[...(SET.pvNoAuto||[]),r.date]; } PV=PV.filter(r=>r.id!==id); await persist(); }
 function buildPvAgg(gran,rg){
   const map=new Map();
   PV.forEach(r=>{ if(!r.date||!inRange(r.date,rg)||!wxPass(r.date)) return; const k=periodKey(r.date,gran); if(!map.has(k)) map.set(k,{kwh:0,creditKwh:0,value:0});
@@ -2079,7 +2084,7 @@ async function addCO(){
   ['co_start','co_end','co_rad','co_out1','co_out2','co_kwh','co_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('co_target1').textContent='—'; document.getElementById('co_target2').textContent='—';
   document.getElementById('co_dur').textContent='—'; document.getElementById('coHint').textContent='';
-  await persist(); alert((wasEdit?'Zaktualizowano cykl CO.':'Zapisano cykl CO na dysku.')+(end?'':' Cykl jest w toku (bez końca) — dopisz koniec później: Dane → Edytuj.'));
+  syncAutoEnergy(); await persist(); alert((wasEdit?'Zaktualizowano cykl CO.':'Zapisano cykl CO na dysku.')+(end?'':' Cykl jest w toku (bez końca) — dopisz koniec później: Dane → Edytuj.'));
 }
 async function addCWU(){
   const start=document.getElementById('w_start').value, end=document.getElementById('w_end').value;
@@ -2096,7 +2101,7 @@ async function addCWU(){
   cancelEdit();
   ['w_start','w_end','w_t1','w_t2','w_out','w_kwh','w_note'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('w_delta').textContent='—'; document.getElementById('w_dur').textContent='—';
-  await persist(); alert((wasEdit?'Zaktualizowano cykl CWU.':'Zapisano cykl CWU na dysku.')+(end?'':' Cykl jest w toku (bez końca) — dopisz koniec później: Dane → Edytuj.'));
+  syncAutoEnergy(); await persist(); alert((wasEdit?'Zaktualizowano cykl CWU.':'Zapisano cykl CWU na dysku.')+(end?'':' Cykl jest w toku (bez końca) — dopisz koniec później: Dane → Edytuj.'));
 }
 async function delRec(id){ if(!confirm('Usunąć wpis?')) return; R=R.filter(r=>r.id!==id); await persist(); }
 
@@ -2175,7 +2180,14 @@ function dayCard(date, typeFilter){
   const pvDay = PV.filter(r=>r.date===date);
   const pvKwhDay = pvDay.reduce((s,r)=>s+(r.kwh||0),0), pvValDay = pvDay.reduce((s,r)=>s+(r.value||0),0);
   const pvLine = pvDay.length ? `<div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.82rem;color:var(--pv)">☀️ Produkcja PV tego dnia: <b>${pvKwhDay.toFixed(2)} kWh</b> · wartość ${pvValDay.toFixed(2)} zł${grandKwh>0?` · pokrycie zużycia pompy: ${Math.min(999,pvKwhDay/grandKwh*100).toFixed(0)}%`:''}</div>` : '';
-  const empty = (!startedCo.length&&!startedCwu.length&&!pvDay.length) ? '<div class="empty">Brak danych dla wybranego filtru.</div>' : '';
+  const mDay=M.filter(m=>m.start&&m.end&&m.start.slice(0,10)===date&&(typeFilter==='all'||m.mode===typeFilter)).map(m=>({m,r:calcPeriod(m,{noCompare:true})})).filter(x=>x.r.hours!=null);
+  let copHtml='';
+  if(mDay.length){ const eBy=md=>mDay.filter(x=>x.m.mode===md).reduce((t,x)=>t+(x.r.E||0),0), eCo=eBy('CO'), eCwu=eBy('CWU'), warnD=[];
+    if(startedCo.length&&eCo>0&&Math.abs(eCo-coKwh)>0.3) warnD.push('CO: cykle '+coKwh.toFixed(2)+' kWh ≠ okresy COP '+eCo.toFixed(2)+' kWh'); if(startedCwu.length&&eCwu>0&&Math.abs(eCwu-cwuKwh)>0.3) warnD.push('CWU: cykle '+cwuKwh.toFixed(2)+' kWh ≠ okresy COP '+eCwu.toFixed(2)+' kWh');
+    copHtml=`<div style="margin-top:10px;border-left:3px solid var(--ok);padding-left:10px"><div style="font-size:.82rem;font-weight:700;color:var(--ok)">COP — okresy pracy z tego dnia (odczyty Warmlink + licznik)</div><div class="tbl-wrap"><table class="rc" style="margin-top:4px"><thead><tr><th>Okres</th><th>Tryb</th><th>Czas</th><th>Energia kWh</th><th>Ciepło kWh</th><th>COP</th></tr></thead><tbody>`
+      +mDay.map(({m,r})=>`<tr><td class="num">${fmtY(m.start).slice(11)}→${fmtY(m.end).slice(11)}</td><td><span class="pill ${m.mode==='CWU'?'cwu':'co'}">${m.mode}</span></td><td class="num">${fmtHM(r.hours)}</td><td class="num">${r.E!=null?r.E.toFixed(2):'—'}</td><td class="num">${r.heat!=null?r.heat.toFixed(1):'—'}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td></tr>`).join('')+`</tbody></table></div>`
+      +(warnD.length?`<div class="warnline bad" style="margin-top:6px">⚠ Różnica między zakładkami: ${warnD.join(' · ')}. Okresy COP liczą energię ze stanów licznika, więc są dokładniejsze — popraw wpis cyklu albo okres.</div>`:'')+`</div>`; }
+  const empty = (!startedCo.length&&!startedCwu.length&&!pvDay.length&&!mDay.length) ? '<div class="empty">Brak danych dla wybranego filtru.</div>' : '';
   return `<div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
       <h2 style="margin:0">${date}</h2>
@@ -2184,7 +2196,7 @@ function dayCard(date, typeFilter){
     <div class="timeline">${timeline||''}</div>
     <div class="ticks"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div>
     ${pauses?`<div style="margin-top:6px">${pauses}</div>`:''}
-    ${secCo}${secCwu}${grand}${pvLine}${empty}
+    ${secCo}${secCwu}${grand}${copHtml}${pvLine}${empty}
   </div>`;
 }
 function renderDaily(){
@@ -2196,6 +2208,8 @@ function renderDaily(){
   R.forEach(r=>{ if(!r.start||!r.end) return; let d=new Date(r.start.slice(0,10)+'T00:00:00'); const endD=new Date(r.end.slice(0,10)+'T00:00:00');
     let guard=0; while(d<=endD&&guard<400){ dateSet.add(ymd(d)); d.setDate(d.getDate()+1); guard++; } });
   PV.forEach(r=>{ if(r.date) dateSet.add(r.date); });
+  M.forEach(m=>{ if(m.start&&m.end) dateSet.add(m.start.slice(0,10)); });
+  R.forEach(r=>{ if(r.start&&!r.end) dateSet.add(r.start.slice(0,10)); });
   let dates=[...dateSet].sort().reverse();
   if(from) dates=dates.filter(d=>d>=from);
   if(to) dates=dates.filter(d=>d<=to);
@@ -2247,13 +2261,27 @@ function svgLine(categories,seriesList,unitLbl){
 const PER_LBL={day:'dzień',week:'tydzień',month:'miesiąc',quarter:'kwartał',half:'półrocze',year:'rok',temp:'przedział temperatury'};
 const fmtDpl=d=>d&&d.length>=10?d.slice(8,10)+'.'+d.slice(5,7)+'.'+d.slice(0,4):'';
 function rangeText(dates,rg){ const a=(rg&&rg.from)||dates[0]||'', b=(rg&&rg.to)||dates[dates.length-1]||''; if(!a||!b) return 'brak danych'; const days=Math.round((Date.parse(b)-Date.parse(a))/864e5)+1; return fmtDpl(a)+' – '+fmtDpl(b)+' ('+days+' dni)'; }
+function periodBounds(key,g){
+  if(g==='day') return [key,key];
+  if(g==='month'){ const [y,m]=key.split('-').map(Number); return [ymd(new Date(y,m-1,1)),ymd(new Date(y,m,0))]; }
+  if(g==='quarter'){ const [y,q]=key.split('-K'), q0=(+q-1)*3; return [ymd(new Date(+y,q0,1)),ymd(new Date(+y,q0+3,0))]; }
+  if(g==='half'){ const [y,p]=key.split('-P'), m0=(+p-1)*6; return [ymd(new Date(+y,m0,1)),ymd(new Date(+y,m0+6,0))]; }
+  if(g==='year') return [key+'-01-01',key+'-12-31'];
+  if(g==='week'){ const [y,w]=key.split('-T'), j=new Date(+y,0,1), d=new Date(+y,0,1+(+w-1)*7-j.getDay()); return [ymd(d),ymd(new Date(d.getFullYear(),d.getMonth(),d.getDate()+6))]; }
+  return null;
+}
+/* pierwszy okres (gdy dane zaczynają się w jego środku) i ostatni (trwający) są niepełne — nie wchodzą do średniej */
+function partialKeys(keys,g,dFrom,dTo){ const out=[]; if(!keys.length||!dFrom||!dTo||g==='day') return out;
+  const a=periodBounds(keys[0],g), b=periodBounds(keys[keys.length-1],g);
+  if(a&&dFrom>a[0]) out.push(keys[0]); if(b&&dTo<b[1]&&!out.includes(keys[keys.length-1])) out.push(keys[keys.length-1]); return out; }
 function panelChart(color,categories,values,unitLbl,chartType,info){
-  info=info||{}; const allK=info.allKeys||categories, allV=info.allVals||values, n=allK.length, sum=allV.reduce((a,b)=>a+b,0), avg=n?sum/n:0, per=info.per||'okres', dec=unitLbl==='szt.'?0:2;
+  info=info||{}; const allK=info.allKeys||categories, allV=info.allVals||values, n=allK.length, sum=allV.reduce((a,b)=>a+b,0), per=info.per||'okres', dec=unitLbl==='szt.'?0:2;
+  const part=new Set(info.partial||[]), fullIdx=allK.map((k,i)=>part.has(k)?-1:i).filter(i=>i>=0), useFull=part.size>0&&fullIdx.length>=1, avgN=useFull?fullIdx.length:n, avg=avgN?(useFull?fullIdx.reduce((t,i)=>t+allV[i],0):sum)/avgN:0;
   const f=v=>v.toLocaleString('pl-PL',{minimumFractionDigits:dec,maximumFractionDigits:dec}), rng=info.range||(n?allK[0]+' → '+allK[n-1]:'');
   const chartHtml = categories.length ? (chartType==='line'? svgLine(categories,[{name:'',color,values}],unitLbl) : svgBars(categories,[{name:'',color,values}],unitLbl)) : '<div class="empty">Brak danych.</div>';
   const trunc=n>categories.length?`<div class="cap" style="margin:6px 0 0">Wykres pokazuje ostatnie ${categories.length} z ${n} okresów. Suma i średnia dotyczą całego zakresu.</div>`:'';
   return `<div class="miniStats"><div><div class="big" style="color:${color}">${f(sum)} ${unitLbl}</div><div class="lbl">Suma za cały zakres${rng?'<br>'+rng:''}</div></div>
-    <div><div class="big">${f(avg)} ${unitLbl}</div><div class="lbl">Średnio na ${per}<br>(z ${n} ${n===1?'okresu':'okresów'})</div></div></div>
+    <div><div class="big">${f(avg)} ${unitLbl}</div><div class="lbl">Średnio na ${per}<br>${useFull?`(z ${avgN} pełnych okresów — pominięto niepełne: ${[...part].join(', ')})`:`(z ${n} ${n===1?'okresu':'okresów'})`}</div></div></div>${part.size?`<div class="cap" style="margin:-4px 0 8px">Dane zaczynają się ${info.dFrom?fmtDpl(info.dFrom):''} — okres „${[...part][0]}” jest niepełny i nie zaniża średniej.</div>`:''}
     ${chartHtml}${trunc}`;
 }
 
@@ -2307,19 +2335,20 @@ function renderReports(){
   const rg=repRange(); const {keys, map} = buildAgg(groupBy,gran,rg);
   const show = groupBy==='temp' ? keys : keys.slice(-24);
   const per=PER_LBL[groupBy==='temp'?'temp':gran], cols=groupBy==='temp'?1:2;
+  const _dd=[...R.filter(r=>inRange(r.date,rg)&&wxPass(r.date)).map(r=>r.date),...PV.filter(p=>inRange(p.date,rg)&&wxPass(p.date)).map(p=>p.date)].filter(Boolean).sort(), dFrom=_dd[0]||'', dTo=_dd[_dd.length-1]||'', partial=groupBy==='temp'?[]:partialKeys(keys,gran,dFrom,dTo);
   const rngTxt=rangeText(R.filter(r=>inRange(r.date,rg)&&wxPass(r.date)).map(r=>r.date).filter(Boolean).sort(),rg);
   const totalCo=[...map.values()].reduce((s,o)=>s+o.coKwh,0), totalCwu=[...map.values()].reduce((s,o)=>s+o.cwuKwh,0);
   document.getElementById('splitChartWrap').innerHTML = (totalCo+totalCwu)>0 ? '<div class="cap">Zakres: <b>'+rngTxt+'</b> · suma CO + CWU: <b>'+(totalCo+totalCwu).toFixed(2)+' kWh</b></div>'+svgDonut([{label:'CO',value:totalCo,color:'#e0904f'},{label:'CWU',value:totalCwu,color:'#49b4cf'}],'kWh') : '<div class="empty">Brak danych.</div>';
   const lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric];
   const mv=t=>k=>+metricVal(map.get(k),t,metric).toFixed(2);
-  setCW('panelCoWrap',cols); document.getElementById('panelCoWrap').innerHTML = panelChart('#e0904f',show,show.map(mv('co')),lbl,chartType,{allKeys:keys,allVals:keys.map(mv('co')),per,range:rngTxt});
-  setCW('panelCwuWrap',cols); document.getElementById('panelCwuWrap').innerHTML = panelChart('#49b4cf',show,show.map(mv('cwu')),lbl,chartType,{allKeys:keys,allVals:keys.map(mv('cwu')),per,range:rngTxt});
+  setCW('panelCoWrap',cols); document.getElementById('panelCoWrap').innerHTML = panelChart('#e0904f',show,show.map(mv('co')),lbl,chartType,{allKeys:keys,allVals:keys.map(mv('co')),per,range:rngTxt,partial,dFrom});
+  setCW('panelCwuWrap',cols); document.getElementById('panelCwuWrap').innerHTML = panelChart('#49b4cf',show,show.map(mv('cwu')),lbl,chartType,{allKeys:keys,allVals:keys.map(mv('cwu')),per,range:rngTxt,partial,dFrom});
 
   const {keys:pvKeysAll, map:pvMapAll} = buildPvAgg(gran,rg);
   const pvShow = pvKeysAll.slice(-24);
   const pvRng=rangeText(PV.filter(p=>inRange(p.date,rg)&&wxPass(p.date)).map(p=>p.date).filter(Boolean).sort(),rg);
   setCW('panelPvWrap',1); document.getElementById('panelPvWrap').innerHTML = pvShow.length
-    ? panelChart('#e8c547', pvShow, pvShow.map(k=>+pvMapAll.get(k).kwh.toFixed(2)), 'kWh', chartType,{allKeys:pvKeysAll,allVals:pvKeysAll.map(k=>+pvMapAll.get(k).kwh.toFixed(2)),per:PER_LBL[gran],range:pvRng})
+    ? panelChart('#e8c547', pvShow, pvShow.map(k=>+pvMapAll.get(k).kwh.toFixed(2)), 'kWh', chartType,{allKeys:pvKeysAll,allVals:pvKeysAll.map(k=>+pvMapAll.get(k).kwh.toFixed(2)),per:PER_LBL[gran],range:pvRng,partial:partialKeys(pvKeysAll,gran,dFrom,dTo),dFrom})
     : '<div class="empty">Brak wpisów PV — dodaj je w zakładce „☀️ PV”.</div>';
 
   const pvMapForTable = groupBy==='period' ? pvMapAll : null;
@@ -2420,8 +2449,10 @@ function renderDashboard(){
     +`Dane w okresie: pompa — ${S.hpDays} dni (${S.RR.length} cykli) · PV — ${S.pvDays} dni (${S.PP.length} wpisów) · okresy COP — ${S.items.length}${lastDt?` · ostatni wpis: ${fmtD(lastDt)}`:''}`;
   if(!S.RR.length&&!S.PP.length){ $('dashKpis').innerHTML=''; ['dashBal','dashPump','dashCop','dashBalance','dashMonths','dashPeriods','dashDays','dashCoWrap','dashBalChart'].forEach(i=>{ if($(i)) $(i).innerHTML=''; });
     $('dashKpis').innerHTML=`<div class="card" style="grid-column:1/-1"><div class="empty">Brak wpisów w tym okresie.${lastDt?` Ostatnie dane są z ${fmtD(lastDt)} — wybierz „Cała historia” albo szerszy okres.`:''}</div></div>`; return; }
-  const B=pvBalance(S.hp,S.hpDay,S.pv), costCov=S.hp>0?S.cost*(B.direct+B.covered)/S.hp:0, costRest=S.cost-costCov, perDay=S.hpDays?S.hp/S.hpDays:null;
-  const pvGap=S.hpDays>0&&S.pvDays<S.hpDays*0.8, gapTxt=pvGap?' ⚠ niepełne dane PV':''; 
+  const _pvd=PV.map(p=>p.date).filter(Boolean).sort(), pvFirst=_pvd[0]||null; let SB=S, balFrom=null;
+  if(pvFirst&&pvFirst>P.from&&pvFirst<=P.to){ SB=dashStats(pvFirst,P.to); balFrom=pvFirst; }      /* bilans tylko tam, gdzie są dane PV — wcześniejsze dni pompy nie zaniżają PV */
+  const B=pvBalance(SB.hp,SB.hpDay,SB.pv), costCov=SB.hp>0?SB.cost*(B.direct+B.covered)/SB.hp:0, costRest=SB.cost-costCov, perDay=S.hpDays?S.hp/S.hpDays:null;
+  const pvGap=SB.hpDays>0&&SB.pvDays<SB.hpDays*0.8, gapTxt=pvGap?' ⚠ niepełne dane PV':''; 
   const opTxt=B.op<1?' × '+B.op:'';
   $('dashKpis').innerHTML=[
     kpi(f(S.hp,1)+' kWh','Pompa — energia (CO+CWU)','var(--amber)',dlt(S.hp,PS&&PS.hp,'down')), kpi(f(S.cost,2)+' zł','Pompa — koszt energii',null,dlt(S.cost,PS&&PS.cost,'down')),
@@ -2429,21 +2460,34 @@ function renderDashboard(){
     kpi(f(S.pv,1)+' kWh','PV — produkcja','var(--pv)',dlt(S.pv,PS&&PS.pv,'up')),
     kpi(f(B.Eday,1)+' kWh','Pompa w godzinach produkcji PV (zasilana bezpośrednio z paneli)','var(--pv)'),
     kpi(f(B.grid,1)+' kWh','Pompa poza produkcją PV (pobór z sieci)','var(--amber)'),
-    kpi((B.bal>=0?'+':'')+f(B.bal,1)+' kWh','Bilans pompy po opuście: nadwyżka PV'+opTxt+' − pobór z sieci'+gapTxt,B.bal>=0?'var(--ok)':'var(--danger)'),
+    kpi((B.bal>=0?'+':'')+f(B.bal,1)+' kWh','Bilans: depozyt po opuście ('+f(B.credit,1)+(B.op<1?', z nadwyżki brutto '+f(B.surplus,1)+opTxt:'')+') − pobór z sieci '+f(B.grid,1)+gapTxt,B.bal>=0?'var(--ok)':'var(--danger)'),
     kpi(B.coverPct==null?'—':f(B.coverPct,0)+'%','Jaką część energii pompy pokrywa PV (godziny PV + opust)'+gapTxt,B.coverPct!=null&&B.coverPct>=100?'var(--ok)':'var(--amber)'),
     kpi(f(costCov,2)+' zł','Koszt pompy pokryty przez PV'+gapTxt,'var(--ok)'), kpi(f(costRest,2)+' zł','Koszt pompy do zapłaty (pobór z sieci ponad opust)',costRest>0.005?'var(--danger)':'var(--ok)'),
     kpi(S.cop==null?'—':'≈ '+S.cop.toFixed(2),'COP ważony (z odczytów w okresie)','var(--ok)'), kpi(perDay==null?'—':f(perDay,2)+' kWh','Pompa — średnio na dzień z wpisami')].join('');
   /* bilans PV vs pompa */
-  const warn=[]; if(S.hpDays&&S.pvDays<S.hpDays*0.8) warn.push(`Wpisy PV są za ${S.pvDays} dni, a wpisy pompy za ${S.hpDays} dni — bilans jest niepełny (brakuje produkcji PV z części okresu, więc PV wygląda na mniejsze, niż było).`);
-  if(S.pvDays&&S.hpDays<S.pvDays*0.8) warn.push(`Wpisy pompy są za ${S.hpDays} dni, a PV za ${S.pvDays} dni — brakuje cykli pompy z części okresu.`);
-  if(B.Eday>B.direct+0.05) warn.push(`W godzinach PV pompa zużyła ${f(B.Eday,1)} kWh, a wpisy produkcji PV to tylko ${f(S.pv,1)} kWh — różnicę policzono jako pobór z sieci. Sprawdź, czy są wpisy PV za wszystkie dni.`);
+  const warn=[]; if(SB.hpDays&&SB.pvDays<SB.hpDays*0.8) warn.push(`Wpisy PV są za ${SB.pvDays} dni, a wpisy pompy za ${SB.hpDays} dni — bilans jest niepełny (brakuje produkcji PV z części okresu, więc PV wygląda na mniejsze, niż było).`);
+  if(SB.pvDays&&SB.hpDays<SB.pvDays*0.8) warn.push(`Wpisy pompy są za ${SB.hpDays} dni, a PV za ${SB.pvDays} dni — brakuje cykli pompy z części okresu.`);
+  if(B.Eday>B.direct+0.05) warn.push(`W godzinach PV pompa zużyła ${f(B.Eday,1)} kWh, a wpisy produkcji PV to tylko ${f(SB.pv,1)} kWh — różnicę policzono jako pobór z sieci. Sprawdź, czy są wpisy PV za wszystkie dni.`);
   const nRh=Object.keys(WXC.rh||{}).filter(d=>d>=P.from&&d<=P.to).length;
-  $('dashBal').innerHTML=`<div class="balGrid"><div class="balBox"><div class="v" style="color:var(--amber)">${f(S.hp,1)} kWh</div><div class="l">zużyła pompa (CO ${f(S.co,1)} + CWU ${f(S.cwu,1)}) · w godz. PV ${f(B.Eday,1)} · poza PV ${f(S.hp-B.Eday,1)} · koszt ${f(S.cost,2)} zł</div></div><div class="balOp">vs</div>`
-    +`<div class="balBox"><div class="v" style="color:var(--pv)">${f(S.pv,1)} kWh</div><div class="l">wyprodukowało PV · z tego bezpośrednio do pompy ${f(B.direct,1)} · nadwyżka ${f(B.surplus,1)} kWh${B.op<1?' → po opuście '+f(B.credit,1):''}</div></div><div class="balOp">⇒</div>`
-    +`<div class="balBox"><div class="v" style="color:${B.bal>=0?'var(--ok)':'var(--danger)'}">${B.bal>=0?'+':''}${f(B.bal,1)} kWh</div><div class="l">${B.coverPct==null?'brak zużycia pompy':'PV pokrywa '+f(B.coverPct,0)+'% energii pompy'} · z sieci do pokrycia ${f(B.grid,1)} kWh, dostępny opust ${f(B.credit,1)} kWh</div></div></div>`
-    +kv('Pobór pompy z sieci (poza godzinami PV)',f(B.grid,1)+' kWh')+kv('Nadwyżka PV po odjęciu zużycia bezpośredniego',f(B.surplus,1)+' kWh')+kv('Opust z nadwyżki'+(B.op<1?' (× '+B.op+')':''),f(B.credit,1)+' kWh')+kv('Dni z wpisami: pompa / PV',`${S.hpDays} / ${S.pvDays}`)
+  const wf=(n,l,v,cls,sub)=>`<tr class="wf ${cls||''}"><td class="n">${n}</td><td>${l}${sub?`<div class="note" style="margin:2px 0 0;font-size:.72rem">${sub}</div>`:''}</td><td class="num"><b>${v}</b></td></tr>`;
+  const opx=B.op<1;
+  $('dashBal').innerHTML=`<div class="balGrid"><div class="balBox"><div class="v" style="color:var(--amber)">${f(SB.hp,1)} kWh</div><div class="l">zużyła pompa (CO ${f(SB.co,1)} + CWU ${f(SB.cwu,1)}) · w godz. PV ${f(B.Eday,1)} · poza PV ${f(SB.hp-B.Eday,1)} · koszt ${f(SB.cost,2)} zł</div></div><div class="balOp">vs</div>`
+    +`<div class="balBox"><div class="v" style="color:var(--pv)">${f(SB.pv,1)} kWh</div><div class="l">wyprodukowało PV · bezpośrednio do pompy ${f(B.direct,1)} · do sieci (brutto) ${f(B.surplus,1)}${opx?' → do odbioru po opuście <b>'+f(B.credit,1)+'</b>':''}</div></div><div class="balOp">⇒</div>`
+    +`<div class="balBox"><div class="v" style="color:${B.bal>=0?'var(--ok)':'var(--danger)'}">${B.bal>=0?'+':''}${f(B.bal,1)} kWh</div><div class="l">${B.bal>=0?'zostaje w depozycie':'brakuje do pokrycia'} (depozyt po opuście ${f(B.credit,1)} − pobór pompy z sieci ${f(B.grid,1)}) · ${B.coverPct==null?'brak zużycia pompy':'PV pokrywa '+f(B.coverPct,0)+'% energii pompy'}</div></div></div>`
+    +`<table class="wft"><tbody>`
+    +wf('1','PV wyprodukowało',f(SB.pv,1)+' kWh','pv')
+    +wf('2','− zużyte bezpośrednio przez pompę (w godzinach produkcji PV)','−'+f(B.direct,1)+' kWh','')
+    +wf('3','= Nadwyżka oddana do sieci <u>(brutto)</u>',f(B.surplus,1)+' kWh','', opx?'To ilość wprowadzona do sieci — <b>nie</b> jest to energia do odebrania.':'')
+    +(opx?wf('4','× opust '+B.op+' = <u>energia do odebrania z sieci</u> (depozyt)',f(B.credit,1)+' kWh','key','Tyle realnie możesz „wykorzystać” — tę wartość porównuj z poborem pompy.'):'')
+    +wf(opx?'5':'4','Pompa pobrała z sieci (poza godzinami PV)',f(B.grid,1)+' kWh','')
+    +wf(opx?'6':'5','Z tego pokryte depozytem',f(B.covered,1)+' kWh','ok')
+    +wf(opx?'7':'6',B.rest>0.05?'Do zapłaty — pobór ponad depozyt':'Zostaje w depozycie po pokryciu poboru',f(B.rest>0.05?B.rest:B.left,1)+' kWh',B.rest>0.05?'bad':'ok')
+    +wf('','Pokrycie energii pompy przez PV = (bezpośrednio '+f(B.direct,1)+' + z depozytu '+f(B.covered,1)+') ÷ zużycie pompy '+f(SB.hp,1),B.coverPct==null?'—':f(B.coverPct,0)+'%','key')
+    +`</tbody></table>`
+    +(balFrom?`<div class="warnline good">Bilans liczony od <b>${fmtDpl(balFrom)}</b> — od pierwszego dnia z danymi PV. Wcześniejsze dni pompy (bez produkcji PV) nie są wliczane, bo zaniżałyby PV i zaburzały obraz.</div>`:'')
+    +kv('Dni z wpisami: pompa / PV',`${SB.hpDays} / ${SB.pvDays}`)
     +warn.map(w=>`<div class="warnline bad">${w}</div>`).join('')
-    +`<p class="note" style="margin:8px 0 0;font-size:.72rem"><b>Jak liczone:</b> energia każdego cyklu jest dzielona proporcjonalnie do czasu na część w godzinach, gdy PV produkuje (promieniowanie godzinowe ≥ ${SET.pvMinRad!=null?SET.pvMinRad:50} W/m² wg Open-Meteo; bez tych danych — wschód/zachód słońca ± ${SET.pvEdge!=null?SET.pvEdge:45} min), i na część poza nimi. W godzinach PV pompa jest zasilana bezpośrednio z paneli (1:1). Poza nimi pobiera z sieci, a pokrywa to nadwyżka PV${B.op<1?' po przeliczeniu opustem × '+B.op:''}. Uwzględniono tylko pompę — pozostałe odbiory domu zmniejszają nadwyżkę. ${nRh?'':'<b>Brak godzinowego promieniowania w pamięci</b> — podział wg wschodu/zachodu słońca; pobierz pogodę w zakładce „Pogoda i API”, żeby był dokładniejszy. '}Stan PV w dniach z danymi huba pochodzi z falownika (SolaX). Progi ustawisz w zakładce „Pogoda i API”.</p>`;
+    +`<p class="note" style="margin:8px 0 0;font-size:.72rem"><b>Jak liczone:</b> energia każdego cyklu jest dzielona proporcjonalnie do czasu na część w godzinach, gdy PV produkuje (promieniowanie godzinowe ≥ ${SET.pvMinRad!=null?SET.pvMinRad:50} W/m² wg Open-Meteo albo stan falownika z huba; bez tych danych — wschód/zachód słońca ± ${SET.pvEdge!=null?SET.pvEdge:45} min), i na część poza nimi. W godzinach PV pompa jest zasilana bezpośrednio z paneli (1:1). Reszta produkcji trafia do sieci (nadwyżka brutto)${opx?' i po opuście × '+B.op+' stanowi depozyt, z którego pokrywasz pobór z sieci':''}. Uwzględniono tylko pompę — pozostałe odbiory domu zmniejszają nadwyżkę. ${nRh?'':'<b>Brak godzinowego promieniowania w pamięci</b> — pobierz pogodę w zakładce „Pogoda”. '}</p>`;
   /* pompa / COP / faktury */
   const tot=S.hp||1;
   $('dashPump').innerHTML=`<div class="sharebar"><i style="width:${S.co/tot*100}%;background:#e0904f"></i><i style="width:${S.cwu/tot*100}%;background:#49b4cf"></i></div>`
@@ -2462,15 +2506,15 @@ function renderDashboard(){
   S.items.forEach(({r,P:PP})=>allocDays(PP).forEach(a=>{ if(a.day<P.from||a.day>P.to) return; const k=periodKey(a.day,gran); let o=cm.get(k); if(!o){ o={Eh:0,heat:0,h:0}; cm.set(k,o); } o.h+=a.h; if(r.E!=null&&r.heat!=null){ o.Eh+=r.E*a.f; o.heat+=r.heat*a.f; } }));
   const keys=[...new Set([...am.keys(),...pm.keys()])].sort(), lbl=k=>gran==='day'?k.slice(8,10)+'.'+k.slice(5,7):k;
   const rows=keys.map(k=>{ const o=am.get(k)||{coKwh:0,cwuKwh:0,coCost:0,cwuCost:0,dayKwh:0}, p=pm.get(k), c=cm.get(k), hp=o.coKwh+o.cwuKwh, pv=p?p.kwh:0; return {k,co:o.coKwh,cwu:o.cwuKwh,hp,day:o.dayKwh||0,cost:o.coCost+o.cwuCost,pv,hasPv:!!p,c,b:pvBalance(hp,o.dayKwh||0,pv)}; });
-  const T={co:sum(rows,r=>r.co),cwu:sum(rows,r=>r.cwu),hp:sum(rows,r=>r.hp),day:sum(rows,r=>r.day),cost:sum(rows,r=>r.cost),pv:sum(rows,r=>r.pv),h:sum(rows,r=>r.c&&r.c.h),Eh:sum(rows,r=>r.c&&r.c.Eh),heat:sum(rows,r=>r.c&&r.c.heat)}; T.b=pvBalance(T.hp,T.day,T.pv);
+  const T={co:sum(rows,r=>r.co),cwu:sum(rows,r=>r.cwu),hp:sum(rows,r=>r.hp),day:sum(rows,r=>r.day),cost:sum(rows,r=>r.cost),pv:sum(rows,r=>r.pv),h:sum(rows,r=>r.c&&r.c.h),Eh:sum(rows,r=>r.c&&r.c.Eh),heat:sum(rows,r=>r.c&&r.c.heat)}; { const rp=rows.filter(r=>r.hasPv); T.b=pvBalance(sum(rp,r=>r.hp),sum(rp,r=>r.day),T.pv); }
   const balC=(b,has)=>has?`<span style="color:${b.bal>=0?'var(--ok)':'var(--danger)'}">${b.bal>=0?'+':''}${b.bal.toFixed(1)}</span>`:'—';
   const covC=(b,has)=>has&&b.coverPct!=null?b.coverPct.toFixed(0)+'%':'—';
-  $('dashGranNote').textContent=`Wiersze: ${gran==='day'?'dni':gran==='week'?'tygodnie':'miesiące'} z wpisami (${rows.length}). „Brak” przy PV = brak wpisów produkcji w tym wierszu. Bilans po opuście: nadwyżka PV (po odjęciu poboru w godzinach PV) × opust − pobór z sieci; wiersz RAZEM liczony jest łącznie, nie jako suma wierszy.`;
-  $('dashMonths').innerHTML=rows.length?'<table class="rc"><thead><tr><th>Okres</th><th>Pompa kWh</th><th>w tym CO</th><th>w tym CWU</th><th>Koszt zł</th><th>Pompa w godz. PV kWh</th><th>Pompa z sieci kWh</th><th>PV kWh</th><th>Bilans po opuście kWh</th><th>Pokrycie przez PV</th><th>COP</th><th>Czas pracy (COP)</th></tr></thead><tbody>'+rows.map(r=>
-    `<tr><td class="num">${lbl(r.k)}</td><td class="num"><b>${r.hp.toFixed(1)}</b></td><td class="num">${r.co.toFixed(1)}</td><td class="num">${r.cwu.toFixed(1)}</td><td class="num">${r.cost.toFixed(2)}</td><td class="num">${r.b.Eday.toFixed(1)}</td><td class="num">${r.b.grid.toFixed(1)}</td><td class="num">${r.hasPv?r.pv.toFixed(1):'brak'}</td><td class="num">${balC(r.b,r.hasPv)}</td><td class="num">${covC(r.b,r.hasPv)}</td><td class="num"><b>${r.c&&r.c.Eh>0?'≈ '+(r.c.heat/r.c.Eh).toFixed(2):'—'}</b></td><td class="num">${r.c?fmtHM(r.c.h):'—'}</td></tr>`).join('')
-    +`</tbody><tfoot><tr style="font-weight:700"><td>RAZEM</td><td class="num">${T.hp.toFixed(1)}</td><td class="num">${T.co.toFixed(1)}</td><td class="num">${T.cwu.toFixed(1)}</td><td class="num">${T.cost.toFixed(2)}</td><td class="num">${T.b.Eday.toFixed(1)}</td><td class="num">${T.b.grid.toFixed(1)}</td><td class="num">${T.pv.toFixed(1)}</td><td class="num">${balC(T.b,true)}</td><td class="num">${covC(T.b,true)}</td><td class="num">${T.Eh>0?'≈ '+(T.heat/T.Eh).toFixed(2):'—'}</td><td class="num">${T.h?fmtHM(T.h):'—'}</td></tr></tfoot></table>`:'<div class="empty">Brak danych.</div>';
+  $('dashGranNote').textContent=`Wiersze: ${gran==='day'?'dni':gran==='week'?'tygodnie':'miesiące'} z wpisami (${rows.length}). „Brak” przy PV = brak wpisów produkcji w tym wierszu. Nadwyżka brutto = PV − pobór bezpośredni w godzinach PV; „do odbioru po opuście” = nadwyżka × opust (to jest energia realnie dostępna); bilans = do odbioru − pobór z sieci. Wiersz RAZEM liczony jest łącznie, nie jako suma wierszy.`;
+  $('dashMonths').innerHTML=rows.length?'<table class="rc"><thead><tr><th>Okres</th><th>Pompa kWh</th><th>w tym CO</th><th>w tym CWU</th><th>Koszt zł</th><th>Pompa w godz. PV kWh</th><th>Pompa z sieci kWh</th><th>PV kWh</th><th>Nadwyżka do sieci (brutto) kWh</th><th>Do odbioru po opuście kWh</th><th>Bilans (odbiór − pobór) kWh</th><th>Pokrycie przez PV</th><th>COP</th><th>Czas pracy (COP)</th></tr></thead><tbody>'+rows.map(r=>
+    `<tr><td class="num">${lbl(r.k)}</td><td class="num"><b>${r.hp.toFixed(1)}</b></td><td class="num">${r.co.toFixed(1)}</td><td class="num">${r.cwu.toFixed(1)}</td><td class="num">${r.cost.toFixed(2)}</td><td class="num">${r.b.Eday.toFixed(1)}</td><td class="num">${r.b.grid.toFixed(1)}</td><td class="num">${r.hasPv?r.pv.toFixed(1):'brak'}</td><td class="num">${r.hasPv?r.b.surplus.toFixed(1):'—'}</td><td class="num">${r.hasPv?r.b.credit.toFixed(1):'—'}</td><td class="num">${balC(r.b,r.hasPv)}</td><td class="num">${covC(r.b,r.hasPv)}</td><td class="num"><b>${r.c&&r.c.Eh>0?'≈ '+(r.c.heat/r.c.Eh).toFixed(2):'—'}</b></td><td class="num">${r.c?fmtHM(r.c.h):'—'}</td></tr>`).join('')
+    +`</tbody><tfoot><tr style="font-weight:700"><td>RAZEM<div class="note" style="font-size:.68rem;font-weight:400">bilans: tylko okresy z PV</div></td><td class="num">${T.hp.toFixed(1)}</td><td class="num">${T.co.toFixed(1)}</td><td class="num">${T.cwu.toFixed(1)}</td><td class="num">${T.cost.toFixed(2)}</td><td class="num">${T.b.Eday.toFixed(1)}</td><td class="num">${T.b.grid.toFixed(1)}</td><td class="num">${T.pv.toFixed(1)}</td><td class="num">${T.b.surplus.toFixed(1)}</td><td class="num">${T.b.credit.toFixed(1)}</td><td class="num">${balC(T.b,true)}</td><td class="num">${covC(T.b,true)}</td><td class="num">${T.Eh>0?'≈ '+(T.heat/T.Eh).toFixed(2):'—'}</td><td class="num">${T.h?fmtHM(T.h):'—'}</td></tr></tfoot></table>`:'<div class="empty">Brak danych.</div>';
   const cats=keys.map(lbl);
-  setCW('dashBalChart',1); $('dashBalChart').innerHTML=keys.length?svgGroup(cats,[{name:'Pompa (CO+CWU) kWh',color:'#e0904f',values:rows.map(r=>+r.hp.toFixed(2))},{name:'Pompa z sieci (poza godz. PV) kWh',color:'#c0504d',values:rows.map(r=>+r.b.grid.toFixed(2))},{name:'PV — produkcja kWh',color:'#e8c547',values:rows.map(r=>+r.pv.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
+  setCW('dashBalChart',1); $('dashBalChart').innerHTML=keys.length?svgGroup(cats,[{name:'Pompa (CO+CWU) kWh',color:'#e0904f',values:rows.map(r=>+r.hp.toFixed(2))},{name:'Pompa z sieci (poza godz. PV) kWh',color:'#c0504d',values:rows.map(r=>+r.b.grid.toFixed(2))},{name:'PV — produkcja kWh',color:'#e8c547',values:rows.map(r=>+r.pv.toFixed(2))},{name:'PV do odbioru po opuście kWh',color:'#5fb87a',values:rows.map(r=>+r.b.credit.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
   setCW('dashCoWrap',1); $('dashCoWrap').innerHTML=keys.length?svgBars(cats,[{name:'CO',color:'#e0904f',values:rows.map(r=>+r.co.toFixed(2))},{name:'CWU',color:'#49b4cf',values:rows.map(r=>+r.cwu.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
   const last=S.items.slice().sort((a,b)=>b.P.start.localeCompare(a.P.start)).slice(0,6);
   $('dashPeriods').innerHTML=last.length?'<table class="rc"><thead><tr><th>Start</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P:PP,r})=>`<tr><td class="num">${fmtY(PP.start)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${PP.mode==='CWU'?'cwu':'co'}">${PP.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP w tym okresie.</div>';
@@ -3411,11 +3455,79 @@ function pvBalance(E,Eday,pv){
   const op=(SET.pvMode==='opusty')?(SET.pvOpust>0?+SET.pvOpust:0.8):1;
   Eday=Math.min(E,Math.max(0,Eday||0));
   const direct=Math.min(Eday,pv||0), surplus=Math.max(0,(pv||0)-direct), credit=surplus*op, grid=E-direct, covered=Math.min(grid,credit);
-  return {E,Eday,direct,surplus,credit,grid,covered,bal:credit-grid,op,coverPct:E>0?(direct+covered)/E*100:null};
+  return {E,Eday,direct,surplus,credit,grid,covered,rest:Math.max(0,grid-credit),left:Math.max(0,credit-grid),bal:credit-grid,op,coverPct:E>0?(direct+covered)/E*100:null};
 }
 function wxSavePvWin(){
   const a=parseFloat($w('wx_minrad').value), b=parseFloat($w('wx_edge').value);
   if(!isNaN(a)&&a>=0) SET.pvMinRad=a; if(!isNaN(b)&&b>=0) SET.pvEdge=b; persist();
+}
+
+
+/* ===================== AUTOMAT: produkcja PV z SolaX i cykle pompy z Warmlinka ===================== */
+/* sumy dzienne z falownika → wpisy PV (tylko dni zakończone, bez wpisu ręcznego); usunięty wpis auto nie wraca */
+async function hubLoadAllDays(force){
+  if(!hubCfg()||HUBC.adBusy) return; if(!force&&HUBC.adAt&&Date.now()-HUBC.adAt<4*3600000) return; HUBC.adBusy=true;
+  try{
+    const dts=[...R.map(r=>r.date),...PV.map(p=>p.date)].filter(Boolean).sort(), from=(dts[0]&&dts[0]<'2025-10-01'?dts[0]:'2025-10-01'), to=ymd(new Date());
+    const dj=await hubGet('days',{from,to},60000); (dj.rows||[]).forEach(r=>{ HUBC.days[r.d]=r; }); HUBC.adAt=Date.now(); hubSave();
+    const have=new Set(PV.map(p=>p.date)), skip=new Set(SET.pvNoAuto||[]), mode=SET.pvMode||'netbilling', op=mode==='opusty'?(SET.pvOpust||0):1; let n=0, n0=0;
+    PV.forEach(p=>{ if(p.src&&p.src.indexOf('hub-auto')===0){ const r=HUBC.days[p.date]; if(r&&r.y>0&&p.date<to&&Math.abs(p.kwh-r.y)>0.05){ pvAutoSet(p,r.y); p.src='hub-auto'; n0++; } } });
+    Object.values(HUBC.days).sort((a,b)=>a.d<b.d?-1:1).forEach(r=>{ if(!r.d||r.d>=to||!(r.y>0)||have.has(r.d)||skip.has(r.d)) return;
+      const kwh=+(+r.y).toFixed(2), price=SET.pvPrice||0, credit=+(kwh*op).toFixed(3);
+      PV.push({id:uid(),date:r.d,kwh,price,mode,opust:op,creditKwh:credit,value:+(credit*price).toFixed(2),note:'auto z SolaX (hub)',src:'hub-auto',srcKwh:'hub'}); n++; });
+    if(n||n0){ await persist(); }
+  }catch(e){ HUBC.adErr=e.message; } finally{ HUBC.adBusy=false; }
+}
+function pvAutoSet(p,kwh){ const mode=SET.pvMode||'netbilling', op=mode==='opusty'?(SET.pvOpust||0):1, k=+(+kwh).toFixed(2), c=+(k*op).toFixed(3); p.kwh=k; p.creditKwh=c; p.opust=op; p.mode=mode; p.value=+(c*(p.price||SET.pvPrice||0)).toFixed(2); }
+/* dzisiejszy wpis PV: powstaje, gdy falownik zacznie produkować, i rośnie z licznikiem dnia (po północy dostaje wartość końcową) */
+let PV_TODAY_AT=0;
+async function pvAutoToday(){
+  const L=HUBC.live&&HUBC.live.sx, d=ymd(new Date()); if(!L||!(L.yt>0)||(SET.pvNoAuto||[]).includes(d)||Date.now()-PV_TODAY_AT<5*60000) return; PV_TODAY_AT=Date.now();
+  let p=PV.find(x=>x.date===d);
+  if(!p){ p={id:uid(),date:d,kwh:0,price:SET.pvPrice||0,note:'auto z SolaX (hub) — dzień trwa',src:'hub-auto-live',srcKwh:'hub'}; pvAutoSet(p,L.yt); PV.push(p); await persist(); }
+  else if(p.src&&p.src.indexOf('hub-auto')===0&&Math.abs(p.kwh-L.yt)>0.05){ pvAutoSet(p,L.yt); p.src='hub-auto-live'; await persist(); }
+}
+/* przebiegi sprężarki z Warmlinka → szkice cykli (bez zużycia energii — to dopisuje użytkownik) */
+async function hubAutoCycles(){
+  if(!hubCfg()||HUBC.acBusy) return; HUBC.acBusy=true;
+  try{
+    const today=new Date(), from0=SET.acLast&&SET.acLast>ymd(new Date(Date.now()-14*864e5))?SET.acLast:ymd(new Date(Date.now()-10*864e5));
+    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal(),step:5},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), run=rows.filter(r=>r.T30>0);
+    const segs=[]; run.forEach(r=>{ const L=segs[segs.length-1]; if(L&&Date.parse(r.ts)-Date.parse(L.last)<=25*60000) L.last=r.ts; else segs.push({first:r.ts,last:r.ts}); });
+    let changed=false; const nowMs=Date.now();
+    segs.forEach(sg=>{
+      const st=sg.first.slice(0,16), running=nowMs-Date.parse(sg.last)<=12*60000, en=running?null:toLocalStr(Date.parse(sg.last)+5*60000);
+      if(!running&&(Date.parse(en)-Date.parse(st))/60000<10) return;                      // zbyt krótkie — szum
+      const endMs=en?Date.parse(en):nowMs, ov=(a0,a1)=>Date.parse(a0)<endMs&&(a1?Date.parse(a1):nowMs)>Date.parse(st);
+      const ex=R.find(r=>r.start&&ov(r.start,r.end));
+      const S=hubWlSummary(rows,st,en||nowLocal()), a=rows.find(r=>r.ts>=st&&r.T30>0)||null, zr=[...rows].reverse().find(r=>r.T30>0&&r.ts<=(en||'9999'))||null;
+      const rdOf=(r,ts)=>({ts,c1:true,c2:true,def:false,k:null,t01:r?r.T01:null,t02:r?r.T02:null,t04:r?r.T04:null,flow:r?r.T39:null,hz:r?r.T30:null,volt:r?r.T34:null,amp:r?r.T35:null,p:null});
+      const wls=S.n&&S.cover?{run:Math.round(S.runMin),def:Math.round(S.defMin),t04:S.t04!=null?+S.t04.toFixed(1):undefined,hz:S.hz||undefined,src:'warmlink'}:undefined;
+      if(ex){ if(ex.auto){ const mm=ex.mid&&M.find(m=>m.id===ex.mid);
+          if(en&&!ex.end){ ex.end=en; ex.open=undefined; ex.wls=wls||ex.wls; changed=true; if(mm&&!mm.end){ mm.end=en; mm.open=undefined; mm.rd[mm.rd.length-1]=rdOf(zr,en); if(wls){ mm.runMin=wls.run; mm.defMin=wls.def; } } }
+          else if(!en&&wls){ ex.wls=wls; changed=true; } } return; }
+      if(M.some(m=>m.start&&ov(m.start,m.end))) return;                                   // jest już okres COP z tego czasu
+      const inWin=rows.filter(r=>r.ts>=st&&r.ts<=(en||'9999')&&r.T08>0), rise=inWin.length>1?inWin[inWin.length-1].T08-inWin[0].T08:0, type=rise>=2?'CWU':'CO';
+      const t04=a&&a.T04!=null?a.T04:null, price=SET.price||0;
+      const mid=uid(), rid=uid();
+      R.push(type==='CO'?{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,out1:t04,out2:null,rad:null,slope:null,offset:null,kwh:null,price,note:'',auto:true,guess:true,wls}
+                       :{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,t1:a&&a.T08>0?a.T08:null,t2:null,out:t04,kwh:null,price,note:'',auto:true,guess:true,wls});
+      M.push({id:mid,rid,mode:type,date:st.slice(0,10),start:st,end:en||'',open:en?undefined:true,kwh:null,defMin:wls?wls.def:0,runMin:wls?wls.run:0,rd:[rdOf(a,st),rdOf(en?zr:null,en||'')],res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true});
+      changed=true; });
+    SET.acLast=ymd(new Date(Date.now()-2*864e5)); if(changed){ await persist(); }
+    renderTodo();
+  }catch(e){ HUBC.acErr=e.message; } finally{ HUBC.acBusy=false; }
+}
+/* „Do uzupełnienia” — jedyne, co musi dopisać użytkownik (zużycie energii) */
+function syncAutoEnergy(){ R.forEach(r=>{ if(!r.mid) return; const m=M.find(x=>x.id===r.mid); if(!m) return;
+  if(r.kwh>0&&!(m.kwh>0)&&!(m.rd||[]).some(x=>x&&x.k!=null)) m.kwh=r.kwh;               /* zużycie wpisane raz (w cyklu) trafia też do okresu COP */
+  if(r.end&&!m.end){ m.end=r.end; m.open=undefined; if(m.rd&&m.rd.length) m.rd[m.rd.length-1].ts=r.end; } }); }
+function renderTodo(){
+  const todo=R.filter(r=>r.auto&&(r.kwh==null||r.kwh==='')).sort((a,b)=>b.start.localeCompare(a.start)), openM=M.filter(m=>m.start&&!m.end);
+  const html=(todo.length||HUBC.acErr)?`<div class="card todo"><h2 style="margin-bottom:6px">📝 Do uzupełnienia: ${todo.length} ${todo.length===1?'cykl':'cykle/cykli'} wykryte automatycznie</h2><div class="note" style="margin:0 0 6px">System sam wykrył uruchomienia pompy z Warmlinka i dopisał dane z pompy i falownika. Brakuje tylko <b>zużycia energii (kWh)</b> — nie ma jej w żadnym monitoringu. Wpisz stan licznika (lub kWh) w „Uzupełnij”. Typ CO/CWU jest zgadnięty na podstawie temperatury zasobnika — popraw, jeśli się pomylił.</div>`
+    +todo.slice(0,12).map(r=>`<div class="it"><span class="pill ${r.type==='CWU'?'cwu':'co'}">${r.type}</span><b>${fmtY(r.start)}</b> → ${r.end?fmtY(r.end):'<span class="pill open">w toku</span>'} · ${r.end?fmtDur(durMin(r.start,r.end)):''}${r.wls&&r.wls.run!=null?' · sprężarka '+r.wls.run+' min':''}<span style="flex:1"></span><button class="btn2 edit" onclick="editRecord('${r.id}')">Uzupełnij zużycie</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></div>`).join('')
+    +(todo.length>12?`<div class="note">…i ${todo.length-12} starszych (zakładka „Dane”).</div>`:'')+(HUBC.acErr?`<div class="warnline bad">Automat cykli: ${wxEsc(HUBC.acErr)}</div>`:'')+'</div>':'';
+  document.querySelectorAll('.todoBox').forEach(e=>{ e.innerHTML=html; });
 }
 
 /* ===================== HUB (Warmlink + SolaX przez Arkusz Google) ===================== */
@@ -3646,7 +3758,9 @@ async function hubPvAuto(force){
     if(d===ymd(new Date())){ const j=await hubGet('live',{}); y=j.sx&&j.sx.yt; txt='dotychczasowa produkcja dziś (dzień jeszcze trwa)'; }
     else { let row=HUBC.days[d]; if(!row){ let j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; if(!row){ try{ await hubGet('sxfill',{d},45000); j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; }catch(e){} } if(row){ HUBC.days[d]=row; hubSave(); } } if(row){ y=row.y; txt='szczyt '+(row.pk!=null?(row.pk/1000).toFixed(2)+' kW':'—')+(row.h0?', praca '+row.h0+'–'+row.h1:''); } }
     if(y==null){ info.textContent='Nie udało się pobrać produkcji z tego dnia z SolaX (krzywa mocy sięga roku wstecz, sumy dzienne — od startu instalacji). Wpisz ręcznie.'; return; }
-    hubPut($w('pv_kwh'),y,force); info.textContent='Z huba (SolaX): '+y+' kWh — '+txt+'. Możesz zmienić ręcznie.';
+    hubPut($w('pv_kwh'),y,force); info.textContent='';
+    { let big=$w('pv_hubbig'); if(!big){ big=document.createElement('div'); big.id='pv_hubbig'; const hb=$w('pv_hub'); hb.insertBefore(big,hb.children[1]||null); }
+      big.innerHTML='<div class="tiles pvt" style="margin:8px 0"><div class="tile"><div class="tv">'+(+y).toFixed(1)+' kWh</div><div class="tl">wyprodukowało PV — '+(d===ymd(new Date())?'dziś do teraz (dzień trwa)':fmtDpl(d))+'</div><div class="ts">'+txt+'</div></div><div class="tile"><div class="tv" style="font-size:1rem!important">wpisano w pole „Produkcja (kWh)”</div><div class="tl">Możesz zmienić ręcznie; zapis dopiero po „Zapisz wpis PV”.</div></div></div>'; }
   }catch(err){ info.textContent='Hub: '+err.message+' — wpisz ręcznie.'; }
 }
 function hubPvSrc(){ const e=$w('pv_kwh'); return (e.dataset.auto==='1'&&e.dataset.manual!=='1')?'solax':undefined; }
@@ -3729,7 +3843,7 @@ async function hubRefreshLive(fresh){
     hubGet('wl',{from,to:now,step:10},40000).then(j=>{ HUBC.wl24=j.rows||[]; }).catch(()=>{}),
     hubGet('days',{from:addDaysS(ymd(new Date()),-rg),to:ymd(new Date())},40000).then(dj=>{ const rows=dj.rows||[]; rows.forEach(r=>HUBC.days[r.d]=r); HUBC.daysInfo={n:rows.length,from:rows.length?rows[0].d:'',to:rows.length?rows[rows.length-1].d:'',rg}; HUBC.daysErr=null; hubSave(); }).catch(e=>{ HUBC.daysErr=e.message; })
   ]);
-  HUBC.liveBusy=false; if(btn){ btn.disabled=false; btn.textContent='↻ Odśwież teraz'; } renderLive(); try{ renderPvDay(false); hubRunHint(); }catch(e){}
+  HUBC.liveBusy=false; if(btn){ btn.disabled=false; btn.textContent='↻ Odśwież teraz'; } renderLive(); try{ renderPvDay(false); hubRunHint(); pvAutoToday(); }catch(e){}
 }
 function svgLive(rows){
   if(!rows||rows.length<2) return '<div class="empty">Brak odczytów z ostatnich 24 h (hub zbiera dane co 5 min).</div>';
@@ -3768,6 +3882,7 @@ function renderLive(){
 }
 setInterval(()=>{ const t=$w('live'); if(t&&t.classList.contains('on')&&hubCfg()&&!HUBC.liveBusy&&Date.now()-HUBC.liveAt>60000) hubRefreshLive(false); },15000);
 function hubInit(){ if(hubCfg()&&Date.now()-(HUBC.sxAt||0)>10*60000) setTimeout(hubPrefetchSx,1200); }
+function hubClearPvBig(){ const b=document.getElementById('pv_hubbig'); if(b) b.innerHTML=''; }
 function hubClearPv(){ const i=$w('pv_hubinfo'); if(i) i.textContent=''; const e=$w('pv_kwh'); if(e){ delete e.dataset.auto; delete e.dataset.manual; } }
 
 /* --- stronicowanie: w każdej tabeli max 31 wpisów na stronę (tyle, ile ma najdłuższy miesiąc) --- */
@@ -3798,9 +3913,10 @@ function labelRc(){
   paginateTables();
   fitRc();
 }
-function renderAll(){ try{ hubRunHint(); }catch(e){} renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); renderDiskInfo(); renderApiTab(); renderLive(); labelRc(); }
+function renderAll(){ try{ hubRunHint(); renderTodo(); }catch(e){} renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); renderDiskInfo(); renderApiTab(); renderLive(); labelRc(); }
 renderAll();
 startupInit();
+setTimeout(()=>{ if(hubCfg()){ hubLoadAllDays(); hubAutoCycles(); } },4000); setInterval(()=>{ if(hubCfg()){ hubAutoCycles(); hubLoadAllDays(); } },10*60000);
 { let lt=null; new MutationObserver(()=>{ clearTimeout(lt); lt=setTimeout(labelRc,0); }).observe(document.querySelector('main'),{childList:true,subtree:true}); }
 if('serviceWorker' in navigator){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
 </script>
