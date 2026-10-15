@@ -951,6 +951,7 @@ details.card[open]>summary{margin-bottom:12px}
     <label>Zestawienie wg</label><select id="ch_gran" onchange="renderCopHist()"><option value="day">Dnia</option><option value="week">Tygodnia</option><option value="month" selected>Miesiąca</option><option value="year">Roku</option></select>
     <label>Okres pracy liczyć do</label><select id="ch_alloc" onchange="renderCopHist()"><option value="start" selected>dnia uruchomienia (jak w „Dane”)</option><option value="split">dób kalendarzowych (dzielony o północy)</option></select>
     <button onclick="exportCopCsv()">Eksport CSV</button>
+    <button onclick="hubBackfillM()">☁ Uzupełnij okresy z Warmlinka</button> <span class="note" id="ch_bf"></span>
   </div>
   <div class="cap" id="ch_cap"></div>
   <div class="stats" id="ch_stats"></div>
@@ -2664,11 +2665,17 @@ function calcPeriod(P,opt){
     if(defH>=r.hours) add('bad','Czas odszraniania nie może być dłuższy niż okres pracy.');
     else {
       const activeH=r.hours-defH; let runH=null, runSrc='';
-      if(P.runMin>0){ runH=P.runMin/60; runSrc='wpisany ręcznie'; if(runH>r.hours){ add('warn','Czas pracy sprężarki ('+fmtHM(runH)+') jest dłuższy niż okres ('+fmtHM(r.hours)+') — ograniczono do długości okresu.'); runH=r.hours; } }
+      if(P.runMin>0){ runH=P.runMin/60; runSrc=(P.src&&/warmlink/i.test(P.src))?'z Warmlinka':'wpisany / z Warmlinka';
+        const maxS=Math.max(0,...rds.map(x=>x.S||0)), lim=Math.max(6,1.3*maxS), pr=r.E>0?r.E/runH:null;
+        if(pr!=null&&pr>lim){ add('warn','Podany czas pracy sprężarki ('+fmtHM(runH)+') jest niemożliwy: przy zużyciu '+r.E.toFixed(2)+' kWh dawałby pobór '+pr.toFixed(1)+' kW (pompa pobiera najwyżej ok. '+lim.toFixed(0)+' kW). Zignorowano — uzupełnij odczyty z Warmlinka („☁ Uzupełnij okresy z Warmlinka”) albo wpisz poprawny czas pracy.'); runH=null; runSrc=''; r.runBad=true; }
+        else if(runH>r.hours){ add('warn','Czas pracy sprężarki ('+fmtHM(runH)+') jest dłuższy niż okres ('+fmtHM(r.hours)+') — ograniczono do długości okresu.'); runH=r.hours; } }
       const pv=rds.filter(x=>x.valid&&x.p!=null&&x.p>0);
       if(pv.length){ r.pRun=pv.reduce((a,x)=>a+x.p,0)/pv.length; r.copInst=pv.reduce((a,x)=>a+x.q,0)/pv.reduce((a,x)=>a+x.p,0); r.nInst=pv.length; }
       r.copFull=(r.E>0)?r.q*activeH/r.E:null;
       if(runH==null&&r.E>0&&r.pRun>0){ const est=r.E/r.pRun; if(est<0.8*activeH){ runH=est; runSrc='oszacowany z licznika: E ÷ średnia moc chwilowa'; r.runAuto=true; } }
+      if(runH==null&&r.E>0&&!(r.pRun>0)&&r.hours>2){        /* brak czasu pracy i mocy chwilowej: typowy pobór podczas pracy z innych okresów tego trybu */
+        const pw=M.filter(m=>m.id!==P.id&&m.mode===P.mode&&m.runMin>0&&m.kwh>0).map(m=>m.kwh/(m.runMin/60)).filter(v=>v>0.8&&v<6);
+        if(pw.length>=1){ const mp=med(pw), est=r.E/mp; if(est<0.9*activeH){ runH=est; runSrc='oszacowany: zużycie ÷ typowy pobór podczas pracy ('+mp.toFixed(1)+' kW, z '+pw.length+' '+(pw.length===1?'okresu':'okresów')+')'; r.runHist=true; } } }
       r.runH=runH!=null?runH:activeH; r.runSrc=runSrc||(defH>0?'cały okres bez odszraniania':'cały okres');
       r.heat=r.q*r.runH;
     }
@@ -2711,7 +2718,8 @@ function calcPeriod(P,opt){
 
   /* --- kontrole wiarygodności --- */
   if(r.heat!=null&&r.E>0){
-    if(r.runAuto) add('warn','Licznik pokazuje średni pobór '+r.pel.toFixed(2)+' kW, a przy odczytach pompa pobierała średnio '+r.pRun.toFixed(2)+' kW — więc sprężarka pracowała tylko ok. '+fmtHM(r.runH)+' z '+fmtHM(r.hours)+'. Ciepło policzono dla tego czasu (COP '+r.cop.toFixed(2)+' zamiast '+r.copFull.toFixed(2)+' przy założeniu pracy bez przerwy). Jeśli znasz faktyczny czas pracy, wpisz go w sekcji 1.');
+    if(r.runHist) add('warn','Brak czasu pracy sprężarki i mocy chwilowej — czas pracy ('+fmtHM(r.runH)+' z '+fmtHM(r.hours)+') OSZACOWANO z typowego poboru innych okresów. COP '+r.cop.toFixed(2)+' jest przybliżony (przy pracy przez cały okres wyszłoby '+(r.copFull!=null?r.copFull.toFixed(2):'—')+'). Uzupełnij odczyty z Warmlinka, aby policzyć go dokładnie.');
+    else if(r.runAuto) add('warn','Licznik pokazuje średni pobór '+r.pel.toFixed(2)+' kW, a przy odczytach pompa pobierała średnio '+r.pRun.toFixed(2)+' kW — więc sprężarka pracowała tylko ok. '+fmtHM(r.runH)+' z '+fmtHM(r.hours)+'. Ciepło policzono dla tego czasu (COP '+r.cop.toFixed(2)+' zamiast '+r.copFull.toFixed(2)+' przy założeniu pracy bez przerwy). Jeśli znasz faktyczny czas pracy, wpisz go w sekcji 1.');
     else if(!(P.runMin>0)&&r.Savg>0&&r.pRun==null){ const f=r.pel/(r.Savg*0.9); if(f<0.6) add('warn','Średni pobór z licznika ('+r.pel.toFixed(2)+' kW) to zaledwie ok. '+Math.round(f*100)+'% poboru podczas pracy (S ≈ '+r.Savg.toFixed(2)+' kVA z T34·T35). Prawdopodobnie sprężarka pracowała tylko ok. '+fmtHM(r.hours*f)+' z '+fmtHM(r.hours)+', a ciepło liczone jest na cały okres — COP wychodzi zawyżony. Wpisz w sekcji 1 „Czas faktycznej pracy sprężarki” (sugestia: ok. '+Math.round(r.hours*f*60)+' min) albo podaj chwilowe moce z licznika.'); }
     if(r.copInst!=null){ add('info','COP z odczytów chwilowych (Q ÷ moc z licznika, '+r.nInst+' odczyt'+(r.nInst>1?'y':'')+'): '+r.copInst.toFixed(2)+'. To kontrola — dotyczy chwil pracy, nie całego okresu.');
       if(!r.runAuto&&!(P.runMin>0)&&r.cop>r.copInst*1.35) add('warn','COP z całego okresu ('+r.cop.toFixed(2)+') jest o '+Math.round((r.cop/r.copInst-1)*100)+'% wyższy niż z odczytów chwilowych ('+r.copInst.toFixed(2)+'). Zwykle znaczy to, że ciepło liczone jest za długo (pompa stała) albo zużycie z licznika jest za małe. Sprawdź czas pracy sprężarki i daty.'); }
@@ -3577,6 +3585,25 @@ async function cpSnap(){
     const running=!g.boundaryEnd&&Date.now()-Date.parse(g.last)<=12*60000;
     cpEl('cp_start').value=g.first.slice(0,16); cpEl('cp_end').value=running?'':segEnd(g); cpEl('cp_mode').value=g.mode; liveCop(); await hubFillAll(true);
   }catch(e){ hubMsgSet('Warmlink: '+e.message); }
+}
+
+/* ☁ uzupełnia PUSTE pola odczytów (T01, T02, T04, T39, T30, T34, T35) i czas pracy we wszystkich zakończonych okresach — niczego nie nadpisuje */
+async function hubBackfillM(){
+  const el=$w('ch_bf'); if(!hubCfg()){ if(el) el.textContent='Najpierw skonfiguruj hub (zakładka „Na żywo”).'; return; }
+  if(HUBC.bfmBusy) return; HUBC.bfmBusy=true; const list=M.filter(m=>m.start&&m.end&&m.rd&&m.rd.length>=2); let filled=0, touched=0, nodata=0, err=0;
+  const KEYS=[['t01','T01'],['t02','T02'],['t04','T04'],['flow','T39'],['hz','T30'],['volt','T34'],['amp','T35']];
+  const fill=(x,r)=>{ if(!x||!r) return 0; let n=0; KEYS.forEach(([k,c])=>{ if(r[c]!=null&&(x[k]==null||x[k]==='')){ x[k]=r[c]; n++; } }); return n; };
+  try{
+    for(let i=0;i<list.length;i++){ const m=list[i]; if(el) el.textContent='Uzupełniam '+(i+1)+' / '+list.length+'…';
+      try{ const rows=await wlSnapFetch(m.start,m.end); if(!rows.length){ nodata++; continue; }
+        const X=hubWlCtx(rows,m.start,m.end), rd=m.rd; let n=0;
+        n+=fill(rd[0],X.pick(m.start,1)); n+=fill(rd[rd.length-1],X.pick(m.end,-1)); rd.slice(1,-1).forEach(x=>{ if(x&&x.ts) n+=fill(x,X.near(x.ts,12)); });
+        const S=hubWlSummary(rows,m.start,m.end);
+        if(S.n&&S.cover){ const badRun=m.runMin>0&&m.kwh>0&&m.kwh/(m.runMin/60)>6; if((!(m.runMin>0)||badRun)&&S.runMin>0){ m.runMin=Math.round(S.runMin); n++; } if(!(m.defMin>0)&&S.defMin>0){ m.defMin=Math.round(S.defMin); n++; } }
+        if(n){ filled+=n; touched++; } }catch(e){ err++; } }
+    if(touched) await persist(); renderAll();
+    if(el) el.textContent='Gotowe: uzupełniono '+filled+' pól w '+touched+' okresach'+(nodata?' · '+nodata+' bez danych w hubie (starsze niż hub)':'')+(err?' · '+err+' błędów':'')+'.';
+  }finally{ HUBC.bfmBusy=false; }
 }
 
 /* ===================== HUB (Warmlink + SolaX przez Arkusz Google) ===================== */
