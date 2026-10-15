@@ -2045,6 +2045,7 @@ function editRecord(id){
   const r=R.find(x=>x.id===id); if(!r) return;
   document.querySelector('nav button[data-tab="dodaj"]').click();
   setType(r.type); editId=id;
+  EDIT_ORIG={id,start:r.start||'',end:r.end||''}; ['co_start','co_end','w_start','w_end'].forEach(x=>{ const e=document.getElementById(x); if(e) delete e.dataset.userTouched; });
   document.getElementById('cancelEditBar').style.display='flex';
   if(r.type==='CO'){
     document.getElementById('co_start').value=r.start; document.getElementById('co_end').value=r.end||'';
@@ -2066,14 +2067,15 @@ function editRecord(id){
 }
 
 async function addCO(){
-  const start=document.getElementById('co_start').value, end=document.getElementById('co_end').value;
+  const lk=(id,k)=>{ const e=document.getElementById(id); return (editId&&EDIT_ORIG&&EDIT_ORIG.id===editId&&!e.dataset.userTouched)?EDIT_ORIG[k]:e.value; };
+  const start=lk('co_start','start'), end=lk('co_end','end');
   if(!start){alert('Podaj datę i godzinę startu.');return;}
   if(end&&new Date(end)<new Date(start)){alert('Koniec jest wcześniejszy niż start — sprawdź datę i godzinę.');return;}
   const out1=parseFloat(document.getElementById('co_out1').value), out2=parseFloat(document.getElementById('co_out2').value);
   const slope=parseFloat(document.getElementById('co_slope').value), off=parseFloat(document.getElementById('co_offset').value);
   const t1=(!isNaN(out1)&&!isNaN(slope)&&!isNaN(off))?+(off-slope*out1).toFixed(2):null;
   const t2=(!isNaN(out2)&&!isNaN(slope)&&!isNaN(off))?+(off-slope*out2).toFixed(2):null;
-  const rec={type:'CO',guess:false,date:start.slice(0,10),start,end:end||null,open:!end||undefined,
+  const rec={type:'CO',guess:false,auto:undefined,date:start.slice(0,10),start,end:end||null,open:!end||undefined,
     rad:document.getElementById('co_rad').value||null,out1:isNaN(out1)?null:out1,out2:isNaN(out2)?null:out2,
     slope:isNaN(slope)?null:slope,offset:isNaN(off)?null:off,target1:t1,target2:t2,kwh:parseFloat(document.getElementById('co_kwh').value)||null,
     price:parsedPrice('co_price'),
@@ -2088,10 +2090,11 @@ async function addCO(){
   syncAutoEnergy(); await persist(); alert((wasEdit?'Zaktualizowano cykl CO.':'Zapisano cykl CO na dysku.')+(end?'':' Cykl jest w toku (bez końca) — dopisz koniec później: Dane → Edytuj.'));
 }
 async function addCWU(){
-  const start=document.getElementById('w_start').value, end=document.getElementById('w_end').value;
+  const lk=(id,k)=>{ const e=document.getElementById(id); return (editId&&EDIT_ORIG&&EDIT_ORIG.id===editId&&!e.dataset.userTouched)?EDIT_ORIG[k]:e.value; };
+  const start=lk('w_start','start'), end=lk('w_end','end');
   if(!start){alert('Podaj datę i godzinę startu.');return;}
   if(end&&new Date(end)<new Date(start)){alert('Koniec jest wcześniejszy niż start — sprawdź datę i godzinę.');return;}
-  const rec={type:'CWU',guess:false,date:start.slice(0,10),start,end:end||null,open:!end||undefined,
+  const rec={type:'CWU',guess:false,auto:undefined,date:start.slice(0,10),start,end:end||null,open:!end||undefined,
     t1:parseFloat(document.getElementById('w_t1').value)||null,t2:parseFloat(document.getElementById('w_t2').value)||null,
     out:parseFloat(document.getElementById('w_out').value)||null,kwh:parseFloat(document.getElementById('w_kwh').value)||null,
     price:parsedPrice('w_price'),
@@ -3489,6 +3492,8 @@ async function hubLoadAllDays(force){
 function pvAutoSet(p,kwh){ const mode=SET.pvMode||'netbilling', op=mode==='opusty'?(SET.pvOpust||0):1, k=+(+kwh).toFixed(2), c=+(k*op).toFixed(3); p.kwh=k; p.creditKwh=c; p.opust=op; p.mode=mode; p.value=+(c*(p.price||SET.pvPrice||0)).toFixed(2); }
 /* dzisiejszy wpis PV: powstaje, gdy falownik zacznie produkować, i rośnie z licznikiem dnia (po północy dostaje wartość końcową) */
 let PV_TODAY_AT=0;
+let EDIT_ORIG=null;      /* daty wpisu w chwili otwarcia do edycji — jeśli ich nie ruszysz ręcznie, zapis zostawia je bez zmian */
+document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if(/^(co|w)_(start|end)$/.test(id)) e.target.dataset.userTouched='1'; });
 async function pvAutoToday(){
   const L=HUBC.live&&HUBC.live.sx, d=ymd(new Date()); if(!L||!(L.yt>0)||(SET.pvNoAuto||[]).includes(d)||Date.now()-PV_TODAY_AT<5*60000) return; PV_TODAY_AT=Date.now();
   let p=PV.find(x=>x.date===d);
@@ -3502,7 +3507,7 @@ async function hubAutoCycles(){
     const from0=SET.acLast&&SET.acLast>ymd(new Date(Date.now()-14*864e5))?SET.acLast:ymd(new Date(Date.now()-10*864e5));
     const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal(),step:5},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs=wlSegments(rows);
     let changed=false; const nowMs=Date.now();
-    const rdOf=(r,ts,def)=>({ts,c1:true,c2:true,def:!!def,k:null,t01:r?r.T01:null,t02:r?r.T02:null,t04:r?r.T04:null,flow:r?r.T39:null,hz:r?r.T30:null,volt:r?r.T34:null,amp:r?r.T35:null,p:null});
+    const rdOf=(r0,ts,def)=>{ const r=wlFill(rows,r0); return {ts,c1:true,c2:true,def:!!def,k:null,t01:r?r.T01:null,t02:r?r.T02:null,t04:r?r.T04:null,flow:r?r.T39:null,hz:r?r.T30:null,volt:r?r.T34:null,amp:r?r.T35:null,p:null}; };
     const isDef=r=>r&&r.T01!=null&&r.T02!=null&&r.T02<r.T01-1;
     const buildRd=(g,st,en)=>{ const rd=[rdOf(g.rows[0],st,isDef(g.rows[0]))], endMs=en?Date.parse(en):nowMs; let t=Date.parse(st)+3600000;
       while(t<endMs-20*60000&&rd.length<9){ const c=g.rows.filter(r=>Math.abs(Date.parse(r.ts)-t)<=10*60000).sort((a,b)=>Math.abs(Date.parse(a.ts)-t)-Math.abs(Date.parse(b.ts)-t))[0]; if(c) rd.push(rdOf(c,c.ts,isDef(c))); t+=3600000; }
@@ -3522,7 +3527,7 @@ async function hubAutoCycles(){
         if(wls){ ex.wls=wls; changed=true; }
         if(mm&&mm.auto&&!(mm.rd||[]).some(x=>x&&x.k!=null)){ mm.end=en||''; mm.open=en?undefined:true; mm.rd=buildRd(g,st,en); if(wls){ mm.runMin=wls.run; mm.defMin=wls.def; mm.pauseMin=wls.pause; mm.defN=wls.defN; } changed=true; }
         return; }
-      const mid=uid(), rid=uid(), a=g.rows[0], t04=a.T04!=null?a.T04:null, price=SET.price||0, type=g.mode;
+      const mid=uid(), rid=uid(), a=wlFill(rows,g.rows[0]), t04=a.T04!=null?a.T04:null, price=SET.price||0, type=g.mode;
       R.push(type==='CO'?{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,out1:t04,out2:null,rad:null,slope:null,offset:null,kwh:null,price,note:'',auto:true,guess:true,wls}
                        :{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,t1:a.T08>0?a.T08:null,t2:tEnd,out:t04,kwh:null,price,note:'',auto:true,guess:true,wls});
       M.push({id:mid,rid,mode:type,date:st.slice(0,10),start:st,end:en||'',open:en?undefined:true,kwh:null,defMin:wls?wls.def:0,runMin:wls?wls.run:0,pauseMin:wls?wls.pause:0,defN:wls?wls.defN:0,rd:buildRd(g,st,en),res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true});
@@ -3573,7 +3578,9 @@ async function hubSnapForm(p){
   try{ const g=wlSnapPick(wlSegments(await wlSnapFetch(st,en)),st,en,p==='co'?'CO':'CWU');
     if(!g){ if(wi) wi.textContent='Warmlink nie pokazuje pracy sprężarki w pobliżu tego terminu.'; return; }
     const running=!g.boundaryEnd&&Date.now()-Date.parse(g.last)<=12*60000;
-    $w(c.start).value=g.first.slice(0,16); $w(c.end).value=running?'':segEnd(g); $w(c.start).dispatchEvent(new Event('change',{bubbles:true}));
+    const ns=g.first.slice(0,16), ne=running?'':segEnd(g);
+    if(editId&&(ns!==st||ne!==en)&&!confirm('Dopasowanie zmieni czasy zapisanego wpisu:\n'+st.replace('T',' ')+' → '+(en||'—').replace('T',' ')+'\nna:\n'+ns.replace('T',' ')+' → '+(ne||'—').replace('T',' ')+'\n(tylko ta faza pracy sprężarki). Kontynuować?')){ if(wi) wi.textContent='Anulowano — czasy bez zmian.'; return; }
+    $w(c.start).value=ns; $w(c.end).value=ne; $w(c.start).dataset.userTouched='1'; $w(c.end).dataset.userTouched='1'; $w(c.start).dispatchEvent(new Event('change',{bubbles:true}));
     await hubAuto(p,true); if(wi) wi.textContent='Dopasowano: faza '+g.mode+' '+g.first.slice(5,16).replace('T',' ')+(running?' → trwa nadal':' → '+segEnd(g).slice(5,16).replace('T',' '))+'. '+wi.textContent;
   }catch(e){ if(wi) wi.textContent='Warmlink: '+e.message; }
 }
@@ -3592,7 +3599,7 @@ async function hubBackfillM(){
   const el=$w('ch_bf'); if(!hubCfg()){ if(el) el.textContent='Najpierw skonfiguruj hub (zakładka „Na żywo”).'; return; }
   if(HUBC.bfmBusy) return; HUBC.bfmBusy=true; const list=M.filter(m=>m.start&&m.end&&m.rd&&m.rd.length>=2); let filled=0, touched=0, nodata=0, err=0;
   const KEYS=[['t01','T01'],['t02','T02'],['t04','T04'],['flow','T39'],['hz','T30'],['volt','T34'],['amp','T35']];
-  const fill=(x,r)=>{ if(!x||!r) return 0; let n=0; KEYS.forEach(([k,c])=>{ if(r[c]!=null&&(x[k]==null||x[k]==='')){ x[k]=r[c]; n++; } }); return n; };
+  const fill=(x,r)=>{ if(!x||!r) return 0; let n=0; KEYS.forEach(([k,c])=>{ if(r[c]!=null&&(x[k]==null||x[k]===''||(k==='amp'&&x[k]===0&&x.hz>0&&r[c]>0))){ x[k]=r[c]; n++; } }); return n; };
   try{
     for(let i=0;i<list.length;i++){ const m=list[i]; if(el) el.textContent='Uzupełniam '+(i+1)+' / '+list.length+'…';
       try{ const rows=await wlSnapFetch(m.start,m.end); if(!rows.length){ nodata++; continue; }
@@ -3643,6 +3650,20 @@ const hubN=v=>{ if(v==null||v==='') return null; if(typeof v==='string'&&/^\d{4}
 const HUB_RNG={T01:[-20,95],T02:[-20,95],T04:[-45,60],T30:[0,130],T32:[0,130],T34:[0,520],T35:[0,80],T39:[0,40],T08:[0,95]};
 function hubSane(k,v){ const r=HUB_RNG[k]; return (v==null||!r)?v:((v<r[0]||v>r[1])?null:v); }   // odrzuca wartości niemożliwe (np. rok 2026 w polu T04 po błędzie kolumn w arkuszu)
 function hubVals(v){ const o={}; ['T01','T02','T04','T30','T32','T34','T35','T39','T08','Mode','Power'].forEach(k=>o[k]=hubSane(k,hubN(v&&v[k]))); return o; }
+/* Warmlink zwraca T04 / T35 / T39 tylko w części próbek (reszta pusta albo T35 = 0 przy pracującej sprężarce).
+   Zamiast brać jedną najbliższą próbkę (często z dziurą) — brakujące pola dopełniamy z najbliższych próbek:
+   T04 (zewn.) z dowolnej w ±90 min, T39/T35/T34 tylko z próbek z pracującą sprężarką w ±20 min. T01/T02 NIE są mieszane (muszą być z jednej chwili). */
+function wlFill(rows,r){
+  if(!r||!rows||!rows.length) return r; const t=Date.parse(r.ts), o=Object.assign({},r);
+  const best=(k,tolMin,needRun,minV)=>{ let b=null,bd=1e18; for(const x of rows){ if(x[k]==null||(minV!=null&&!(x[k]>minV))) continue; if(needRun&&!(x.T30>0)) continue; const d=Math.abs(Date.parse(x.ts)-t); if(d<bd){ bd=d; b=x; } } return b&&bd<=tolMin*60000?b[k]:null; };
+  if(o.T04==null) o.T04=best('T04',90,false);
+  if(r.T30>0){
+    if(o.T39==null) o.T39=best('T39',20,true,0);
+    if(o.T34==null) o.T34=best('T34',20,true,0);
+    if(o.T35==null||o.T35===0){ const v=best('T35',20,true,0); if(v!=null) o.T35=v; }     /* T35 = 0 przy pracującej sprężarce to brak odczytu, nie prąd */
+  }
+  return o;
+}
 /* najbliższe dane dla chwili ts: dla „teraz” — odczyt na żywo, dla przeszłości — najbliższa próbka z historii huba */
 async function hubNear(ts){
   const t=Date.parse(ts);
@@ -3653,7 +3674,7 @@ async function hubNear(ts){
 const WLMAP={t01:'T01',t02:'T02',t04:'T04',flow:'T39',hz:'T30',volt:'T34',amp:'T35'};
 function hubFillRd(i,w,force){
   let n=0; const v=RDS[i].v;
-  Object.keys(WLMAP).forEach(k=>{ const x=w[WLMAP[k]]; if(x==null) return; if(force||v[k]===undefined||v[k]===''||v[k]===null){ v[k]=String(x); n++; } });
+  Object.keys(WLMAP).forEach(k=>{ const x=w[WLMAP[k]]; if(x==null) return; if(force||v[k]===undefined||v[k]===''||v[k]===null||(k==='amp'&&+v[k]===0&&x>0&&w.T30>0)){ v[k]=String(x); n++; } });
   if(n&&w.T30>0&&w.T01!=null&&w.T02!=null&&w.T02<w.T01-1) RDS[i].def=true;    // woda wychodząca zimniejsza od wchodzącej = odszranianie
   return n;
 }
@@ -3680,7 +3701,7 @@ async function hubFillAll(manual){
       add.filter(ts=>!RDS.some(x=>x.ts===ts)).forEach(ts=>RDS.splice(RDS.length-1,0,{ts,v:{},k:'',c1:RDS[0].c1,c2:RDS[0].c2,def:false}));
     }
     let filled=0, got=0; const last=RDS.length-1;
-    RDS.forEach((x,i)=>{ if(i===last&&open) return; const ts=i===0?s:(i===last?e:x.ts), r=ts?(i===0?pick(ts,1):i===last?pick(ts,-1):near(ts,12)):null; if(r){ got++; filled+=hubFillRd(i,r,false); } });
+    RDS.forEach((x,i)=>{ if(i===last&&open) return; const ts=i===0?s:(i===last?e:x.ts), r=ts?(i===0?pick(ts,1):i===last?pick(ts,-1):near(ts,12)):null; if(r){ got++; filled+=hubFillRd(i,wlFill(all,r),false); } });
     const S=hubWlSummary(all,s,e), extra=[]; const rm=cpEl('cp_runmin'), dm=cpEl('cp_defmin');
     if(S.n&&S.cover){
       if(rm&&!rm.value&&S.runMin>0){ rm.value=Math.round(S.runMin); extra.push('czas pracy sprężarki '+Math.round(S.runMin)+' min'); }
@@ -3744,7 +3765,7 @@ function hubWlCtx(all,s,e){
   const near=(ts,tol)=>{ const t=T(ts); let b=null,bd=1e18; rows.forEach(r=>{ const d=Math.abs(T(r.ts)-t); if(d<bd){ bd=d; b=r; } }); return b&&bd<=tol*60000?b:null; };
   const runNear=(ts,dir)=>{ const t=T(ts), c=rows.filter(r=>r.T30>0&&(dir>0?(T(r.ts)>=t&&T(r.ts)<=t+90*60000):(T(r.ts)<=t&&T(r.ts)>=t-90*60000))); return c.length?(dir>0?c[0]:c[c.length-1]):null; };
   const pick=(ts,dir)=>{ const r=near(ts,12); return (r&&r.T30>0)?r:(runNear(ts,dir)||r); };
-  return {rows,near,runNear,pick};
+  return {rows,near:(a,b)=>wlFill(all,near(a,b)),runNear:(a,b)=>wlFill(all,runNear(a,b)),pick:(a,b)=>wlFill(all,pick(a,b))};
 }
 async function hubAuto(p,force,trig){
   const c=WXP[p]; if(!c||!hubCfg()) return; if(!force&&c.ed()&&trig!=='end') return;
@@ -3805,7 +3826,7 @@ async function hubDetectLast(p){
     if(!run.length){ if(wi) wi.textContent='W ostatnich 72 h hub nie widzi pracy sprężarki.'; return; }
     let i0=run.length-1; while(i0>0&&Date.parse(run[i0].ts)-Date.parse(run[i0-1].ts)<=25*60000) i0--;
     const first=run[i0].ts, lastR=run[run.length-1].ts, running=Date.now()-Date.parse(lastR)<=12*60000;
-    $w(c.start).value=first.slice(0,16); $w(c.end).value=running?'':toLocalStr(Date.parse(lastR)+5*60000);
+    $w(c.start).value=first.slice(0,16); $w(c.end).value=running?'':toLocalStr(Date.parse(lastR)+5*60000); $w(c.start).dataset.userTouched='1'; $w(c.end).dataset.userTouched='1';
     $w(c.start).dispatchEvent(new Event('change',{bubbles:true}));
     await hubAuto(p,true); if(wi) wi.textContent='Wykryto pracę sprężarki: '+first.slice(5,16).replace('T',' ')+(running?' → trwa nadal (koniec zostaw pusty)':' → '+$w(c.end).value.slice(5,16).replace('T',' '))+'. '+wi.textContent;
   }catch(e){ if(wi) wi.textContent='Warmlink: '+e.message; }
