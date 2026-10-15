@@ -971,7 +971,7 @@ details.card[open]>summary{margin-bottom:12px}
     <h2 style="margin-bottom:8px">Okresy pracy</h2>
     <div id="ch_open"></div>
     <p class="note" style="margin:0 0 8px"><b>Odczyty: wszystkie / do COP</b> — „wszystkie” to liczba odczytów wpisanych w okresie (Start, Stop i pośrednie), „do COP” to te, z których da się policzyć ciepło: mają T01, T02 i przepływ T39, ΔT &gt; 0, sprężarka pracuje i nie jest to odszranianie. Okres z „0” w drugiej liczbie nie ma COP — dopisz odczyty przyciskiem „Edytuj”.</p>
-    <table class="rc big cards"><thead><tr><th>Tryb</th><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas trwania</th><th>COP</th><th>Energia (kWh)</th><th>Moc pobierana (kW)</th><th>Moc grzewcza (kW)</th><th>Ciepło oddane (kWh)</th><th>Temp. zewn. T04 (śr. · min…max)</th><th>Temp. dnia z API (min · śr. · max)</th><th>Sprężarka T30</th><th>Zakres COP</th><th>cos φ</th><th>Odczyty (wszystkie / do COP)</th><th>Kontrole</th><th>Notatka</th><th></th></tr></thead>
+    <table class="rc big cards"><thead><tr><th>Tryb</th><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas trwania</th><th>COP</th><th>Energia (kWh)</th><th>Moc pobierana (kW)</th><th>Moc grzewcza (kW)</th><th>Ciepło oddane (kWh)</th><th>Temp. zewn. T04 (śr. · min…max)</th><th>Temp. z API w czasie pracy (min · śr. · max)</th><th>Sprężarka T30</th><th>Zakres COP</th><th>cos φ</th><th>Odczyty (wszystkie / do COP)</th><th>Kontrole</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="ch_tbody"></tbody></table>
     <div id="ch_empty" class="empty" style="display:none">Brak okresów — dodaj w zakładce „⚡ COP — okres pracy” albo zaimportuj dane w „📥 COP — import”.</div>
   </div>
@@ -3046,7 +3046,7 @@ function renderCopHist(){
       <td class="num cop"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td>
       <td class="num">${r.E!=null?r.E.toFixed(2)+' kWh':'—'}<div class="note">${xmlEsc(r.Esrc||'')}</div></td><td class="num">${r.pel!=null?'≈ '+r.pel.toFixed(2)+' kW':'—'}</td><td class="num">${r.q!=null?r.q.toFixed(2)+' kW':'—'}</td><td class="num">${r.heat!=null?r.heat.toFixed(1)+' kWh':'—'}</td>
       <td class="num w2">${r.t04!=null?'<span class="tp"><i>śr.</i><b>'+r.t04.toFixed(1)+'°</b></span><span class="tp min"><i>min</i><b>'+r.t04min.toFixed(1)+'°</b></span><span class="tp max"><i>max</i><b>'+r.t04max.toFixed(1)+'°</b></span>':'—'}</td>
-      <td class="w2">${wxTempsHtml(dw?{tn:dw.tn,tm:dw.tm,tx:dw.tx}:null)}</td>
+      <td class="w2">${wxTempsHtml(wxPeriodTemps(P.start,P.end)||(dw?{tn:dw.tn,tm:dw.tm,tx:dw.tx}:null))}</td>
       <td class="num">${r.hz!=null?r.hz.toFixed(0)+' Hz':'—'}</td><td class="num">${rng}</td><td class="num">${r.pf!=null?r.pf.toFixed(2)+(r.pfSrc==='chwilowy'?'':'*'):'—'}</td><td class="num">${r.rows.length} / ${r.nVal}</td>
       <td class="notecell">${flags}</td>
       <td class="notecell">${P.note?xmlEsc(P.note):'—'}</td>
@@ -3425,6 +3425,7 @@ function wxRec(r){
   const w=r.wx; if(w&&(w.tn!=null||w.tm!=null||w.tx!=null||w.rad!=null)) return w;
   const c=wxDay(r.date); return c?{tn:c.tn,tx:c.tx,tm:c.tm,rad:c.rad,sun:c.sun,src:'api'}:null;
 }
+function wxPeriodTemps(st,en){ if(!st||!en||!WXC.hours) return null; const a=Date.parse(st.slice(0,13)+':00'), b=Date.parse(en.slice(0,16)); if(isNaN(a)||isNaN(b)) return null; const v=[]; for(let t=a;t<=b+30*60000;t+=3600000){ const x=wxTempAt(toLocalStr(t)); if(x!=null) v.push(x); } return v.length?{tn:Math.min(...v),tx:Math.max(...v),tm:v.reduce((p,c)=>p+c,0)/v.length}:null; }
 function wxTempsHtml(w){
   if(!w||(w.tn==null&&w.tm==null&&w.tx==null)) return '—';
   const f=v=>v==null?'—':(+v).toFixed(1)+'°';
@@ -3501,12 +3502,35 @@ async function pvAutoToday(){
   else if(p.src&&p.src.indexOf('hub-auto')===0&&Math.abs(p.kwh-L.yt)>0.05){ pvAutoSet(p,L.yt); p.src='hub-auto-live'; await persist(); }
 }
 /* przebiegi sprężarki z Warmlinka → szkice cykli (bez zużycia energii — to dopisuje użytkownik) */
+/* scala podwójne wpisy tego samego cyklu (np. utworzone równolegle na dwóch urządzeniach): zostaje ten, który użytkownik uzupełnił */
+function hubDedupeCycles(){
+  let ch=false; const within=(a,b)=>Math.abs(Date.parse(a)-Date.parse(b))<=20*60000;
+  const isAutoR=r=>r.auto||r.mid||(r.wls&&r.wls.src==='warmlink'), scR=r=>(r.auto?0:4)+(r.kwh>0?2:0)+(r.guess===false?1:0)+(r.end?0.5:0);
+  const rs=R.filter(r=>r.start&&r.type).sort((a,b)=>a.start<b.start?-1:1), gone=new Set();
+  for(let i=0;i<rs.length;i++){ const a=rs[i]; if(gone.has(a.id)) continue;
+    for(let j=i+1;j<rs.length;j++){ const b=rs[j]; if(gone.has(b.id)) continue; if(!within(a.start,b.start)) break;
+      if(a.type!==b.type||!(isAutoR(a)||isAutoR(b))) continue;
+      const w=scR(b)>scR(a)?b:a, l=w===a?b:a;
+      ['kwh','note','t1','t2','out','out1','out2','rad','slope','offset'].forEach(k=>{ if((w[k]==null||w[k]==='')&&l[k]!=null&&l[k]!=='') w[k]=l[k]; });
+      gone.add(l.id); ch=true; if(l===a) break; } }
+  if(gone.size){ rs.filter(r=>gone.has(r.id)).forEach(l=>{ const w=rs.find(r=>!gone.has(r.id)&&r.type===l.type&&within(r.start,l.start)); if(l.mid&&w&&w.mid&&w.mid!==l.mid){ const mi=M.findIndex(m=>m.id===l.mid&&(m.auto||m.src==='warmlink-auto')); if(mi>-1) M.splice(mi,1); } }); R=R.filter(r=>!gone.has(r.id)); }
+  const linked=new Set(R.map(r=>r.mid).filter(Boolean)), isAutoM=m=>m.auto||m.src==='warmlink-auto';
+  const scM=m=>(m.auto?0:4)+(m.kwh>0?2:0)+((m.rd||[]).some(x=>x&&x.k!=null)?2:0)+(linked.has(m.id)?1:0)+(m.end?0.5:0);
+  const ms=M.filter(m=>m.start&&m.mode).sort((a,b)=>a.start<b.start?-1:1), mg=new Map();
+  for(let i=0;i<ms.length;i++){ const a=ms[i]; if(mg.has(a.id)) continue;
+    for(let j=i+1;j<ms.length;j++){ const b=ms[j]; if(mg.has(b.id)) continue; if(!within(a.start,b.start)) break;
+      if(a.mode!==b.mode||!(isAutoM(a)||isAutoM(b))) continue;
+      const w=scM(b)>scM(a)?b:a, l=w===a?b:a; if(!(w.kwh>0)&&l.kwh>0) w.kwh=l.kwh;
+      mg.set(l.id,w.id); ch=true; if(l===a) break; } }
+  if(mg.size){ M=M.filter(m=>!mg.has(m.id)); R.forEach(r=>{ if(r.mid&&mg.has(r.mid)){ r.mid=mg.get(r.mid); const m=M.find(x=>x.id===r.mid); if(m) m.rid=r.id; } }); }
+  return ch;
+}
 async function hubAutoCycles(){
   if(!hubCfg()||HUBC.acBusy) return; HUBC.acBusy=true;
   try{
     const from0=SET.acLast&&SET.acLast>ymd(new Date(Date.now()-14*864e5))?SET.acLast:ymd(new Date(Date.now()-10*864e5));
-    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal(),step:5},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs=wlSegments(rows);
-    let changed=false; const nowMs=Date.now();
+    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs=wlSegments(rows);
+    let changed=hubDedupeCycles(); const nowMs=Date.now();
     const rdOf=(r0,ts,def)=>{ const r=wlFill(rows,r0); return {ts,c1:true,c2:true,def:!!def,k:null,t01:r?r.T01:null,t02:r?r.T02:null,t04:r?r.T04:null,flow:r?r.T39:null,hz:r?r.T30:null,volt:r?r.T34:null,amp:r?r.T35:null,p:null}; };
     const isDef=r=>r&&r.T01!=null&&r.T02!=null&&r.T02<r.T01-1;
     const buildRd=(g,st,en)=>{ const rd=[rdOf(g.rows[0],st,isDef(g.rows[0]))], endMs=en?Date.parse(en):nowMs; let t=Date.parse(st)+3600000;
@@ -3519,15 +3543,18 @@ async function hubAutoCycles(){
       if(R.some(r=>!r.auto&&r.start&&ov(r.start,r.end))||M.some(m=>!m.auto&&m.start&&ov(m.start,m.end))) return;      // użytkownik prowadzi to sam
       const Sm=hubWlSummary(g.rows,st,en||nowLocal()), pause=Math.max(0,Math.round((endMs-Date.parse(st))/60000-Sm.runMin));
       const wls=Sm.n&&Sm.cover?{run:Math.round(Sm.runMin),def:Math.round(Sm.defMin),defN:Sm.defN||0,pause,t04:Sm.t04!=null?+Sm.t04.toFixed(1):undefined,hz:Sm.hz||undefined,src:'warmlink'}:undefined;
-      const tEnd=en&&g.rows[g.rows.length-1].T08>0?g.rows[g.rows.length-1].T08:null;
+      const tEnd=en?(()=>{ const L=Date.parse(g.last); let b=null; rows.forEach(r=>{ const t=Date.parse(r.ts); if(t>=L-5*60000&&t<=L+20*60000&&r.T08>0&&(b==null||r.T08>b)) b=r.T08; }); return b; })():null;   /* maks. T08 od ostatniej próbki z pracą do 20 min po stopie */
       let ex=R.find(r=>r.auto&&r.start&&Math.abs(Date.parse(r.start)-Date.parse(st))<=15*60000);
       if(ex&&ex.type!==g.mode&&ex.guess){ const mi=M.findIndex(m=>m.id===ex.mid); if(mi>-1) M.splice(mi,1); R.splice(R.indexOf(ex),1); ex=null; changed=true; }      // typ okazał się inny — zakładam wpis od nowa
       if(ex){ const mm=ex.mid&&M.find(m=>m.id===ex.mid);
         if(en&&(!ex.end||(ex.guess&&ex.end!==en))){ ex.end=en; ex.open=undefined; if(ex.type==='CWU'&&tEnd!=null&&ex.t2==null) ex.t2=tEnd; changed=true; }
+        if(ex.type==='CWU'&&ex.guess&&tEnd!=null&&ex.t2!==tEnd){ ex.t2=tEnd; changed=true; }
         if(wls){ ex.wls=wls; changed=true; }
         if(mm&&mm.auto&&!(mm.rd||[]).some(x=>x&&x.k!=null)){ mm.end=en||''; mm.open=en?undefined:true; mm.rd=buildRd(g,st,en); if(wls){ mm.runMin=wls.run; mm.defMin=wls.def; mm.pauseMin=wls.pause; mm.defN=wls.defN; } changed=true; }
         return; }
-      const mid=uid(), rid=uid(), a=wlFill(rows,g.rows[0]), t04=a.T04!=null?a.T04:null, price=SET.price||0, type=g.mode;
+      const type=g.mode, kk=type+Math.floor(Date.parse(st)/60000), mid='am'+kk, rid='ar'+kk;      /* id z czasu startu: to samo urządzenie/drugie urządzenie nie utworzy drugiego wpisu */
+      if(TOMB.some(t=>t.id===rid)||R.some(r=>r.id===rid)) return;                              /* usunięty przez użytkownika albo już jest */
+      const a=wlFill(rows,g.rows[0]), t04=a.T04!=null?a.T04:null, price=SET.price||0;
       R.push(type==='CO'?{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,out1:t04,out2:null,rad:null,slope:null,offset:null,kwh:null,price,note:'',auto:true,guess:true,wls}
                        :{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,t1:a.T08>0?a.T08:null,t2:tEnd,out:t04,kwh:null,price,note:'',auto:true,guess:true,wls});
       M.push({id:mid,rid,mode:type,date:st.slice(0,10),start:st,end:en||'',open:en?undefined:true,kwh:null,defMin:wls?wls.def:0,runMin:wls?wls.run:0,pauseMin:wls?wls.pause:0,defN:wls?wls.defN:0,rd:buildRd(g,st,en),res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true});
@@ -3601,7 +3628,7 @@ function wlSnapPick(segs,s,e,mode){
   return best;
 }
 /* ⏱ „Dopasuj czasy do pracy sprężarki” — jedna zasada w Dodaj (CO/CWU) i w COP */
-async function wlSnapFetch(s,e){ const ext0=toLocalStr(Date.parse(s)-3*3600000), ext1=toLocalStr(Math.min(Date.now(),(e?Date.parse(e):Date.now())+90*60000)); const j=await hubGet('wl',{from:ext0,to:ext1,step:5},60000); return (j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1); }
+async function wlSnapFetch(s,e){ const ext0=toLocalStr(Date.parse(s)-3*3600000), ext1=toLocalStr(Math.min(Date.now(),(e?Date.parse(e):Date.now())+90*60000)); const j=await hubGet('wl',{from:ext0,to:ext1,step:1},60000); return (j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1); }
 async function hubSnapForm(p){
   const c=WXP[p], wi=$w(p+'_wlinfo'), st=$w(c.start).value, en=$w(c.end).value; if(!hubCfg()){ if(wi) wi.textContent='Najpierw skonfiguruj hub (zakładka „Na żywo”).'; return; }
   if(!st){ if(wi) wi.textContent='Najpierw podaj przybliżony start — dopasuję go do pracy sprężarki.'; return; }
@@ -3720,7 +3747,7 @@ async function hubFillAll(manual){
   hubMsgSet('Pobieram odczyty z Warmlink…'); HUBC.fillBusy=true;
   try{
     const ext0=toLocalStr(Date.parse(s)-3*3600000), ext1=toLocalStr(Math.min(Date.now(),Date.parse(e)+90*60000));
-    const j=await hubGet('wl',{from:ext0,to:ext1,step:5},60000), all=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1);
+    const j=await hubGet('wl',{from:ext0,to:ext1,step:1},60000), all=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1);
     if(!all.length){ hubMsgSet('Hub nie ma odczytów Warmlink z tego przedziału. Wpisz ręcznie.'); return; }
     const T=ts=>Date.parse(ts), rows=all.filter(r=>r.ts>=s.slice(0,16)&&r.ts<=e.slice(0,16));
     const near=(ts,tol)=>{ const t=T(ts); let b=null,bd=1e18; rows.forEach(r=>{ const d=Math.abs(T(r.ts)-t); if(d<bd){ bd=d; b=r; } }); return b&&bd<=tol*60000?b:null; };
@@ -3811,7 +3838,7 @@ async function hubAuto(p,force,trig){
   const wlPart=async()=>{ const wmsg=[];
     try{
       const e1=to||st, ext0=toLocalStr(Date.parse(st)-3*3600000), ext1=toLocalStr(Math.min(Date.now(),Date.parse(e1)+90*60000));
-      const j=await hubGet('wl',{from:ext0,to:ext1,step:5},60000); if(seq!==HUBSEQ[p]) return;
+      const j=await hubGet('wl',{from:ext0,to:ext1,step:1},60000); if(seq!==HUBSEQ[p]) return;
       const all=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), X=hubWlCtx(all,st,e1);
       if(!all.length){ wmsg.push('hub nie ma odczytów Warmlink z okolic tego terminu'); return wmsg; }
       const a=X.pick(st,1), b=en?X.pick(en,-1):null;
@@ -3854,7 +3881,7 @@ async function hubDetectLast(p){
   const c=WXP[p], wi=$w(p+'_wlinfo'); if(!hubCfg()){ if(wi) wi.textContent='Najpierw skonfiguruj hub (zakładka „Na żywo”).'; return; }
   if(wi) wi.textContent='Szukam ostatniej pracy sprężarki w Warmlinku…';
   try{
-    const j=await hubGet('wl',{from:toLocalStr(Date.now()-72*3600000),to:nowLocal(),step:5},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs0=wlSegments(rows), run=segs0.length?[1]:[];
+    const j=await hubGet('wl',{from:toLocalStr(Date.now()-72*3600000),to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs0=wlSegments(rows), run=segs0.length?[1]:[];
     if(!run.length){ if(wi) wi.textContent='W ostatnich 72 h hub nie widzi pracy sprężarki.'; return; }
     const gL=segs0[segs0.length-1], first=gL.first, lastR=gL.last, running=segRunning(gL);
     $w(c.start).value=first.slice(0,16); $w(c.end).value=running?'':segEnd(gL); $w(c.start).dataset.userTouched='1'; $w(c.end).dataset.userTouched='1';
@@ -3992,10 +4019,10 @@ function renderLive(){
   const age=ts=>{ if(!ts) return '—'; const m=Math.round((Date.now()-Date.parse(String(ts).slice(0,16)))/60000); return m<1?'przed chwilą':(m<90?m+' min temu':Math.round(m/60)+' h temu'); };
   const grid=x=>'<div class="kvgrid">'+x+'</div>';
   if(HUBC.liveErr) $w('live_wl').innerHTML=`<div class="warnline bad">Hub: ${wxEsc(HUBC.liveErr)}</div>`;
-  else if(L&&L.wl){ const v=hubVals(L.wl.v), run=v.T30>0, dt=(v.T01!=null&&v.T02!=null)?v.T02-v.T01:null, q=(run&&dt!=null&&v.T39!=null)?v.T39*(+SET.rho||1000)*(+SET.cpw||4.186)*dt/3600:null, S=(v.T34&&v.T35)?Math.sqrt(3)*v.T34*v.T35/1000:null;
+  else if(L&&L.wl){ const v=hubVals(L.wl.v), oo=k=>{ const raw=L.wl.v&&L.wl.v[k]; return v[k]!=null?(v[k]?'ON':'OFF'):(raw===undefined?'— <span class="note">hub nie zbiera O01/O10: wdróż nowy Code.gs (v1.7)</span>':(raw===''||raw===null?'—':wxEsc(String(raw)))); }, run=v.T30>0, dt=(v.T01!=null&&v.T02!=null)?v.T02-v.T01:null, q=(run&&dt!=null&&v.T39!=null)?v.T39*(+SET.rho||1000)*(+SET.cpw||4.186)*dt/3600:null, S=(v.T34&&v.T35)?Math.sqrt(3)*v.T34*v.T35/1000:null;
     $w('live_wl').innerHTML=`<div class="statusrow"><span class="big" style="color:${run?'var(--ok)':'var(--muted)'}">${run?'● sprężarka pracuje'+(v.T30?' · '+v.T30+' Hz':''):'○ sprężarka stoi'}</span><span class="note">dane ${age(L.wl.ts)}</span></div>`
       +grid(lk('T01 — wlot do pompy',v.T01!=null?v.T01+' °C':'—')+lk('T02 — wylot z pompy',v.T02!=null?v.T02+' °C':'—')+lk('ΔT (T02 − T01)',dt!=null?dt.toFixed(1)+' K':'—')+lk('T04 — temp. zewnętrzna',v.T04!=null?v.T04+' °C':'—')+lk('T39 — przepływ',v.T39!=null?v.T39+' m³/h':'—')
-      +lk('Moc grzewcza Q (szac. z T39·ΔT)',q!=null?q.toFixed(2)+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?v.T34+' V':'—')+' / '+(v.T35!=null?v.T35+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?S.toFixed(2)+' kVA':'—')+lk('T32 — maks. częstotliwość',v.T32!=null?v.T32+' Hz':'—')+lk('T08 — temp. CWU',v.T08!=null?v.T08+' °C':'—')+lk('O01 — sprężarka',v.O01==null?'—':(v.O01?'ON':'OFF'))+lk('O10 — zawór CO/CWU',v.O10==null?'—':(v.O10?'1':'0')))
+      +lk('Moc grzewcza Q (szac. z T39·ΔT)',q!=null?q.toFixed(2)+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?v.T34+' V':'—')+' / '+(v.T35!=null?v.T35+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?S.toFixed(2)+' kVA':'—')+lk('T32 — maks. częstotliwość',v.T32!=null?v.T32+' Hz':'—')+lk('T08 — temp. CWU',v.T08!=null?v.T08+' °C':'—')+lk('O01 — sprężarka',oo('O01'))+lk('O10 — zawór CO/CWU (ON = CWU)',oo('O10')))
       +`<details style="margin-top:8px"><summary style="font-size:.8rem;margin:0">Wszystkie kody Warmlink (do rozpoznania zaworu 2-drogowego CO/CWU)</summary><div class="chips" style="margin-top:6px">${Object.keys(L.wl.v||{}).sort().map(k=>`<span class="chipv"><i>${wxEsc(k)}</i><b>${wxEsc(String(L.wl.v[k]))}</b></span>`).join('')}</div></details>`
       +(L.errWl?`<div class="warnline bad">Ostatni błąd odczytu Warmlink: ${wxEsc(L.errWl)}</div>`:''); }
   else $w('live_wl').innerHTML='<div class="empty">Brak odczytów Warmlink'+(L&&L.errWl?': '+wxEsc(L.errWl):' (hub zbiera dane co 5 min)')+'.</div>';
