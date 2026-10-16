@@ -625,6 +625,9 @@ details.card[open]>summary{margin-bottom:12px}
     <div class="grid">
       <div><label>Data</label><input type="date" id="pv_date"></div>
       <div><label>Produkcja (kWh)</label><input type="number" id="pv_kwh" step="0.01" min="0"></div>
+      <div><label>Import z sieci (kWh) — opcjonalnie</label><input type="number" id="pv_imp" step="0.01" min="0"></div>
+      <div><label>Eksport do sieci (kWh) — opcjonalnie</label><input type="number" id="pv_exp" step="0.01" min="0"></div>
+      <div><label>Zużycie domu (kWh) — opcjonalnie</label><input type="number" id="pv_load" step="0.01" min="0"></div>
       <div><label>Cena zastosowana w tym wpisie (zł/kWh)</label><input type="number" id="pv_price" step="0.001" min="0"></div>
       <div class="full wxform" id="pv_wx">
         <div class="wxform-h"><b>🌦 Pogoda dnia</b><span class="note" id="pv_wxinfo"></span>
@@ -640,6 +643,7 @@ details.card[open]>summary{margin-bottom:12px}
 
   <div class="card tbl-wrap">
     <h2 style="margin-bottom:8px">Historia produkcji PV</h2>
+    <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center"><label style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:0">📥 Import z XLSX / CSV<input type="file" accept=".xlsx,.csv,.txt" style="display:none" onchange="pvImportFile(this)"></label><button type="button" class="apibtn" onclick="pvTemplate()">⬇ Szablon CSV</button><span class="note" id="pv_impinfo">Kolumny: Data, Produkcja (kWh), opcjonalnie Import, Eksport, Zużycie domu. Stary format .xls zapisz jako .xlsx lub CSV.</span></div>
     <table class="rc"><thead><tr><th>Data</th><th>kWh</th><th>kWh do rozliczenia</th><th>Cena (zł/kWh)</th><th>Wartość</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th><th>Szacunek z nasłonecznienia</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="pvTbody"></tbody><tfoot id="pvTblFoot"></tfoot></table>
     <div id="pvEmptyMsg" class="empty" style="display:none">Brak wpisów.</div>
@@ -951,7 +955,7 @@ details.card[open]>summary{margin-bottom:12px}
     <label>Zestawienie wg</label><select id="ch_gran" onchange="renderCopHist()"><option value="day">Dnia</option><option value="week">Tygodnia</option><option value="month" selected>Miesiąca</option><option value="year">Roku</option></select>
     <label>Okres pracy liczyć do</label><select id="ch_alloc" onchange="renderCopHist()"><option value="start" selected>dnia uruchomienia (jak w „Dane”)</option><option value="split">dób kalendarzowych (dzielony o północy)</option></select>
     <button onclick="exportCopCsv()">Eksport CSV</button>
-    <button onclick="hubBackfillM()">☁ Uzupełnij okresy z Warmlinka</button> <span class="note" id="ch_bf"></span>
+    <button onclick="hubBackfillM()">☁ Uzupełnij okresy z Warmlinka</button> <button onclick="hubRepairM()" title="Nadpisuje odczyty okresów, w których kilka odczytów ma identyczne wartości (błąd starej wersji)">🔧 Napraw zdublowane odczyty</button> <span class="note" id="ch_bf"></span>
   </div>
   <div class="cap" id="ch_cap"></div>
   <div class="stats" id="ch_stats"></div>
@@ -1506,6 +1510,76 @@ function updatePvModeUI(){
     ? 'Na starych zasadach (opusty) nie dostajesz zapłaty za oddaną energię — każda oddana 1 kWh trafia do „depozytu” pomniejszona o współczynnik opustu (ustawowo <b>0,8</b> dla instalacji ≤10 kWp, <b>0,7</b> dla instalacji &gt;10 kWp — sprawdź na fakturze/w umowie z OSD) i możesz ją odebrać w ciągu 365 dni, pomniejszając ilość kWh do zapłacenia. „Wartość” pokazywana przy wpisach to więc <b>szacunek oszczędności</b> (kWh do rozliczenia × cena zakupu), a nie realny przychód.'
     : 'Ta cena to tylko <b>domyślna propozycja</b>, która wpisuje się automatycznie w formularz nowego wpisu poniżej — nie przelicza wpisów już zapisanych. Strona nie pobiera cen automatycznie z sieci; zaktualizuj ją ręcznie (np. wg aktualnej średniej RCEm), gdy chcesz, by kolejne wpisy liczyły się wg nowej stawki.';
 }
+/* ===================== PV: wpisy ręczne i import XLSX/CSV ===================== */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function impDate(v){ if(v==null||v==='') return null; const t=String(v).trim();
+  if(/^\d{5}(\.\d+)?$/.test(t)){ const n=+t; if(n>20000&&n<80000) return new Date(Math.round((n-25569)*864e5)).toISOString().slice(0,10); }
+  let m=t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m) return m[1]+'-'+pad2(m[2])+'-'+pad2(m[3]);
+  m=t.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/); if(m) return m[3]+'-'+pad2(m[2])+'-'+pad2(m[1]); return null; }
+function impNum(v){ if(v==null||v==='') return null; const n=parseFloat(String(v).replace(/\s|\u00a0/g,'').replace(',','.')); return isNaN(n)?null:n; }
+const impNorm=s=>String(s==null?'':s).toLowerCase().replace(/ł/g,'l').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function xmlDec(s){ return s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#(\d+);/g,(_,d)=>String.fromCharCode(+d)).replace(/&#x([0-9a-f]+);/gi,(_,h)=>String.fromCharCode(parseInt(h,16))).replace(/&amp;/g,'&'); }
+async function xlsxRead(buf){      /* minimalny czytnik .xlsx (zip + XML), pierwszy arkusz → tablica wierszy */
+  const u=new Uint8Array(buf), dv=new DataView(buf); let e=-1;
+  for(let i=u.length-22;i>=Math.max(0,u.length-65600);i--) if(dv.getUint32(i,true)===0x06054b50){ e=i; break; }
+  if(e<0) throw new Error('to nie jest plik .xlsx');
+  const n=dv.getUint16(e+10,true); let p=dv.getUint32(e+16,true); const files={};
+  for(let k=0;k<n;k++){ if(dv.getUint32(p,true)!==0x02014b50) break;
+    const meth=dv.getUint16(p+10,true), cs=dv.getUint32(p+20,true), nl=dv.getUint16(p+28,true), el=dv.getUint16(p+30,true), cl=dv.getUint16(p+32,true), lo=dv.getUint32(p+42,true), name=new TextDecoder().decode(u.subarray(p+46,p+46+nl));
+    files[name]={meth,cs,lo}; p+=46+nl+el+cl; }
+  const get=async name=>{ const f=files[name]; if(!f) return null; const nl=dv.getUint16(f.lo+26,true), el=dv.getUint16(f.lo+28,true), st=f.lo+30+nl+el, raw=u.subarray(st,st+f.cs);
+    if(f.meth===0) return new TextDecoder().decode(raw);
+    const out=await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer(); return new TextDecoder().decode(out); };
+  const shared=[]; const ss=await get('xl/sharedStrings.xml');
+  if(ss){ const re=/<si>([\s\S]*?)<\/si>/g; let m; while((m=re.exec(ss))){ let t='',r2=/<t[^>]*>([\s\S]*?)<\/t>/g,q; while((q=r2.exec(m[1]))) t+=q[1]; shared.push(xmlDec(t)); } }
+  const sheets=Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort((a,b)=>parseInt(a.match(/\d+/g).pop())-parseInt(b.match(/\d+/g).pop()));
+  if(!sheets.length) throw new Error('brak arkusza w pliku');
+  const x=await get(sheets[0]), rows=[]; const rr=/<row\b[^>]*>([\s\S]*?)<\/row>/g; let rm;
+  while((rm=rr.exec(x))){ const row=[], cr=/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g; let cm;
+    while((cm=cr.exec(rm[1]))){ const at=cm[1], ref=(at.match(/\br="([A-Z]+)\d+"/)||[])[1], ty=(at.match(/\bt="(\w+)"/)||[])[1]; if(!ref) continue;
+      let ci=0; for(const ch of ref) ci=ci*26+(ch.charCodeAt(0)-64); ci--;
+      const body=cm[2]||'', vm=body.match(/<v>([\s\S]*?)<\/v>/); let val=null;
+      if(ty==='s'&&vm) val=shared[+vm[1]]; else if(ty==='inlineStr'){ const im=body.match(/<t[^>]*>([\s\S]*?)<\/t>/); val=im?xmlDec(im[1]):null; } else if(vm) val=ty==='str'?xmlDec(vm[1]):vm[1];
+      row[ci]=val; }
+    rows.push(row); }
+  return rows;
+}
+function csvRows(text){ text=text.replace(/^\ufeff/,''); const first=text.split(/\r?\n/).find(l=>l.trim())||''; const cnt=c=>(first.match(new RegExp(c==='\t'?'\t':'\\'+c,'g'))||[]).length; const del=cnt(';')>=cnt(',')&&cnt(';')>=cnt('\t')?';':(cnt('\t')>cnt(',')?'\t':',');
+  return text.split(/\r?\n/).filter(l=>l.trim()).map(l=>{ const out=[]; let cur='',q=false; for(let i=0;i<l.length;i++){ const ch=l[i]; if(ch==='"'){ if(q&&l[i+1]==='"'){ cur+='"'; i++; } else q=!q; } else if(ch===del&&!q){ out.push(cur); cur=''; } else cur+=ch; } out.push(cur); return out; }); }
+async function impReadFile(f){
+  const buf=await f.arrayBuffer(), u=new Uint8Array(buf);
+  if(u[0]===0xD0&&u[1]===0xCF&&u[2]===0x11&&u[3]===0xE0) throw new Error('to stary format .xls — zapisz plik w Excelu jako „Skoroszyt programu Excel (.xlsx)” albo „CSV” i zaimportuj ponownie');
+  if(u[0]===0x50&&u[1]===0x4B) return await xlsxRead(buf);
+  let t=new TextDecoder('utf-8').decode(buf); if(t.includes('\ufffd')) t=new TextDecoder('windows-1250').decode(buf); return csvRows(t);
+}
+function impParsePv(rows){
+  let h=-1; for(let i=0;i<Math.min(rows.length,15);i++){ if((rows[i]||[]).some(c=>/^(data|date|dzien|day)\b/.test(impNorm(c).trim()))){ h=i; break; } }
+  const col={d:0,k:1,i:2,e:3,l:4};
+  if(h>=0){ const H=(rows[h]||[]).map(impNorm), used=new Set(), find=(re)=>{ const i=H.findIndex((c,ix)=>!used.has(ix)&&re.test(c)); if(i>=0) used.add(i); return i; };
+    col.d=find(/^(data|date|dzien|day)\b/); col.e=find(/eksport|export|feed|oddan|do sieci/); col.i=find(/import|pobran|pobor|from grid|zakup/); col.l=find(/zuzyc|consum|load|dom\b/);
+    col.k=find(/produkc|yield|wytw|generat|\bpv\b|energia/); if(col.k<0){ const j=H.findIndex((c,ix)=>!used.has(ix)&&ix!==col.d&&/kwh/.test(c)); col.k=j; } }
+  const items=[]; let skipped=0;
+  rows.slice(h+1).forEach(r=>{ r=r||[]; const date=impDate(r[col.d]); if(!date){ if(r.some(c=>c!=null&&c!=='')) skipped++; return; }
+    const o={date,kwh:col.k>=0?impNum(r[col.k]):null,imp:col.i>=0?impNum(r[col.i]):null,exp:col.e>=0?impNum(r[col.e]):null,load:col.l>=0?impNum(r[col.l]):null};
+    if(o.kwh==null&&o.imp==null&&o.exp==null&&o.load==null){ skipped++; return; } items.push(o); });
+  const by=new Map(); items.forEach(o=>by.set(o.date,Object.assign(by.get(o.date)||{},Object.fromEntries(Object.entries(o).filter(([k,v])=>v!=null||k==='date')))));
+  return {items:[...by.values()].sort((a,b)=>a.date<b.date?-1:1),skipped,hasHeader:h>=0};
+}
+function pvRec(date,kwh,extra){ const price=SET.pvPrice||0, mode=SET.pvMode||'netbilling', opust=mode==='opusty'?(SET.pvOpust||0):1, creditKwh=+(kwh*opust).toFixed(3); return {date,kwh,price,mode,opust,creditKwh,value:+(creditKwh*price).toFixed(2),...extra}; }
+async function pvImportFile(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f) return; const info=$w('pv_impinfo');
+  try{ const res=impParsePv(await impReadFile(f));
+    if(!res.items.length){ alert('Nie znaleziono żadnych wierszy z datą i wartością.\nOczekiwane kolumny: Data, Produkcja (kWh), opcjonalnie Import, Eksport, Zużycie domu. Pobierz szablon CSV.'); return; }
+    const have=new Set(PV.map(p=>p.date)), nNew=res.items.filter(o=>!have.has(o.date)&&o.kwh!=null).length, nUpd=res.items.filter(o=>have.has(o.date)).length, noKwh=res.items.filter(o=>!have.has(o.date)&&o.kwh==null).length;
+    if(!confirm('Plik: '+f.name+'\nDni: '+res.items.length+' ('+res.items[0].date+' → '+res.items[res.items.length-1].date+')\nNowych wpisów: '+nNew+' · istniejących do zaktualizowania: '+nUpd+(noKwh?' · pominiętych (brak produkcji dla nowej daty): '+noKwh:'')+(res.skipped?' · wierszy bez daty: '+res.skipped:'')+(res.hasHeader?'':'\n(brak nagłówka — przyjęto kolejność: data, produkcja, import, eksport, zużycie)')+'\n\nZaimportować?')) return;
+    let a=0,b=0; res.items.forEach(o=>{ const p=PV.find(x=>x.date===o.date&&!(x.src==='hub-auto-live'&&0));
+      if(p){ if(o.kwh!=null){ p.kwh=o.kwh; p.creditKwh=+(o.kwh*(p.opust??1)).toFixed(3); p.value=+(p.creditKwh*(p.price||0)).toFixed(2); }
+        ['imp','exp','load'].forEach(k=>{ if(o[k]!=null) p[k]=o[k]; }); p.src='import'; p.srcKwh='import'; b++; }
+      else if(o.kwh!=null){ PV.push({id:uid(),...pvRec(o.date,o.kwh,{note:'import z pliku '+f.name,src:'import',srcKwh:'import',imp:o.imp!=null?o.imp:undefined,exp:o.exp!=null?o.exp:undefined,load:o.load!=null?o.load:undefined})}); a++; } });
+    await persist(); renderAll(); if(info) info.textContent='Zaimportowano: '+a+' nowych, '+b+' zaktualizowanych.';
+  }catch(e){ alert('Import nie powiódł się: '+e.message); if(info) info.textContent=''; }
+}
+function pvTemplate(){ const t='\ufeffData;Produkcja (kWh);Import z sieci (kWh);Eksport do sieci (kWh);Zużycie domu (kWh)\n'+ymd(new Date())+';15,2;;;\n'; const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'})); a.download='szablon_produkcja_PV.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
 function cancelPvEdit(){
   pvEditId=null;
   document.getElementById('pvSubmitBtn').textContent='Zapisz wpis PV';
@@ -1518,7 +1592,7 @@ function editPv(id){
   document.getElementById('pvCancelBar').style.display='flex';
   document.getElementById('pvSubmitBtn').textContent='Zapisz zmiany (PV)';
   document.getElementById('pv_date').value=r.date;
-  document.getElementById('pv_kwh').value=r.kwh;
+  document.getElementById('pv_kwh').value=r.kwh; ['imp','exp','load'].forEach(k=>{ document.getElementById('pv_'+k).value=r[k]!=null?r[k]:''; });
   document.getElementById('pv_price').value=r.price;
   document.getElementById('pv_note').value=r.note||''; wxLoadForm('pv',r); hubClearPv();
 }
@@ -1528,12 +1602,12 @@ async function addPv(){
   const price=parseFloat(document.getElementById('pv_price').value)||SET.pvPrice||0;
   const mode=SET.pvMode||'netbilling', opust=mode==='opusty'?(SET.pvOpust||0):1;
   const creditKwh=+(kwh*opust).toFixed(3);
-  const rec={date,kwh,price,mode,opust,creditKwh,value:+(creditKwh*price).toFixed(2),note:document.getElementById('pv_note').value||'',wx:wxRead('pv')||undefined,srcKwh:hubPvSrc()};
+  const rec={date,kwh,price,mode,opust,creditKwh,value:+(creditKwh*price).toFixed(2),note:document.getElementById('pv_note').value||'',wx:wxRead('pv')||undefined,srcKwh:hubPvSrc(),src:'reczny',...Object.fromEntries(['imp','exp','load'].map(k=>{ const v=parseFloat(document.getElementById('pv_'+k).value); return [k,isNaN(v)?undefined:v]; }))};
   const wasEdit=!!pvEditId;
   if(wasEdit){ const idx=PV.findIndex(x=>x.id===pvEditId); if(idx>-1) PV[idx]={...PV[idx],...rec}; }
   else PV.push({id:uid(),...rec});
   cancelPvEdit();
-  ['pv_kwh','pv_note'].forEach(id=>document.getElementById(id).value='');
+  ['pv_kwh','pv_note','pv_imp','pv_exp','pv_load'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pv_price').value=SET.pvPrice;
   await persist(); alert(wasEdit?'Zaktualizowano wpis PV.':'Zapisano wpis PV na dysku.');
 }
@@ -3560,7 +3634,7 @@ async function hubAutoCycles(){
       M.push({id:mid,rid,mode:type,date:st.slice(0,10),start:st,end:en||'',open:en?undefined:true,kwh:null,defMin:wls?wls.def:0,runMin:wls?wls.run:0,pauseMin:wls?wls.pause:0,defN:wls?wls.defN:0,rd:buildRd(g,st,en),res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true});
       changed=true; });
     SET.acLast=ymd(new Date(Date.now()-2*864e5)); if(changed){ await persist(); }
-    renderTodo();
+    renderTodo(); setTimeout(()=>hubRepairM(true),500);
   }catch(e){ HUBC.acErr=e.message; } finally{ HUBC.acBusy=false; }
 }
 /* „Do uzupełnienia” — jedyne, co musi dopisać użytkownik (zużycie energii) */
@@ -3671,6 +3745,24 @@ async function hubBackfillM(){
   }finally{ HUBC.bfmBusy=false; }
 }
 
+/* odczyty okresu zdublowane (np. po starym przerzedzaniu próbek co 5 min: kilka odczytów ma identyczne T01/T02/T39/T30/T34/T35) → nadpisz właściwymi próbkami z huba */
+async function hubRepairM(quiet){
+  const el=$w('ch_bf'); if(!hubCfg()){ if(!quiet&&el) el.textContent='Najpierw skonfiguruj hub (zakładka „Na żywo”).'; return; }
+  if(HUBC.rpBusy) return; HUBC.rpBusy=true;
+  const KEYS=[['t01','T01'],['t02','T02'],['t04','T04'],['flow','T39'],['hz','T30'],['volt','T34'],['amp','T35']];
+  const dup=m=>{ const seen=new Map(); (m.rd||[]).forEach(x=>{ if(!x||x.t01==null) return; const k=[x.t01,x.t02,x.flow,x.hz,x.volt,x.amp].join('|'); seen.set(k,(seen.get(k)||0)+1); }); return [...seen.values()].some(n=>n>1); };
+  const list=M.filter(m=>m.start&&m.end&&m.rd&&m.rd.length>=2&&dup(m)); let fixed=0, err=0;
+  try{
+    for(let i=0;i<list.length;i++){ const m=list[i]; if(!quiet&&el) el.textContent='Naprawiam '+(i+1)+' / '+list.length+'…';
+      try{ const rows=await wlSnapFetch(m.start,m.end); if(!rows.length) continue; const X=hubWlCtx(rows,m.start,m.end), rd=m.rd;
+        const set=(x,r)=>{ if(!x||!r) return 0; let n=0; KEYS.forEach(([k,c])=>{ if(r[c]!=null&&x[k]!==r[c]){ x[k]=r[c]; n++; } }); return n; };
+        let n=set(rd[0],X.pick(m.start,1))+set(rd[rd.length-1],X.pick(m.end,-1)); rd.slice(1,-1).forEach(x=>{ if(x&&x.ts) n+=set(x,X.near(x.ts,4)); });
+        if(n) fixed++; }catch(e){ err++; } }
+    if(fixed){ await persist(); renderAll(); }
+    if(!quiet&&el) el.textContent=list.length?('Naprawiono odczyty w '+fixed+' z '+list.length+' okresów ze zdublowanymi odczytami'+(err?' · '+err+' błędów':'')+'.'):'Nie znaleziono okresów ze zdublowanymi odczytami.';
+  }finally{ HUBC.rpBusy=false; }
+}
+
 /* ===================== HUB (Warmlink + SolaX przez Arkusz Google) ===================== */
 const HUBK='hp_hub_v1'; let HUBC={sx:{},sxTo:'',days:{},live:null,liveAt:0,wl24:null,busy:false,sxAt:0}; var HUBMSG=''; let HUBSEQ={co:0,w:0,pv:0};
 try{ const t=localStorage.getItem(HUBK); if(t) Object.assign(HUBC,JSON.parse(t)); }catch(e){}
@@ -3707,6 +3799,7 @@ async function hubGet(a,params,ms){
 const hubN=v=>{ if(v==null||v==='') return null; if(typeof v==='string'&&/^\d{4}-\d\d-\d\dT/.test(v)){ const d=new Date(v); if(!isNaN(d)) return parseFloat(d.getDate()+'.'+(d.getMonth()+1)); }   /* Arkusz (PL) zamienia „3.5” na datę 3 maja — odtwarzamy liczbę */ const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
 const HUB_RNG={T01:[-20,95],T02:[-20,95],T04:[-45,60],T30:[0,130],T32:[0,130],T34:[0,520],T35:[0,80],T39:[0,40],T08:[0,95]};
 function hubSane(k,v){ const r=HUB_RNG[k]; return (v==null||!r)?v:((v<r[0]||v>r[1])?null:v); }   // odrzuca wartości niemożliwe (np. rok 2026 w polu T04 po błędzie kolumn w arkuszu)
+const WL_DESC={O01:'sprężarka ON/OFF',O10:'zawór CO/CWU',T01:'wlot',T02:'wylot',T04:'zewn.',T08:'CWU',T30:'Hz',T32:'Hz max',T34:'V',T35:'A',T39:'przepływ'};
 function onOff(v){ if(v==null||v==='') return null; if(typeof v==='number') return v>0?1:0; const t=String(v).trim().toLowerCase(); if(/^(1|on|open|opened|true)$/.test(t)) return 1; if(/^(0|off|close|closed|false)$/.test(t)) return 0; const n=parseFloat(t.replace(',','.')); return isNaN(n)?null:(n>0?1:0); }
 function hubVals(v){ const o={}; ['T01','T02','T04','T30','T32','T34','T35','T39','T08','Mode','Power'].forEach(k=>o[k]=hubSane(k,hubN(v&&v[k]))); o.O01=onOff(v&&v.O01); o.O10=onOff(v&&v.O10); return o; }
 /* Warmlink zwraca T04 / T35 / T39 tylko w części próbek (reszta pusta albo T35 = 0 przy pracującej sprężarce).
@@ -4019,11 +4112,11 @@ function renderLive(){
   const age=ts=>{ if(!ts) return '—'; const m=Math.round((Date.now()-Date.parse(String(ts).slice(0,16)))/60000); return m<1?'przed chwilą':(m<90?m+' min temu':Math.round(m/60)+' h temu'); };
   const grid=x=>'<div class="kvgrid">'+x+'</div>';
   if(HUBC.liveErr) $w('live_wl').innerHTML=`<div class="warnline bad">Hub: ${wxEsc(HUBC.liveErr)}</div>`;
-  else if(L&&L.wl){ const v=hubVals(L.wl.v), oo=k=>{ const raw=L.wl.v&&L.wl.v[k]; return v[k]!=null?(v[k]?'ON':'OFF'):(raw===undefined?'— <span class="note">hub nie zbiera O01/O10: wdróż nowy Code.gs (v1.7)</span>':(raw===''||raw===null?'—':wxEsc(String(raw)))); }, run=v.T30>0, dt=(v.T01!=null&&v.T02!=null)?v.T02-v.T01:null, q=(run&&dt!=null&&v.T39!=null)?v.T39*(+SET.rho||1000)*(+SET.cpw||4.186)*dt/3600:null, S=(v.T34&&v.T35)?Math.sqrt(3)*v.T34*v.T35/1000:null;
+  else if(L&&L.wl){ const v=hubVals(L.wl.v), oo=k=>{ const raw=L.wl.v&&L.wl.v[k], cw=WL_O10POL!=null?WL_O10POL:1; return v[k]!=null?(k==='O01'?(v[k]?'<b style="color:var(--ok)">ON</b> · sprężarka pracuje':'OFF · sprężarka stoi'):(v[k]===cw?'<b>'+(v[k]?'ON':'OFF')+'</b> · zawór na <b>CWU</b>':(v[k]?'ON':'OFF')+' · zawór na <b>CO</b>')):(raw===undefined?'— <span class="note">hub nie zbiera O01/O10: wdróż nowy Code.gs (v1.7)</span>':(raw===''||raw===null?'—':wxEsc(String(raw)))); }, run=v.T30>0, dt=(v.T01!=null&&v.T02!=null)?v.T02-v.T01:null, q=(run&&dt!=null&&v.T39!=null)?v.T39*(+SET.rho||1000)*(+SET.cpw||4.186)*dt/3600:null, S=(v.T34&&v.T35)?Math.sqrt(3)*v.T34*v.T35/1000:null;
     $w('live_wl').innerHTML=`<div class="statusrow"><span class="big" style="color:${run?'var(--ok)':'var(--muted)'}">${run?'● sprężarka pracuje'+(v.T30?' · '+v.T30+' Hz':''):'○ sprężarka stoi'}</span><span class="note">dane ${age(L.wl.ts)}</span></div>`
       +grid(lk('T01 — wlot do pompy',v.T01!=null?v.T01+' °C':'—')+lk('T02 — wylot z pompy',v.T02!=null?v.T02+' °C':'—')+lk('ΔT (T02 − T01)',dt!=null?dt.toFixed(1)+' K':'—')+lk('T04 — temp. zewnętrzna',v.T04!=null?v.T04+' °C':'—')+lk('T39 — przepływ',v.T39!=null?v.T39+' m³/h':'—')
-      +lk('Moc grzewcza Q (szac. z T39·ΔT)',q!=null?q.toFixed(2)+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?v.T34+' V':'—')+' / '+(v.T35!=null?v.T35+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?S.toFixed(2)+' kVA':'—')+lk('T32 — maks. częstotliwość',v.T32!=null?v.T32+' Hz':'—')+lk('T08 — temp. CWU',v.T08!=null?v.T08+' °C':'—')+lk('O01 — sprężarka',oo('O01'))+lk('O10 — zawór CO/CWU (ON = CWU)',oo('O10')))
-      +`<details style="margin-top:8px"><summary style="font-size:.8rem;margin:0">Wszystkie kody Warmlink (do rozpoznania zaworu 2-drogowego CO/CWU)</summary><div class="chips" style="margin-top:6px">${Object.keys(L.wl.v||{}).sort().map(k=>`<span class="chipv"><i>${wxEsc(k)}</i><b>${wxEsc(String(L.wl.v[k]))}</b></span>`).join('')}</div></details>`
+      +lk('Moc grzewcza Q (szac. z T39·ΔT)',q!=null?q.toFixed(2)+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?v.T34+' V':'—')+' / '+(v.T35!=null?v.T35+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?S.toFixed(2)+' kVA':'—')+lk('T32 — maks. częstotliwość',v.T32!=null?v.T32+' Hz':'—')+lk('T08 — temp. CWU',v.T08!=null?v.T08+' °C':'—')+lk('O01 — sprężarka',oo('O01'))+lk('O10 — zawór CO/CWU',oo('O10')))
+      +`<details style="margin-top:8px"><summary style="font-size:.8rem;margin:0">Wszystkie kody Warmlink (do rozpoznania zaworu 2-drogowego CO/CWU)</summary><div class="chips" style="margin-top:6px">${Object.keys(L.wl.v||{}).sort().map(k=>`<span class="chipv"><i>${wxEsc(k)}${WL_DESC[k]?' ('+WL_DESC[k]+')':''}</i><b>${wxEsc(String(L.wl.v[k]))}</b></span>`).join('')}</div></details>`
       +(L.errWl?`<div class="warnline bad">Ostatni błąd odczytu Warmlink: ${wxEsc(L.errWl)}</div>`:''); }
   else $w('live_wl').innerHTML='<div class="empty">Brak odczytów Warmlink'+(L&&L.errWl?': '+wxEsc(L.errWl):' (hub zbiera dane co 5 min)')+'.</div>';
   if(L&&L.sx){ const s=L.sx; $w('live_sx').innerHTML=`<div class="statusrow"><span class="big" style="color:${s.on?'var(--pv)':'var(--muted)'}">${s.on?'● falownik produkuje':'○ falownik nie produkuje'}${s.pw!=null?' · '+(s.pw/1000).toFixed(2)+' kW':''}</span><span class="note">dane ${age(s.ts)}</span></div>`
@@ -4031,9 +4124,13 @@ function renderLive(){
   else $w('live_sx').innerHTML='<div class="empty">Brak odczytów SolaX'+(L&&L.errSx?': '+wxEsc(L.errSx):'')+'.</div>';
   setCW('live_chart',1);
   $w('live_chart').innerHTML=svgLive(HUBC.wl24);
-  const rg=parseInt(($w('live_range')||{}).value,10)||30, from=addDaysS(ymd(new Date()),-rg), ds=Object.keys(HUBC.days).filter(d=>d>=from).sort().reverse();
-  const sumR=(d)=>R.filter(r=>r.date===d).reduce((s,r)=>s+(r.kwh||0),0);
-  $w('live_days').innerHTML=ds.length?`<table class="rc"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Import z sieci (kWh)</th><th>Eksport do sieci (kWh)</th><th>Zużycie domu (kWh)</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=HUBC.days[d], W=wxRec({date:d}), pk=sumR(d); return `<tr><td class="num">${d}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${x.im!=null?(+x.im).toFixed(1):'—'}</td><td class="num">${x.ex!=null?(+x.ex).toFixed(1):'—'}</td><td class="num">${x.ld!=null?(+x.ld).toFixed(1):'—'}</td><td class="num">${pk?pk.toFixed(1):'—'}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table>`+(HUBC.daysErr?`<div class="warnline bad">Odświeżenie dni z huba nie powiodło się: ${wxEsc(HUBC.daysErr)} — pokazuję dane zapamiętane wcześniej.</div>`:(HUBC.daysInfo&&HUBC.daysInfo.n<rg*0.5&&HUBC.daysInfo.rg===rg?`<div class="note" style="margin-top:6px">Hub zwrócił ${HUBC.daysInfo.n} dni (${wxEsc(HUBC.daysInfo.from)} → ${wxEsc(HUBC.daysInfo.to)}) z ${rg} żądanych — brakujące dni dociągnij przyciskiem „⬇ Pobierz historię SolaX”.</div>`:'')):'<div class="empty">Brak dni w historii za ten okres'+(HUBC.daysErr?' — błąd pobierania z huba: '+wxEsc(HUBC.daysErr):(HUBC.daysInfo&&HUBC.daysInfo.n===0?' — hub nie zwrócił żadnego dnia (arkusz DNI jest pusty albo ma uszkodzone daty: w Arkuszu uruchom Monitor PC+PV → 5. Napraw daty, potem „Wdróż → Nowa wersja”)':''))+'. Kliknij „Pobierz historię SolaX” powyżej albo uruchom w Arkuszu: Monitor PC+PV → 4. Pobierz historię SolaX.</div>';
+  const rg=parseInt(($w('live_range')||{}).value,10)||30, from=addDaysS(ymd(new Date()),-rg), pvm=d=>PV.find(p=>p.date===d&&!(p.src&&p.src.indexOf('hub-auto')===0)), dset=new Set(Object.keys(HUBC.days)); PV.forEach(p=>{ if(p.date&&pvm(p.date)===p) dset.add(p.date); }); const ds=[...dset].filter(d=>d>=from).sort().reverse();
+  const pumpDay=(d)=>{ let s=0, miss=0; R.forEach(r=>{ if(!r.start) return; const e=r.end||r.start, a=r.start.slice(0,10), b=e.slice(0,10); if(d<a||d>b) return;
+      if(!(r.kwh>0)){ if(r.type) miss++; return; }
+      if(!r.end||a===b){ if(d===a) s+=r.kwh; return; }
+      const al=allocDays({start:r.start,end:r.end}).find(x=>x.day===d); if(al) s+=r.kwh*al.f; });
+    return {kwh:s,miss}; };
+  $w('live_days').innerHTML=ds.length?`<table class="rc"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Import z sieci (kWh)</th><th>Eksport do sieci (kWh)</th><th>Zużycie domu (kWh)</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=Object.assign({},HUBC.days[d]||{}), pm=pvm(d), W=wxRec({date:d}), pk=pumpDay(d); let manE=false; if(pm){ x.y=pm.kwh; ['imp:im','exp:ex','load:ld'].forEach(z=>{ const [a,b]=z.split(':'); if(pm[a]!=null){ x[b]=pm[a]; manE=true; } }); } const noMeter=!manE&&(x.im===0&&x.ex===0&&x.ld!=null&&x.y!=null&&Math.abs(x.ld-x.y)<0.15); return `<tr><td class="num">${d}${pm?' <span title="wpis ręczny / import z pliku">✎</span>':''}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${noMeter?'<span title="Falownik nie ma licznika (CT): SolaX zwraca import = 0, eksport = 0 i zużycie = produkcja. To nie są pomiary.">—</span>':(x.im!=null?(+x.im).toFixed(1):'—')}</td><td class="num">${noMeter?'—':(x.ex!=null?(+x.ex).toFixed(1):'—')}</td><td class="num">${noMeter?'—':(x.ld!=null?(+x.ld).toFixed(1):'—')}</td><td class="num">${pk.kwh>0?pk.kwh.toFixed(1):'—'}${pk.miss?` <span title="${pk.miss} cykli tego dnia bez wpisanego zużycia (kWh) — nie wliczone" style="color:var(--warn,#c90)">⚠</span>`:''}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table><div class="note" style="margin-top:6px">„Pompa tego dnia”: zużycie cykli rozdzielone na doby proporcjonalnie do czasu (cykl przez północ liczy się w obu dniach); ⚠ = są cykle bez wpisanego kWh. Import/eksport/zużycie domu: „—” gdy falownik nie ma licznika (SolaX zwraca wtedy 0 / 0 / zużycie = produkcja).</div>`+(HUBC.daysErr?`<div class="warnline bad">Odświeżenie dni z huba nie powiodło się: ${wxEsc(HUBC.daysErr)} — pokazuję dane zapamiętane wcześniej.</div>`:(HUBC.daysInfo&&HUBC.daysInfo.n<rg*0.5&&HUBC.daysInfo.rg===rg?`<div class="note" style="margin-top:6px">Hub zwrócił ${HUBC.daysInfo.n} dni (${wxEsc(HUBC.daysInfo.from)} → ${wxEsc(HUBC.daysInfo.to)}) z ${rg} żądanych — brakujące dni dociągnij przyciskiem „⬇ Pobierz historię SolaX”.</div>`:'')):'<div class="empty">Brak dni w historii za ten okres'+(HUBC.daysErr?' — błąd pobierania z huba: '+wxEsc(HUBC.daysErr):(HUBC.daysInfo&&HUBC.daysInfo.n===0?' — hub nie zwrócił żadnego dnia (arkusz DNI jest pusty albo ma uszkodzone daty: w Arkuszu uruchom Monitor PC+PV → 5. Napraw daty, potem „Wdróż → Nowa wersja”)':''))+'. Kliknij „Pobierz historię SolaX” powyżej albo uruchom w Arkuszu: Monitor PC+PV → 4. Pobierz historię SolaX.</div>';
 }
 setInterval(()=>{ const t=$w('live'); if(t&&t.classList.contains('on')&&hubCfg()&&!HUBC.liveBusy&&Date.now()-HUBC.liveAt>60000) hubRefreshLive(false); },15000);
 function hubInit(){ if(hubCfg()&&Date.now()-(HUBC.sxAt||0)>10*60000) setTimeout(hubPrefetchSx,1200); }
