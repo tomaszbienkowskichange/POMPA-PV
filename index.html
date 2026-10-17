@@ -2423,6 +2423,20 @@ function panelChart(color,categories,values,unitLbl,chartType,info){
 
 function tempKey(t){ const e=document.getElementById('repTempBin'), b=e?(parseFloat(e.value)||1):1, k=Math.round(t/b)*b; return (b>=1?k.toFixed(0):k.toFixed(1))+'°C'; }
 function outdoorTemp(r){ if(r.type==='CO'){ const vals=[r.out1,r.out2].filter(v=>v!=null); return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null; } return r.out!=null?r.out:null; }
+/* Cykl trwa od startu do końca i często przechodzi przez północ (u Ciebie 160 z 331 cykli, ~88% energii), więc energia, koszt i czas
+   rozkładają się na doby proporcjonalnie do czasu (jak okresy COP); część „w godzinach PV” liczona osobno dla każdej doby. */
+function recSlices(r){
+  if(!r||!r.start) return r&&r.date?[{day:r.date,f:1,min:0,pvf:0.5}]:[];
+  const t0=Date.parse(r.start), t1=r.end?Date.parse(r.end):NaN;
+  if(isNaN(t0)) return r.date?[{day:r.date,f:1,min:0,pvf:0.5}]:[];
+  if(isNaN(t1)||t1<=t0) return [{day:r.start.slice(0,10),f:1,min:0,pvf:pvFracRec(r)}];
+  const out=[], tot=t1-t0; let d=new Date(t0); d.setHours(0,0,0,0);
+  for(let g=0;d.getTime()<t1&&g<400;g++){ const ds=d.getTime(), de=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1).getTime(), a=Math.max(ds,t0), b=Math.min(de,t1);
+    if(b>a) out.push({day:ymd(d),f:(b-a)/tot,min:(b-a)/60000,pvf:pvOnFrac(toLocalStr(a),toLocalStr(b))}); d=new Date(de); }
+  return out;
+}
+function addSlice(o,r,x,first){ o.dates.add(x.day); const c=recCost(r), k=(r.kwh||0)*x.f, cc=c*x.f; o.dayKwh+=k*x.pvf; o.dayCost+=cc*x.pvf;
+  if(r.type==='CO'){ o.coKwh+=k; o.coCost+=cc; o.coMin+=x.min; if(first) o.coCount++; } else { o.cwuKwh+=k; o.cwuCost+=cc; o.cwuMin+=x.min; if(first) o.cwuCount++; } }
 function ensureAgg(map,k){ if(!map.has(k)) map.set(k,{dayKwh:0,dayCost:0,dates:new Set(),coKwh:0,cwuKwh:0,coCost:0,cwuCost:0,coMin:0,cwuMin:0,coCount:0,cwuCount:0}); }
 function addAgg(o,r){ if(r.date) o.dates.add(r.date); const min=durMin(r.start,r.end)||0, c=recCost(r), fd=pvFracRec(r); o.dayKwh+=(r.kwh||0)*fd; o.dayCost+=c*fd; if(r.type==='CO'){o.coKwh+=r.kwh||0;o.coCost+=c;o.coMin+=min;o.coCount++;} else {o.cwuKwh+=r.kwh||0;o.cwuCost+=c;o.cwuMin+=min;o.cwuCount++;} }
 function inRange(d,rg){ return !rg||((!rg.from||d>=rg.from)&&(!rg.to||d<=rg.to)); }
@@ -2432,7 +2446,7 @@ function buildAgg(groupBy,gran,rg){
     RR.forEach(r=>{ const t=outdoorTemp(r); if(t==null) return; const k=tempKey(t); ensureAgg(map,k); addAgg(map.get(k),r); });
     return {keys:[...map.keys()].sort((a,b)=>parseFloat(a)-parseFloat(b)), map};
   }
-  RR.forEach(r=>{ if(!r.date) return; const k=periodKey(r.date,gran); ensureAgg(map,k); addAgg(map.get(k),r); });
+  R.forEach(r=>recSlices(r).forEach((x,i)=>{ if(!inRange(x.day,rg)||!wxPass(x.day)) return; const k=periodKey(x.day,gran); ensureAgg(map,k); addSlice(map.get(k),r,x,i===0); }));
   return {keys:[...map.keys()].sort(), map};
 }
 function metricVal(o,t,metric){ if(metric==='kwh') return t==='co'?o.coKwh:o.cwuKwh;
@@ -2594,14 +2608,18 @@ function dashPeriod(){
 }
 function dashStats(from,to){
   const sum=(a,f)=>a.reduce((t,x)=>t+(f(x)||0),0);
-  const RR=R.filter(r=>r.date&&r.date>=from&&r.date<=to), coR=RR.filter(r=>r.type==='CO'), cwuR=RR.filter(r=>r.type==='CWU'), PP=PV.filter(p=>p.date&&p.date>=from&&p.date<=to);
+  const SL=[]; R.forEach(r=>recSlices(r).forEach((x,i)=>{ if(x.day>=from&&x.day<=to) SL.push({r,x,first:i===0}); }));
+  const RR=SL.filter(o=>o.first).map(o=>o.r), coR=RR.filter(r=>r.type==='CO'), cwuR=RR.filter(r=>r.type==='CWU'), PP=PV.filter(p=>p.date&&p.date>=from&&p.date<=to);
   const items=M.filter(mm=>mm.start&&mm.end&&mm.start.slice(0,10)>=from&&mm.start.slice(0,10)<=to).map(P=>({P,r:calcPeriod(P,{noCompare:true})})).filter(x=>x.r.hours!=null);
   const withH=items.filter(x=>x.r.heat!=null&&x.r.E>0), wcop=l=>{ const e=sum(l,x=>x.r.E); return e>0?sum(l,x=>x.r.heat)/e:null; };
-  const co=sum(coR,r=>r.kwh), cwu=sum(cwuR,r=>r.kwh);
-  return {RR,coR,cwuR,PP,items,withH,co,cwu,hp:co+cwu,hpDay:sum(RR,r=>(r.kwh||0)*pvFracRec(r)),cost:sum(RR,recCost),coCost:sum(coR,recCost),cwuCost:sum(cwuR,recCost),
-    coMin:sum(coR,r=>durMin(r.start,r.end)),cwuMin:sum(cwuR,r=>durMin(r.start,r.end)),
+  const sl=(t,fn)=>SL.filter(o=>o.r.type===t).reduce((a,o)=>a+(fn(o)||0),0), slAll=fn=>SL.reduce((a,o)=>a+(fn(o)||0),0);
+  const co=sl('CO',o=>(o.r.kwh||0)*o.x.f), cwu=sl('CWU',o=>(o.r.kwh||0)*o.x.f);
+  const recs=[...new Set(SL.map(o=>o.r))], noKwh=recs.filter(r=>r.kwh==null||r.kwh==='').length, zeroLen=recs.filter(r=>r.kwh>0&&r.start&&r.end&&r.end<=r.start).length;
+  let ovl=0; { const q=recs.filter(r=>r.start).sort((a,b)=>a.start.localeCompare(b.start)); let mx=''; q.forEach(r=>{ if(r.start<mx) ovl++; const e=r.end||r.start; if(e>mx) mx=e; }); }
+  return {RR,coR,cwuR,PP,items,withH,co,cwu,noKwh,zeroLen,ovl,hp:co+cwu,hpDay:slAll(o=>(o.r.kwh||0)*o.x.f*o.x.pvf),cost:slAll(o=>recCost(o.r)*o.x.f),coCost:sl('CO',o=>recCost(o.r)*o.x.f),cwuCost:sl('CWU',o=>recCost(o.r)*o.x.f),
+    coMin:sl('CO',o=>o.x.min),cwuMin:sl('CWU',o=>o.x.min),
     pv:sum(PP,p=>p.kwh),pvCredit:sum(PP,p=>p.creditKwh??p.kwh),pvVal:sum(PP,p=>p.value),
-    hpDays:new Set(RR.map(r=>r.date)).size,pvDays:new Set(PP.map(p=>p.date)).size,
+    hpDays:new Set(SL.map(o=>o.x.day)).size,pvDays:new Set(PP.map(p=>p.date)).size,
     cop:wcop(withH),copCo:wcop(withH.filter(x=>x.P.mode==='CO')),copCwu:wcop(withH.filter(x=>x.P.mode==='CWU')),pE:sum(items,x=>x.r.E),pH:sum(items,x=>x.r.hours),heat:sum(withH,x=>x.r.heat)};
 }
 function dashInv(from,to){
@@ -2630,7 +2648,11 @@ function renderDashboard(){
   $('dashCustom').style.display=DASH.p==='custom'?'inline-flex':'none';
   const fmtD=s=>s.slice(8,10)+'.'+s.slice(5,7)+'.'+s.slice(0,4);
   $('dashPeriodInfo').innerHTML=`<b>${P.label}:</b> ${fmtD(P.from)} – ${fmtD(P.to)} (${P.days} dni)${P.prev?` · porównanie z ${fmtD(P.prev.from)} – ${fmtD(P.prev.to)}`:''}<br>`
-    +`Dane w okresie: pompa — ${S.hpDays} dni (${S.RR.length} cykli) · PV — ${S.pvDays} dni (${S.PP.length} wpisów) · okresy COP — ${S.items.length}${lastDt?` · ostatni wpis: ${fmtD(lastDt)}`:''}`;
+    +`Dane w okresie: pompa — ${S.hpDays} dni (${S.RR.length} cykli) · PV — ${S.pvDays} dni (${S.PP.length} wpisów) · okresy COP — ${S.items.length}${lastDt?` · ostatni wpis: ${fmtD(lastDt)}`:''}`
+    +(S.noKwh?`<br><span style="color:var(--amber)">⚠ ${S.noKwh} cykli bez kWh — ich energia nie jest wliczona (uzupełnij w Cykle → Dodaj).</span>`:'')
+    +(S.ovl?`<br><span style="color:var(--amber)">⚠ ${S.ovl} cykli nakłada się na inny cykl — czas i energia mogą być liczone podwójnie.</span>`:'')
+    +(S.zeroLen?`<br><span style="color:var(--amber)">⚠ ${S.zeroLen} cykli ma start = koniec, ale niezerowe kWh (pewnie import) — rozkład na doby nie jest możliwy.</span>`:'')
+    +`<br><span style="color:var(--muted)">Energia, koszt i czas cyklu przechodzącego przez północ są dzielone na doby proporcjonalnie do czasu.</span>`;
   if(!S.RR.length&&!S.PP.length){ $('dashKpis').innerHTML=''; ['dashBal','dashPump','dashCop','dashBalance','dashMonths','dashPeriods','dashDays','dashCoWrap','dashBalChart'].forEach(i=>{ if($(i)) $(i).innerHTML=''; });
     $('dashKpis').innerHTML=`<div class="card" style="grid-column:1/-1"><div class="empty">Brak wpisów w tym okresie.${lastDt?` Ostatnie dane są z ${fmtD(lastDt)} — wybierz „Cała historia” albo szerszy okres.`:''}</div></div>`; return; }
   const _pvd=PV.map(p=>p.date).filter(Boolean).sort(), pvFirst=_pvd[0]||null; let SB=S, balFrom=null;
@@ -2701,7 +2723,7 @@ function renderDashboard(){
   setCW('dashBalChart',1); $('dashBalChart').innerHTML=keys.length?svgGroup(cats,[{name:'Pompa (CO+CWU) kWh',color:'#e0904f',values:rows.map(r=>+r.hp.toFixed(2))},{name:'Pompa z sieci (poza godz. PV) kWh',color:'#c0504d',values:rows.map(r=>+r.b.grid.toFixed(2))},{name:'PV — produkcja kWh',color:'#e8c547',values:rows.map(r=>+r.pv.toFixed(2))},{name:'PV do odbioru po opuście kWh',color:'#5fb87a',values:rows.map(r=>+r.b.credit.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
   setCW('dashCoWrap',1); $('dashCoWrap').innerHTML=keys.length?svgBars(cats,[{name:'CO',color:'#e0904f',values:rows.map(r=>+r.co.toFixed(2))},{name:'CWU',color:'#49b4cf',values:rows.map(r=>+r.cwu.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
   const last=S.items.slice().sort((a,b)=>b.P.start.localeCompare(a.P.start)).slice(0,6);
-  $('dashPeriods').innerHTML=last.length?'<table class="rc"><thead><tr><th>Start</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P:PP,r})=>`<tr><td class="num">${fmtY(PP.start)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${PP.mode==='CWU'?'cwu':'co'}">${PP.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP w tym okresie.</div>';
+  $('dashPeriods').innerHTML=last.length?'<table class="rc"><thead><tr><th>Start</th><th>Koniec</th><th>Czas</th><th>Tryb</th><th>E kWh</th><th>COP</th><th>T04 °C</th></tr></thead><tbody>'+last.map(({P:PP,r})=>`<tr><td class="num">${fmtY(PP.start)}</td><td class="num">${fmtY(PP.end)}</td><td class="num">${fmtHM(r.hours)}</td><td><span class="pill ${PP.mode==='CWU'?'cwu':'co'}">${PP.mode}</span></td><td class="num">${f2(r.E,2)}</td><td class="num"><b>${r.cop!=null?'≈ '+r.cop.toFixed(2):'—'}</b></td><td class="num">${r.t04!=null?r.t04.toFixed(1):'—'}</td></tr>`).join('')+'</tbody></table>':'<div class="empty">Brak okresów COP w tym okresie.</div>';
   const dd=[...new Set([...S.RR.map(r=>r.date),...S.PP.map(p=>p.date)])].sort().reverse().slice(0,7);
   $('dashDays').innerHTML=dd.length?'<table class="rc"><thead><tr><th>Dzień</th><th>CO kWh</th><th>CWU kWh</th><th>Koszt zł</th><th>PV kWh</th></tr></thead><tbody>'+dd.map(d=>{ const rr=S.RR.filter(r=>r.date===d);
     return `<tr><td class="num">${d}</td><td class="num">${sum(rr.filter(r=>r.type==='CO'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr.filter(r=>r.type==='CWU'),r=>r.kwh).toFixed(2)}</td><td class="num">${sum(rr,recCost).toFixed(2)}</td><td class="num">${S.PP.some(p=>p.date===d)?sum(S.PP.filter(p=>p.date===d),p=>p.kwh).toFixed(2):'—'}</td></tr>`; }).join('')+'</tbody></table>':'<div class="empty">Brak danych.</div>';
