@@ -30,6 +30,8 @@ header p{margin:0;color:var(--muted);font-size:.85rem}
 .storebar button{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.76rem;cursor:pointer;font-family:inherit}
 nav{display:flex;gap:6px;max-width:none;margin:12px 0 0;padding:0 24px;flex-wrap:wrap}
 nav button{background:var(--panel);border:1px solid var(--line);color:var(--muted);padding:8px 13px;border-radius:8px;font-size:.83rem;cursor:pointer;font-family:inherit}
+nav button[hidden]{display:none}
+.subnav{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}.subnav button{background:transparent;border:1px solid var(--line);color:var(--muted);padding:5px 12px;border-radius:999px;font-size:.78rem;cursor:pointer;font-family:inherit}.subnav button.on{color:var(--text);background:var(--panel2);border-color:#3a4652}
 nav button.on{color:var(--text);border-color:#3a4652;background:var(--panel2)}
 main{max-width:none;margin:0;padding:14px 24px 60px}
 .tab{display:none} .tab.on{display:block}
@@ -409,8 +411,8 @@ details.card[open]>summary{margin-bottom:12px}
       <div class="toolbar" style="margin:0 0 8px"><label>Wiersze</label><select id="dashGran" onchange="renderDashboard()"><option value="auto" selected>Automatycznie</option><option value="day">Dni</option><option value="week">Tygodnie</option><option value="month">Miesiące</option></select></div>
       <div class="note" id="dashGranNote" style="margin-bottom:6px"></div>
       <div class="tbl-wrap" id="dashMonths"></div></div>
-    <div class="card dc w6"><h2>Ostatnie okresy pracy (COP)</h2><div class="tbl-wrap" id="dashPeriods"></div></div>
-    <div class="card dc w6"><h2>Ostatnie dni</h2><div class="tbl-wrap" id="dashDays"></div></div>
+    <div class="card dc w12"><h2>Ostatnie okresy pracy (COP)</h2><div class="tbl-wrap" id="dashPeriods"></div></div>
+    <div id="dashDays" style="display:none"></div>
     <div class="card dc w12"><h3>🔥 Pompa — CO i CWU w okresie (kWh)</h3><div id="dashCoWrap"></div></div>
   </div>
 </div>
@@ -563,10 +565,7 @@ details.card[open]>summary{margin-bottom:12px}
     <tbody id="tbody"></tbody><tfoot id="tblFoot"></tfoot></table>
     <div id="emptyMsg" class="empty" style="display:none">Brak wpisów.</div>
   </div>
-  <div class="card" style="border-left:4px solid var(--pv)">
-    <h2><span class="dot pv"></span>☀️ Produkcja PV w tym samym zakresie dat (Od/Do powyżej)</h2>
-    <div id="danePvWrap"></div>
-  </div>
+  <div id="danePvWrap" style="display:none"></div>
 </div>
 
 <div class="tab" id="raporty">
@@ -590,7 +589,7 @@ details.card[open]>summary{margin-bottom:12px}
   </div>
   <div class="stats" id="repKpi"></div>
   <div class="card"><h2><span class="dot co"></span><span class="dot cwu"></span><span id="repMainTitle">Pompa ciepła</span></h2><div id="repSplit"></div><div id="repMainChart"></div></div>
-  <div class="card" style="border-left:4px solid var(--pv)"><h2><span class="dot pv"></span>☀️ Produkcja PV w tym samym okresie</h2><div id="panelPvWrap"></div></div>
+  <div id="panelPvWrap" style="display:none"></div>
   <div class="card tbl-wrap"><h2 style="margin-bottom:6px">Zestawienie szczegółowe</h2><div class="cap" id="repTblCap"></div><table class="rc"><thead><tr id="repThead"></tr></thead><tbody id="repTbody"></tbody></table>
     <p class="note" id="repPvNote" style="margin-top:8px;display:none">Kolumna PV pojawia się przy grupowaniu wg czasu i metryce kWh / koszt. „Dni z wpisami pompy” pokazuje, ile dni danego okresu ma wpisy (pompa nie pracuje codziennie, więc to informacja o pokryciu danymi, nie błąd). Okres oznaczony „(trwa)” jest jeszcze niepełny — nie porównuj jego sumy z pełnymi okresami; kreska „—” oznacza brak wpisów pompy.</p>
   </div>
@@ -1007,17 +1006,6 @@ details.card[open]>summary{margin-bottom:12px}
 </div>
 
 <div class="tab" id="live">
-  <div class="card">
-    <h2>☁ Hub danych — Warmlink (pompa) i SolaX (falownik)</h2>
-    <p class="note">Hub to Twój Arkusz Google z małym skryptem (<b>instrukcja: INSTRUKCJA_HUB.md</b>). Co 5 minut zapisuje odczyty pompy z Warmlinka i falownika SolaX, a aplikacja pobiera je sama — na każdym urządzeniu. Przy wpisywaniu cyklu CO/CWU, okresu COP i produkcji PV pola podstawiają się automatycznie (z możliwością ręcznej zmiany), a w bilansie „PV − pompa” stan PV pochodzi z falownika. Wklej tu link z menu Arkusza „3. Pokaż link do aplikacji”.</p>
-    <div class="apirow">
-      <div style="flex:3 1 320px"><label>Adres huba (zawiera klucz dostępu)</label><input id="hub_url" type="password" autocomplete="off" onchange="hubSaveUrl()"></div>
-      <div style="flex:0 0 auto"><button class="apibtn pri" onclick="hubTest()">Test połączenia</button></div>
-      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubBfRun()">⬇ Pobierz historię SolaX</button></div>
-    </div>
-    <div id="hub_status" class="note" style="margin-top:8px"></div>
-    <div id="hub_bf" class="note" style="margin-top:6px"></div>
-  </div>
   <div class="card"><h2>🔥 Pompa — teraz (Warmlink)</h2><div id="live_wl"></div><div class="apirow"><div style="flex:0 0 auto"><button class="apibtn" id="live_btn" onclick="hubRefreshLive(true)">↻ Odśwież teraz</button></div><div style="flex:1 1 200px"><span class="note" id="live_msg"></span></div></div></div>
   <div class="card"><h2>☀️ Falownik — teraz (SolaX)</h2><div id="live_sx"></div></div>
   <div id="live_chart"></div>
@@ -1071,7 +1059,18 @@ details.card[open]>summary{margin-bottom:12px}
 </div>
 
 <div class="tab" id="ustawienia">
-  <div class="card">
+<div class="card">
+    <h2>☁ Hub danych — Warmlink (pompa) i SolaX (falownik)</h2>
+    <p class="note">Hub to Twój Arkusz Google z małym skryptem (<b>instrukcja: INSTRUKCJA_HUB.md</b>). Co 5 minut zapisuje odczyty pompy z Warmlinka i falownika SolaX, a aplikacja pobiera je sama — na każdym urządzeniu. Przy wpisywaniu cyklu CO/CWU, okresu COP i produkcji PV pola podstawiają się automatycznie (z możliwością ręcznej zmiany), a w bilansie „PV − pompa” stan PV pochodzi z falownika. Wklej tu link z menu Arkusza „3. Pokaż link do aplikacji”.</p>
+    <div class="apirow">
+      <div style="flex:3 1 320px"><label>Adres huba (zawiera klucz dostępu)</label><input id="hub_url" type="password" autocomplete="off" onchange="hubSaveUrl()"></div>
+      <div style="flex:0 0 auto"><button class="apibtn pri" onclick="hubTest()">Test połączenia</button></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubBfRun()">⬇ Pobierz historię SolaX</button></div>
+    </div>
+    <div id="hub_status" class="note" style="margin-top:8px"></div>
+    <div id="hub_bf" class="note" style="margin-top:6px"></div>
+  </div>
+    <div class="card">
     <h2>Cena energii — zużycie pompy ciepła</h2>
     <div class="grid"><div><label>Domyślna cena za 1 kWh (zł)</label><input type="number" id="priceInput" step="0.01" onchange="updatePrice()"></div></div>
     <p style="font-size:.8rem;color:var(--muted);margin-top:10px">To tylko podpowiedź, która wpisuje się automatycznie w pole „Cena zastosowana w tym cyklu” w nowym wpisie CO/CWU. Zmiana tej wartości <b>nie przelicza</b> już zapisanych cykli — każdy zapisany wpis zachowuje cenę z dnia, w którym został dodany (widoczną i edytowalną per wpis w formularzu „+ Dodaj”, tak samo jak przy PV). Dzięki temu historia kosztów zostaje poprawna nawet gdy cena zakupu energii się zmieni.</p>
@@ -1181,6 +1180,19 @@ document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()
   b.classList.add('on'); document.getElementById(b.dataset.tab).classList.add('on');
   renderAll();
 }));
+
+/* GRUPY ZAKŁADEK: widoczne 8 przycisków; pozostałe (ukryte) nadal działają dla przejść z kodu (editRecord → „Dodaj” itd.) */
+const TAB_GROUPS=[['cykle','Cykle',[['dodaj','+ Dodaj'],['dzien','Dzień'],['dane','Lista']]],['cop','⚡ COP',[['cop','Okres pracy'],['cophist','Historia']]],['koszty','🧾 Koszty',[['faktury','Faktury'],['dokumenty','Dokumenty']]],['ustaw','Ustawienia',[['ustawienia','Hub i dane'],['api','Pogoda']]]];
+(function(){
+  const btn=t=>document.querySelector('nav button[data-tab="'+t+'"]');
+  TAB_GROUPS.forEach(g=>{ g[2].forEach((x,i)=>{ const b=btn(x[0]); if(!b) return; if(i===0) b.textContent=g[1]; else b.hidden=true;
+    const tab=document.getElementById(x[0]); if(tab&&!tab.querySelector(':scope>.subnav')) tab.insertAdjacentHTML('afterbegin','<div class="subnav">'+g[2].map(y=>'<button type="button" data-sub="'+y[0]+'">'+y[1]+'</button>').join('')+'</div>'); }); });
+  document.querySelectorAll('.subnav button').forEach(b=>b.addEventListener('click',()=>{ const t=btn(b.dataset.sub); if(t) t.click(); }));
+  const sync=()=>{ const cur=(document.querySelector('.tab.on')||{}).id, g=TAB_GROUPS.find(g=>g[2].some(x=>x[0]===cur)); if(!g) return;
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on')); const first=btn(g[2][0][0]); if(first) first.classList.add('on');
+    document.querySelectorAll('#'+cur+'>.subnav button').forEach(x=>x.classList.toggle('on',x.dataset.sub===cur)); };
+  document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',sync));
+})();
 function setType(t){
   document.getElementById('coForm').style.display = t==='CO'?'block':'none';
   document.getElementById('cwuForm').style.display = t==='CWU'?'block':'none';
@@ -4311,7 +4323,7 @@ function renderLive(){
   const tab=$w('live'); if(!tab) return;
   const hu=$w('hub_url'); if(hu&&document.activeElement!==hu) hu.value=SET.hubUrl||'';
   const cfg=hubCfg(), L=HUBC.live, lk=(l,v)=>`<div class="kv"><span>${l}</span><b>${v}</b></div>`;
-  if(!cfg){ $w('live_wl').innerHTML=$w('live_sx').innerHTML='<div class="empty">Hub nie jest skonfigurowany — wklej adres powyżej (instrukcja: INSTRUKCJA_HUB.md).</div>'; $w('live_chart').innerHTML=''; $w('live_days').innerHTML=''; return; }
+  if(!cfg){ $w('live_wl').innerHTML=$w('live_sx').innerHTML='<div class="empty">Hub nie jest skonfigurowany — wklej adres w Ustawieniach → „Hub danych” (instrukcja: INSTRUKCJA_HUB.md).</div>'; $w('live_chart').innerHTML=''; $w('live_days').innerHTML=''; return; }
   if(tab.classList.contains('on')&&!HUBC.liveBusy&&Date.now()-HUBC.liveAt>45000) hubRefreshLive(false);
   const age=ts=>{ if(!ts) return '—'; const m=Math.round((Date.now()-Date.parse(String(ts).slice(0,16)))/60000); return m<1?'przed chwilą':(m<90?m+' min temu':Math.round(m/60)+' h temu'); };
   const grid=x=>'<div class="kvgrid">'+x+'</div>';
