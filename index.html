@@ -387,7 +387,6 @@ details.card[open]>summary{margin-bottom:12px}
   <button data-tab="dokumenty">📁 Dokumenty</button>
   <button data-tab="cop">⚡ COP — okres pracy</button>
   <button data-tab="cophist">📈 COP — historia</button>
-  <button data-tab="copimp">📥 COP — import</button>
   <button data-tab="live">📡 Na żywo</button>
   <button data-tab="api">🌦 Pogoda</button>
   <button data-tab="ustawienia">Ustawienia</button>
@@ -1003,49 +1002,7 @@ details.card[open]>summary{margin-bottom:12px}
     <p class="note" style="margin:0 0 8px"><b>Odczyty: wszystkie / do COP</b> — „wszystkie” to liczba odczytów wpisanych w okresie (Start, Stop i pośrednie), „do COP” to te, z których da się policzyć ciepło: mają T01, T02 i przepływ T39, ΔT &gt; 0, sprężarka pracuje i nie jest to odszranianie. Okres z „0” w drugiej liczbie nie ma COP — dopisz odczyty przyciskiem „Edytuj”.</p>
     <table class="rc big cards"><thead><tr><th>Tryb</th><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas trwania</th><th>COP</th><th>Energia (kWh)</th><th>Moc pobierana (kW)</th><th>Moc grzewcza (kW)</th><th>Ciepło oddane (kWh)</th><th>Temp. zewn. T04 (śr. · min…max)</th><th>Temp. z API w czasie pracy (min · śr. · max)</th><th>Sprężarka T30</th><th>Zakres COP</th><th>cos φ</th><th>Odczyty (wszystkie / do COP)</th><th>Kontrole</th><th>Notatka</th><th></th></tr></thead>
     <tbody id="ch_tbody"></tbody></table>
-    <div id="ch_empty" class="empty" style="display:none">Brak okresów — dodaj w zakładce „⚡ COP — okres pracy” albo zaimportuj dane w „📥 COP — import”.</div>
-  </div>
-</div>
-
-<div class="tab" id="copimp">
-  <div class="card">
-    <h2>📥 Import danych historycznych</h2>
-    <p class="note">Tu wczytasz dane, które już masz (z Excela, Arkuszy Google, pliku CSV). Każdy <b>wiersz = jeden okres pracy</b>. Importowane okresy trafiają do tej samej bazy co wpisane ręcznie i od razu są w historii i zestawieniach.</p>
-  </div>
-
-  <div class="card">
-    <h2>A. Z zapisanych już cykli CO / CWU</h2>
-    <p class="note">Aplikacja ma już Twoje cykle CO i CWU (zakładka „+ Dodaj”) z czasem startu i końca oraz zużyciem z licznika. Można z nich jednym kliknięciem utworzyć okresy COP — będą mieć czas i zużycie, a odczyty cieplne (T01, T02, T39) możesz dopisać później przyciskiem „Edytuj”.</p>
-    <div id="imp_cycInfo" class="note" style="margin:8px 0"></div>
-    <button class="submit" style="margin-top:0" onclick="importFromCycles()">Utwórz okresy COP z cykli CO/CWU</button>
-  </div>
-
-  <div class="card">
-    <h2>B. Z tabeli (wklej z Excela albo wczytaj plik CSV)</h2>
-    <p class="note">1) Skopiuj w Excelu zakres <b>razem z wierszem nagłówków</b> i wklej poniżej (albo wczytaj plik .csv / .txt). 2) Sprawdź, czy kolumny zostały dobrze rozpoznane — możesz je zmienić. 3) Kliknij „Podgląd”, a potem „Importuj”.</p>
-    <div class="toolbar" style="margin-top:10px">
-      <label style="display:inline-flex;align-items:center;background:var(--panel2);border:1px solid var(--line);padding:7px 11px;border-radius:6px;cursor:pointer;font-size:.8rem;margin:0">Wczytaj plik CSV / TXT<input type="file" accept=".csv,.txt,.tsv" style="display:none" onchange="impLoadFile(event)"></label>
-      <button onclick="downloadCopTemplate()">Pobierz szablon CSV</button>
-    </div>
-    <textarea id="imp_text" rows="7" placeholder="Wklej tutaj dane (pierwszy wiersz = nagłówki kolumn). Rozdzielacz: tabulator, średnik lub przecinek — rozpoznawany automatycznie." style="width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.78rem" oninput="impParse()"></textarea>
-    <div id="imp_info" class="note" style="margin:8px 0"></div>
-    <div id="imp_map"></div>
-    <div class="toolbar" style="margin-top:12px">
-      <label class="chk" style="margin:0"><input type="checkbox" id="imp_dedupe" checked> Pomiń wiersze, które już istnieją (ten sam start i tryb)</label>
-      <button onclick="impPreview()">Podgląd</button>
-      <button onclick="impRun()" style="background:var(--ok);color:#0c1f13;border:none;font-weight:700">Importuj</button>
-    </div>
-    <div id="imp_preview"></div>
-  </div>
-
-  <div class="card">
-    <h2>Jak zostaną odczytane kolumny</h2>
-    <p class="note">• Daty: <b>RRRR-MM-DD GG:MM</b> albo <b>DD.MM.RRRR GG:MM</b> (bez godziny = 00:00). Liczby mogą mieć przecinek lub kropkę.<br>
-    • Kolumny z końcówką <b>_start</b> to odczyt na uruchomieniu, <b>_stop</b> — na zatrzymaniu. Jeśli masz <b>tylko jedną wartość</b> (np. średnią), przypisz ją do „start” — zostanie użyta dla całego okresu.<br>
-    • Zużycie: wpisz albo „zużycie okresu (kWh)”, albo stany licznika na starcie i stopie.<br>
-    • Tryb: tekst zawierający „CWU” = CWU, inaczej CO.<br>
-    • Importowane okresy używają bieżącej korekty ΔT z Ustawień (domyślnie 0 K).<br>
-    • Wiersze bez poprawnej daty startu i stopu są pomijane (zobaczysz powód w podglądzie).</p>
+    <div id="ch_empty" class="empty" style="display:none">Brak okresów — dodaj w zakładce „⚡ COP — okres pracy”.</div>
   </div>
 </div>
 
@@ -3264,104 +3221,12 @@ function renderCopHist(){
       <td><button class="btn2 edit" onclick="editCop('${P.id}')">Edytuj</button><button class="btn2 del" onclick="delCop('${P.id}')">Usuń</button></td></tr>`; }).join('');
 }
 
-/* ===================== IMPORT / EKSPORT ===================== */
-const IMP_T=[['','— pomiń tę kolumnę —'],['start','Uruchomienie (data i godz.)'],['end','Zatrzymanie (data i godz.)'],['mode','Tryb (CO / CWU)'],['kwh','Zużycie okresu (kWh)'],['k1','Stan licznika — start (kWh)'],['k2','Stan licznika — stop (kWh)'],['defmin','Odszranianie łącznie (min)'],['note','Notatka']];
-[['t01','T01 wlot (°C)'],['t02','T02 wylot (°C)'],['t04','T04 zewn. (°C)'],['flow','T39 przepływ (m³/h)'],['hz','T30 (Hz)'],['volt','T34 (V)'],['amp','T35 (A)']].forEach(([k,l])=>{ IMP_T.push([k+'_s',l+' — start']); IMP_T.push([k+'_e',l+' — stop']); });
-let impHdr=[], impRows=[], impMap=[], impPrev=null;
-function normH(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ł/g,'l').replace(/[^a-z0-9]+/g,' ').trim(); }
-function impGuess(h){
-  const n=normH(h), stop=/stop|koniec|zatrzym|\bend\b|konc/.test(n), sfx=stop?'_e':'_s';
-  let m=n.match(/\bt(01|02|04|39|30|34|35)\b/);
-  if(m){ const k={'01':'t01','02':'t02','04':'t04','39':'flow','30':'hz','34':'volt','35':'amp'}[m[1]]; return k+sfx; }
-  if(/wlot|inlet|powrot/.test(n)) return 't01'+sfx; if(/wylot|outlet|zasilanie/.test(n)) return 't02'+sfx;
-  if(/ambient|zewn/.test(n)) return 't04'+sfx; if(/przeplyw|flow/.test(n)) return 'flow'+sfx;
-  if(/czestotl|freq|\bhz\b/.test(n)) return 'hz'+sfx; if(/napiec|volt/.test(n)) return 'volt'+sfx; if(/prad|amp|current/.test(n)) return 'amp'+sfx;
-  if(/licznik|stan/.test(n)) return stop?'k2':'k1';
-  if(/kwh|zuzyc|energia/.test(n)) return 'kwh';
-  if(/odszr|defrost/.test(n)) return 'defmin';
-  if(/notat|uwagi|opis|komentarz/.test(n)) return 'note';
-  if(/tryb|mode|typ/.test(n)) return 'mode';
-  if(stop||/\bdo\b/.test(n)) return 'end';
-  if(/uruchom|start|poczat|\bod\b|data|czas/.test(n)) return 'start';
-  return '';
-}
-function parseDelim(text,d){
-  const rows=[]; let row=[],cell='',q=false;
-  for(let i=0;i<text.length;i++){ const ch=text[i];
-    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=ch; }
-    else if(ch==='"') q=true; else if(ch===d){ row.push(cell); cell=''; }
-    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n') i++; row.push(cell); cell=''; if(row.some(c=>c.trim()!=='')) rows.push(row); row=[]; }
-    else cell+=ch; }
-  row.push(cell); if(row.some(c=>c.trim()!=='')) rows.push(row); return rows;
-}
-function impParse(){
-  const text=cpEl('imp_text').value.replace(/^﻿/,''); impPrev=null; cpEl('imp_preview').innerHTML='';
-  if(!text.trim()){ impHdr=[];impRows=[];impMap=[]; cpEl('imp_info').textContent=''; cpEl('imp_map').innerHTML=''; return; }
-  const first=text.split(/\r?\n/)[0], cnt=c=>(first.split(c).length-1);
-  const d=cnt('\t')>0?'\t':(cnt(';')>=cnt(',')?';':',');
-  const all=parseDelim(text,d); impHdr=all[0]||[]; impRows=all.slice(1);
-  impMap=impHdr.map(impGuess); const seen=new Set(); impMap=impMap.map(k=>{ if(!k) return ''; if(seen.has(k)) return ''; seen.add(k); return k; });
-  cpEl('imp_info').textContent='Rozpoznano '+impHdr.length+' kolumn i '+impRows.length+' wierszy (rozdzielacz: '+(d==='\t'?'tabulator':d)+').';
-  cpEl('imp_map').innerHTML='<div class="fgrid">'+impHdr.map((h,i)=>`<div class="fld"><div class="fhead"><span class="fname wrap">${xmlEsc(h||'(bez nazwy)')}</span></div><div class="fdesc wrap">np. ${xmlEsc((impRows[0]&&impRows[0][i])||'—')}</div><select onchange="impMap[${i}]=this.value;impPrev=null">${IMP_T.map(([k,l])=>`<option value="${k}" ${impMap[i]===k?'selected':''}>${l}</option>`).join('')}</select></div>`).join('')+'</div>';
-}
-function impLoadFile(ev){
-  const f=ev.target.files[0]; if(!f) return;
-  const rd=new FileReader(); rd.onload=e=>{ let t=e.target.result;
-    if(t.includes('�')){ const r2=new FileReader(); r2.onload=e2=>{ cpEl('imp_text').value=e2.target.result; impParse(); }; r2.readAsText(f,'windows-1250'); }
-    else { cpEl('imp_text').value=t; impParse(); } };
-  rd.readAsText(f,'utf-8'); ev.target.value='';
-}
+/* ===================== EKSPORT CSV okresów COP (import ręczny usunięty) ===================== */
 function impDate(s){
   if(s==null) return null; s=String(s).trim(); if(!s) return null; let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/), y,mo,d,h=0,mi=0;
   if(m){ y=+m[1];mo=+m[2];d=+m[3];h=+(m[4]||0);mi=+(m[5]||0); }
   else { m=s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})(?:[ T,]+(\d{1,2}):(\d{2}))?/); if(!m) return null; d=+m[1];mo=+m[2];y=+m[3];h=+(m[4]||0);mi=+(m[5]||0); }
   if(mo<1||mo>12||d<1||d>31||h>23||mi>59) return null; const p=n=>String(n).padStart(2,'0'); return y+'-'+p(mo)+'-'+p(d)+'T'+p(h)+':'+p(mi);
-}
-function impBuild(row,useCorr){
-  const g=k=>{ const i=impMap.indexOf(k); return i<0?'':(row[i]==null?'':row[i]); };
-  const start=impDate(g('start')), end=impDate(g('end'));
-  if(!start) return {err:'brak lub błędna data uruchomienia'}; if(!end) return {err:'brak lub błędna data zatrzymania'};
-  if(Date.parse(end)<=Date.parse(start)) return {err:'zatrzymanie nie jest późniejsze niż uruchomienie'};
-  const mk=(ts,sfx,kv)=>{ const o={ts,c1:true,c2:true,def:false,k:kv}; COPK.forEach(k=>o[k]=num(g(k+sfx))); return o; };
-  const k1=num(g('k1')), k2=num(g('k2')), kwh=num(g('kwh'));
-  if(!(kwh>0) && !(k1!=null&&k2!=null&&k2>k1)) return {err:'brak zużycia (kWh okresu albo stany licznika start/stop)'};
-  const rd=[mk(start,'_s',k1),mk(end,'_e',k2)];
-  const strs=(ks,sf)=>ks.flatMap(k=>sf.map(s=>g(k+s)));
-  const res={T:Math.pow(10,-Math.max(1,...strs(['t01','t02'],['_s','_e']).map(s=>decs(s,1)))),F:Math.pow(10,-Math.max(1,...strs(['flow'],['_s','_e']).map(s=>decs(s,1)))),E:Math.pow(10,-Math.max(1,decs(g('kwh'),1),decs(g('k1'),1),decs(g('k2'),1)))};
-  const nVals=rd.reduce((s,x)=>s+COPK.filter(k=>x[k]!=null).length,0);
-  return {rec:{id:uid(),start,end,date:start.slice(0,10),mode:/cwu/i.test(g('mode'))?'CWU':'CO',defMin:num(g('defmin'))||0,kwh:(k1!=null&&k2!=null&&k2>k1)?null:kwh,rd,res,rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:String(g('note')||'').trim(),src:'import'},nVals};
-}
-function impPreview(){
-  if(!impRows.length){ cpEl('imp_preview').innerHTML='<div class="warnline">Najpierw wklej dane albo wczytaj plik.</div>'; return; }
-  const useCorr=true, exist=new Set(M.map(m=>m.start+'|'+m.mode)), dd=cpEl('imp_dedupe').checked;
-  const out=impRows.map((row,i)=>{ const b=impBuild(row,useCorr); if(b.err) return {i,st:'bład: '+b.err,ok:false}; const dup=dd&&exist.has(b.rec.start+'|'+b.rec.mode); if(!dup) exist.add(b.rec.start+'|'+b.rec.mode);
-    return {i,b,ok:!dup,st:dup?'pominięty — już istnieje':'OK'}; });
-  impPrev=out; const ok=out.filter(x=>x.ok).length;
-  cpEl('imp_preview').innerHTML=`<div class="warnline ${ok?'good':'bad'}" style="margin-top:12px">Do zaimportowania: <b>${ok}</b> z ${out.length} wierszy.</div><div class="tbl-wrap"><table class="rc"><thead><tr><th>#</th><th>Uruchomienie</th><th>Zatrzymanie</th><th>Czas</th><th>Tryb</th><th>Zużycie (kWh)</th><th>Wartości T</th><th>Status</th></tr></thead><tbody>`
-   +out.slice(0,60).map(x=>{ if(!x.b) return `<tr><td>${x.i+1}</td><td colspan="6">—</td><td class="notecell" style="color:var(--danger)">${xmlEsc(x.st)}</td></tr>`; const r=x.b.rec, E=(r.kwh!=null?r.kwh:(r.rd[1].k-r.rd[0].k));
-     return `<tr><td>${x.i+1}</td><td class="num">${fmtY(r.start)}</td><td class="num">${fmtY(r.end)}</td><td class="num">${fmtHM((Date.parse(r.end)-Date.parse(r.start))/36e5)}</td><td>${r.mode}</td><td class="num">${E.toFixed(2)}</td><td class="num">${x.b.nVals}</td><td class="notecell" style="color:${x.ok?'var(--ok)':'var(--amber)'}">${xmlEsc(x.st)}</td></tr>`; }).join('')
-   +'</tbody></table></div>'+(out.length>60?`<p class="note">Pokazano 60 z ${out.length} wierszy.</p>`:'');
-}
-async function impRun(){
-  impPreview(); const ok=impPrev.filter(x=>x.ok);
-  if(!ok.length){ alert('Brak poprawnych wierszy do zaimportowania — zobacz podgląd.'); return; }
-  ok.forEach(x=>M.push(x.b.rec)); const bad=impPrev.filter(x=>!x.b).length, dup=impPrev.filter(x=>x.b&&!x.ok).length;
-  cpEl('imp_text').value=''; impParse(); await persist();
-  alert('Zaimportowano '+ok.length+' okresów. Pominięto: '+dup+' (duplikaty), '+bad+' (błędy).');
-}
-function cycleInfo(){
-  const el=cpEl('imp_cycInfo'); if(!el) return;
-  const done=new Set(M.map(m=>m.srcId).filter(Boolean)), c=R.filter(r=>r.start&&r.end&&r.kwh>0);
-  el.textContent='Cykle z zużyciem i czasem: '+c.length+' (CO: '+c.filter(r=>r.type==='CO').length+', CWU: '+c.filter(r=>r.type==='CWU').length+'). Już utworzone okresy COP: '+c.filter(r=>done.has(r.id)).length+'. Cykle bez zużycia (kWh) są pomijane.';
-}
-async function importFromCycles(){
-  const done=new Set(M.map(m=>m.srcId).filter(Boolean)); let n=0;
-  const noKwh=R.filter(r=>r.start&&r.end&&!(r.kwh>0)&&!done.has(r.id)).map(r=>r.type+' '+fmtDT(r.start)+'→'+fmtDT(r.end).slice(-5));
-  R.forEach(r=>{ if(!r.start||!r.end||!(r.kwh>0)||done.has(r.id)) return;
-    const mk=(ts,t04)=>({ts,t01:null,t02:null,t04:t04??null,flow:null,hz:null,volt:null,amp:null,c1:true,c2:true,def:false,k:null});
-    M.push({id:uid(),srcId:r.id,start:r.start,end:r.end,date:r.start.slice(0,10),mode:r.type==='CWU'?'CWU':'CO',defMin:0,kwh:r.kwh,
-      rd:[mk(r.start,r.type==='CO'?r.out1:r.out),mk(r.end,r.type==='CO'?r.out2:null)],res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,hzMax:SET.hzMax,note:r.note||'',src:'cykl'}); n++; });
-  await persist(); alert((n?('Utworzono '+n+' okresów COP z cykli CO/CWU. Mają czas, zużycie i temperaturę zewnętrzną; odczyty T01/T02/T39 dopisz przyciskiem „Edytuj”, aby policzyć COP.'):'Brak nowych cykli do przeniesienia.')+(noKwh.length?('\n\nPominięto cykle bez zużycia (kWh): '+noKwh.join('; ')+'. Uzupełnij kWh w „+ Dodaj” → Dane → Edytuj i zaimportuj ponownie — inaczej ich energia i czas nie wchodzą do zestawień.'):''));
 }
 const CSV_COLS=['start','end','tryb','kwh_okresu','licznik_start_kwh','licznik_stop_kwh','odszranianie_min','t01_start','t01_stop','t02_start','t02_stop','t04_start','t04_stop','t39_start','t39_stop','t30_start','t30_stop','t34_start','t34_stop','t35_start','t35_stop','notatka'];
 function csvEsc(v){ v=v==null?'':String(v); return /[;"\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
@@ -3371,12 +3236,6 @@ function csvRow(m){ const a=m.rd[0]||{}, z=m.rd[m.rd.length-1]||{}, S=(m.kwh!=nu
 async function exportCopCsv(){
   const t='﻿'+CSV_COLS.join(';')+'\n'+M.slice().sort((a,b)=>a.start.localeCompare(b.start)).map(csvRow).join('\n');
   await saveBlob(new Blob([t],{type:'text/csv'}),'okresy_cop.csv','CSV',{'text/csv':['.csv']});
-}
-async function downloadCopTemplate(){
-  const ex=[{start:'2026-10-01T06:00',end:'2026-10-03T06:00',mode:'CO',kwh:null,defMin:0,note:'przykład: CO, 2 doby',rd:[{k:100.0,t01:29,t02:32,t04:8.5,flow:2.5,hz:45,volt:405,amp:3.1},{k:190.0,t01:29.5,t02:32.1,t04:6.0,flow:2.5,hz:50,volt:407,amp:3.4}]},
-            {start:'2026-10-03T06:00',end:'2026-10-03T07:30',mode:'CWU',kwh:3.2,defMin:0,note:'przykład: CWU, tylko zużycie',rd:[{},{}]}];
-  const t='﻿'+CSV_COLS.join(';')+'\n'+ex.map(m=>csvRow(m)).join('\n');
-  await saveBlob(new Blob([t],{type:'text/csv'}),'szablon_okresy_cop.csv','CSV',{'text/csv':['.csv']});
 }
 ensureCopDefaults(); resetCopForm(); syncCopSettingsUI();
 
@@ -4283,6 +4142,13 @@ function lzRuns(rows){
       hzAvg:lzAvg(hz),hzMax:hz.length?Math.max(...hz):null,t02max:t2.length?Math.max(...t2):null,dt:lzAvg(base.map(r=>r.T02-r.T01)),q:lzAvg(qs),t04:lzAvg(t4)};
   });
 }
+/* odszranianie: sprężarka pracuje, a woda na wylocie jest zimniejsza od wlotu (T02 < T01 − 1 K) — ta sama zasada co w hubie (def) i w podsumowaniach cykli */
+const LZ_DEF='#7fd4ff';
+const lzIsDef=r=>!!r&&(r.T30>0||r.O01===1)&&r.T01!=null&&r.T02!=null&&r.T02<r.T01-1;
+function lzDefs(rows){ const out=[]; let cur=null;
+  rows.forEach((r,i)=>{ if(!lzIsDef(r)) return; const t=Date.parse(r.ts), n=rows[i+1], w=Math.min(15,Math.max(2,n?(Date.parse(n.ts)-t)/60000:5))*60000;
+    if(cur&&t-cur.b<=20*60000){ cur.b=Math.max(cur.b,t+w); cur.n++; } else { cur={a:t,b:t+w,n:1}; out.push(cur); } });
+  return out; }
 function lzPrep(){
   const e=HUBC.wlR&&HUBC.wlR[LIVE_RG]; if(!e) return null;
   if(!e.prep||e.prep.at!==e.at){ const rows=e.rows.map(r=>Object.assign({},hubVals(r),{ts:String(r.ts).slice(0,16)})).filter(r=>r.ts).sort((a,b)=>a.ts<b.ts?-1:1); e.prep={at:e.at,rows,runs:lzRuns(rows)}; }
@@ -4301,12 +4167,14 @@ function lzKpis(runs,rows,from,now){
   const Lw=HUBC.live&&HUBC.live.wl, lv=Lw?hubVals(Lw.v):null, lvAge=Lw?(now-Date.parse(String(Lw.ts).slice(0,16)))/60000:1e9, liveRun=runs.find(r=>r.live), last=runs[runs.length-1];
   const on=lv&&lvAge<=20?lv.T30>0:!!liveRun;
   const hzTxt=on?lzF0(lv&&lvAge<=20&&lv.T30>0?lv.T30:(liveRun&&liveRun.g.rows[liveRun.g.rows.length-1].T30))+' Hz'+(liveRun?' · '+liveRun.type+' od '+lzDM(liveRun.start)+' '+lzHM(liveRun.start):''):(last?'ostatnio '+last.type+' do '+lzDM(last.end)+' '+lzHM(last.end):'brak cykli w danych');
+  const dfs=lzDefs(rows).filter(q=>q.b>from), dfm=dfs.reduce((a,q)=>a+(q.b-Math.max(q.a,from))/60000,0);
   const k=(v,l)=>`<div class="lzkpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
   return `<div class="lzkpi"><div class="v"><span class="lzdot" style="background:${on?'var(--ok)':'var(--muted)'}"></span>${on?'pracuje':'stoi'}</div><div class="l">${hzTxt}</div></div>`
     +k(hm(wco0(co,wk)),`<span style="color:${LZ_C.CO}">●</span> CO — praca sprężarki · <span style="color:var(--text)">${co.length} ${co.length===1?'cykl':'cykli'}</span>`)
     +k(hm(wk(cw)),`<span style="color:${LZ_C.CWU}">●</span> CWU — praca sprężarki · <span style="color:var(--text)">${cw.length} ${cw.length===1?'cykl':'cykli'}</span>`)
     +k(`${lzF1(dtAvg)}<small>K</small>`,'średnia ΔT (T02−T01) w cyklach CO')
-    +k(t4.length?`${lzF0(Math.min(...t4))}…${lzF0(Math.max(...t4))}<small>°C</small>`:'—',t4.length?`temp. zewnętrzna w całym zakresie (min…max) · średnia <span style="color:var(--text)">${lzF1(t4avg)} °C</span>${t4co!=null?` · w trakcie pracy CO <span style="color:var(--text)">${lzF1(t4co)} °C</span>`:''}`:'temp. zewnętrzna — brak odczytów');
+    +k(t4.length?`${lzF0(Math.min(...t4))}…${lzF0(Math.max(...t4))}<small>°C</small>`:'—',t4.length?`temp. zewnętrzna w całym zakresie (min…max) · średnia <span style="color:var(--text)">${lzF1(t4avg)} °C</span>${t4co!=null?` · w trakcie pracy CO <span style="color:var(--text)">${lzF1(t4co)} °C</span>`:''}`:'temp. zewnętrzna — brak odczytów')
+    +k(dfs.length?`❄ ${dfs.length}<small>×</small>`:'0',dfs.length?`odszraniań w zakresie · łącznie <span style="color:var(--text)">${lzDur(Math.max(1,dfm))}</span>`:'odszraniań w zakresie');
 }
 const wco0=(co,wk)=>wk(co);
 function lzRowsSvg(runs,rows,days,W,now){
@@ -4314,7 +4182,7 @@ function lzRowsSvg(runs,rows,days,W,now){
   const xm=m=>X0+Math.max(0,Math.min(1440,m))/1440*(X1-X0), wStart=lzDay0(days-1), gapMs=150*60000, gaps=[];
   if(rows.length){ const t=rows.map(r=>Date.parse(r.ts)); if(t[0]-wStart>gapMs) gaps.push([wStart,t[0]]); for(let i=1;i<t.length;i++) if(t[i]-t[i-1]>gapMs) gaps.push([t[i-1]+30*60000,t[i]]); if(now-t[t.length-1]>gapMs) gaps.push([t[t.length-1]+30*60000,now]); }
   const t4all=rows.filter(r=>Date.parse(r.ts)>=wStart).map(r=>r.T04).filter(v=>v!=null), hasT4=t4all.length>0, tMin=hasT4?Math.floor(Math.min(...t4all)/5)*5:0, tMax=hasT4?Math.max(tMin+5,Math.ceil(Math.max(...t4all)/5)*5):1;
-  const allItems=runs.flatMap(r=>r.items);
+  const allItems=runs.flatMap(r=>r.items), DEFS=lzDefs(rows);
   let s=`<defs><pattern id="lzhatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#9aa8b5" opacity=".06"/><line x1="0" y1="0" x2="0" y2="6" stroke="#9aa8b5" stroke-width="1.4" opacity=".35"/></pattern></defs>`;
   [0,3,6,9,12,15,18,21,24].forEach(h=>{ const x=xm(h*60), lab=!(narrow&&h%6)&&h<24; s+=`<line x1="${fx(x)}" x2="${fx(x)}" y1="${top-6}" y2="${H-4}" stroke="#222c35"/>`+(lab?`<text x="${fx(x)}" y="14" text-anchor="middle" font-size="11.5" fill="#9aa8b5">${lzP(h)}:00</text>`:''); });
   for(let i=0;i<days;i++){
@@ -4327,6 +4195,8 @@ function lzRowsSvg(runs,rows,days,W,now){
       if(r.type==='CWU'){ const th=Math.max(5,Math.round(bh*.38)); s+=`<rect x="${fx(x+1)}" y="${fx(y+3+(bh+2-th)/2)}" width="${fx(Math.max(3,w-2))}" height="${th}" rx="3" fill="${LZ_C.CWU}"${sel?' stroke="#e7edf2" stroke-width="2"':''}/>`; }
       else s+=`<rect x="${fx(x+1)}" y="${y+5}" width="${fx(Math.max(2,w-2))}" height="${bh-2}" rx="4" fill="${LZ_C.CO}"${sel?' stroke="#e7edf2" stroke-width="2"':''}/>`;
       hit+=`<rect class="lz-hit" data-id="${r.id}" data-ty="${y+rowH+2}" x="${fx(x-5)}" y="${y}" width="${fx(w+10)}" height="${rowH}" fill="transparent"/>`; });
+    DEFS.forEach(q=>{ const a=Math.max(q.a,d0), b=Math.min(q.b,d1); if(b<=a) return; const x=xm((a-d0)/60000), w=Math.max(3,xm((b-d0)/60000)-x);
+      s+=`<rect x="${fx(x)}" y="${y+3}" width="${fx(w)}" height="${bh+2}" rx="1.5" fill="${LZ_DEF}" opacity=".9"><title>❄ odszranianie ${lzHM(q.a)}–${lzHM(q.b)}</title></rect>`; });
     s+=hit;
     const lab=i===0?'dziś':i===1?'wczoraj':null;
     s+=`<text x="${L-8}" y="${mid}" text-anchor="end" font-size="${narrow?11.5:12}" fill="${we?'#9aa8b5':'#e7edf2'}" font-weight="${i===0?700:500}">${(lab&&!narrow&&days<=3)?lab:LZ_WD[wk]+' '+lzDM(d0)}</text>`;
@@ -4344,13 +4214,16 @@ function lzDetail(r,rows,W){
   const X=m=>L+Math.max(0,Math.min(span,m))/span*(W-L-Rr);
   const STEPS=[5,10,15,30,60,120,180,360,720,1440,2880], maxT=narrow?4:7, step=STEPS.find(q=>span/q<=maxT)||2880, stMs=step*60000, b0=new Date(r.start); b0.setHours(0,0,0,0);
   const ticks=[]; for(let t=b0.getTime()+Math.ceil((r.start-b0.getTime())/stMs)*stMs;t<=r.end+1;t+=stMs) ticks.push(t);
+  const DF=lzDefs(rows).filter(q=>q.b>r.start&&q.a<r.end);
+  const dfb=(top,bot,lab)=>DF.map(q=>{ const x0=X((Math.max(q.a,r.start)-r.start)/60000), x1=X((Math.min(q.b,r.end)-r.start)/60000);
+    return `<rect x="${fx(x0)}" y="${top}" width="${fx(Math.max(2.5,x1-x0))}" height="${bot-top}" fill="${LZ_DEF}" opacity=".2"><title>❄ odszranianie ${lzHM(q.a)}–${lzHM(q.b)}</title></rect>`+(lab?`<text x="${fx(x0+2)}" y="${top+11}" font-size="10.5" fill="${LZ_DEF}">❄</text>`:''); }).join('');
   const grid=(top,bot)=>ticks.map(t=>`<line x1="${fx(X((t-r.start)/60000))}" x2="${fx(X((t-r.start)/60000))}" y1="${top}" y2="${bot}" stroke="#222c35"/>`).join('');
   const lbls=H=>ticks.map((t,i)=>{ const d=new Date(t), x=fx(X((t-r.start)/60000)), nd=d.getHours()===0&&d.getMinutes()===0||i===0; return `<text x="${x}" y="${H-19}" text-anchor="middle" font-size="11.5" fill="#9aa8b5">${lzHM(t)}</text>`+(nd?`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" font-weight="600" fill="#cfd8e0">${lzDM(t)}</text>`:''); }).join('');
   const cur=(top,bot)=>`<line class="lz-cur" x1="0" x2="0" y1="${top-4}" y2="${bot}" stroke="#e7edf2" stroke-width="1" opacity="0"/>`;
   const panelLine=(id,H,vals,minSpan,k,color,unit,last)=>{ const top=6, bot=H-(last?34:8);
     if(vals.length<2) return ''; const R=liveNiceRange(vals,minSpan), Y=v=>top+(1-(v-R.lo)/(R.hi-R.lo))*(bot-top); let o='';
     for(let v=R.lo;v<=R.hi+1e-9;v+=R.st) o+=`<line x1="${L}" x2="${W-Rr}" y1="${fx(Y(v))}" y2="${fx(Y(v))}" stroke="#26313b"/><text x="${L-7}" y="${fx(Y(v)+4)}" text-anchor="end" font-size="11.5" fill="#9aa8b5">${Math.round(v*10)/10}${unit}</text>`;
-    o+=grid(top,bot)+(last?lbls(H):'');
+    o+=grid(top,bot)+dfb(top,bot,false)+(last?lbls(H):'');
     let d='',pv=false,lp=null; pts.forEach(q=>{ if(q[k]==null){ pv=false; return; } d+=(pv?' L':' M')+fx(X(q.m))+','+fx(Y(q[k])); pv=true; lp=q; });
     o+=`<path d="${d.trim()}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
     if(lp) o+=`<circle cx="${fx(X(lp.m))}" cy="${fx(Y(lp[k]))}" r="4" fill="${color}" stroke="#171f26" stroke-width="2"/><text x="${W-Rr+10}" y="${fx(Y(lp[k])+4)}" font-size="12" fill="#e7edf2" font-weight="700">${lzF1(lp[k])}${unit}</text>`;
@@ -4361,7 +4234,7 @@ function lzDetail(r,rows,W){
     if(!vals.length) tsvg=`<div class="empty">Brak odczytów T01/T02 w tym cyklu.</div>`;
     else { const R=liveNiceRange(vals,10), Y=v=>top+(1-(v-R.lo)/(R.hi-R.lo))*(bot-top); let o='';
       for(let v=R.lo;v<=R.hi+1e-9;v+=R.st) o+=`<line x1="${L}" x2="${W-Rr}" y1="${fx(Y(v))}" y2="${fx(Y(v))}" stroke="#26313b"/><text x="${L-7}" y="${fx(Y(v)+4)}" text-anchor="end" font-size="11.5" fill="#9aa8b5">${v}°</text>`;
-      o+=grid(top,bot);
+      o+=grid(top,bot)+dfb(top,bot,true);
       const line=(k,c)=>{ let d='',pv=false,last=null; pts.forEach(q=>{ if(q[k]==null){ pv=false; return; } d+=(pv?' L':' M')+fx(X(q.m))+','+fx(Y(q[k])); pv=true; last=q; });
         let o2=d?`<path d="${d.trim()}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`:''; if(last) o2+=`<circle cx="${fx(X(last.m))}" cy="${fx(Y(last[k]))}" r="4.5" fill="${c}" stroke="#171f26" stroke-width="2"/>`;
         if(pts.length<=40) pts.forEach(q=>{ if(q[k]!=null) o2+=`<circle cx="${fx(X(q.m))}" cy="${fx(Y(q[k]))}" r="2.6" fill="${c}" stroke="#171f26" stroke-width="1"/>`; }); return {h:o2,last:last?last[k]:null}; };
@@ -4372,7 +4245,7 @@ function lzDetail(r,rows,W){
       tsvg=`<svg id="lz_tSvg" viewBox="0 0 ${W} ${H}">${o}${cur(top,bot)}</svg>`; } }
   { const H=hasO?66:96, top=6, bot=H-(hasO?8:34), hi=Math.max(40,Math.ceil(Math.max(0,...pts.map(q=>q.T30||0))/20)*20), Y=v=>top+(1-v/hi)*(bot-top); let o='';
     [0,hi/2,hi].forEach(v=>{ o+=`<line x1="${L}" x2="${W-Rr}" y1="${fx(Y(v))}" y2="${fx(Y(v))}" stroke="#26313b"/><text x="${L-7}" y="${fx(Y(v)+4)}" text-anchor="end" font-size="11.5" fill="#9aa8b5">${v}</text>`; });
-    o+=grid(top,bot)+(hasO?'':lbls(H));
+    o+=grid(top,bot)+dfb(top,bot,false)+(hasO?'':lbls(H));
     if(pts.length){ const d=pts.map((q,i)=>(i?'L':'M')+fx(X(q.m))+','+fx(Y(q.T30>0?q.T30:0))).join(' '), l=pts[pts.length-1];
       o+=`<path d="${d} L${fx(X(l.m))},${fx(Y(0))} L${fx(X(pts[0].m))},${fx(Y(0))}Z" fill="#9aa8b5" opacity=".12"/><path d="${d}" fill="none" stroke="#9aa8b5" stroke-width="2" stroke-linejoin="round"/>`
         +`<circle cx="${fx(X(l.m))}" cy="${fx(Y(l.T30>0?l.T30:0))}" r="4.5" fill="#9aa8b5" stroke="#171f26" stroke-width="2"/><text x="${W-Rr+10}" y="${fx(Y(l.T30>0?l.T30:0)+4)}" font-size="12" fill="#e7edf2" font-weight="700">${lzF0(l.T30>0?l.T30:0)} Hz</text>`; }
@@ -4394,14 +4267,14 @@ function liveChartHtml(){
   HUBC.lzR={W,rowH:RS.rowH};
   const fail=HUBC.wlR&&HUBC.wlR[LIVE_RG]&&HUBC.wlR[LIVE_RG].fail?'<div class="note" style="margin-top:6px">⚠ Część zakresu nie pobrała się — odśwież.</div>':'';
   let h=chips+`<div class="lzkpis">${lzKpis(runs,rows,from,now)}</div>`
-   +`<div class="lzcard"><div class="lzcardh"><h2>Kiedy grzało CO (i CWU)</h2><div class="lzlegend"><span><i style="background:${LZ_C.CO}"></i>CO — grube pasy</span><span><i style="background:${LZ_C.CWU};height:6px;vertical-align:1px"></i>CWU — cienkie znaczniki</span><span><i class="hatch"></i>brak danych w hubie</span></div></div>`
+   +`<div class="lzcard"><div class="lzcardh"><h2>Kiedy grzało CO (i CWU)</h2><div class="lzlegend"><span><i style="background:${LZ_C.CO}"></i>CO — grube pasy</span><span><i style="background:${LZ_C.CWU};height:6px;vertical-align:1px"></i>CWU — cienkie znaczniki</span><span><i class="hatch"></i>brak danych w hubie</span><span><i style="background:${LZ_DEF};width:5px"></i>❄ odszranianie</span></div></div>`
    +`<div class="lzstage" id="lz_rowsStage">${RS.svg}<div class="lztip" id="lz_tip1"></div></div>`
-   +`<details class="lznote"><summary>Jak czytać ten wykres</summary><div class="note">Każdy wiersz to doba (0–24 h). Cykl CO trwa często wiele godzin, a nawet przechodzi przez północ — wtedy widać go w dwóch wierszach, a pełny czas startu i końca (z datami) pokazuje szczegół poniżej. CWU to krótkie grzanie zasobnika, stąd cienki znacznik. Kliknij pas, żeby zobaczyć cykl z bliska. Puste tło = postój (hub zapisuje wtedy 1 odczyt na godzinę), kreskowane = brak odczytów przez ponad 2,5 h. Liczba po prawej = godziny pracy CO w dobie.</div></details>${fail}</div>`;
+   +`<details class="lznote"><summary>Jak czytać ten wykres</summary><div class="note">Każdy wiersz to doba (0–24 h). Cykl CO trwa często wiele godzin, a nawet przechodzi przez północ — wtedy widać go w dwóch wierszach, a pełny czas startu i końca (z datami) pokazuje szczegół poniżej. CWU to krótkie grzanie zasobnika, stąd cienki znacznik. Kliknij pas, żeby zobaczyć cykl z bliska. Puste tło = postój (hub zapisuje wtedy 1 odczyt na godzinę), kreskowane = brak odczytów przez ponad 2,5 h. Liczba po prawej = godziny pracy CO w dobie. Jasnoniebieskie znaczniki ❄ = odszranianie (sprężarka pracuje, ale woda na wylocie T02 jest zimniejsza od wlotu T01); w szczegółach cyklu to półprzezroczyste pasy na wszystkich wykresach.</div></details>${fail}</div>`;
   h+='<div class="lzgrid">';
-  if(sel){ const D=lzDetail(sel,rows,Wd), st=(v,l)=>`<div class="lzstat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  if(sel){ const D=lzDetail(sel,rows,Wd), dfs=lzDefs(rows).filter(q=>q.b>sel.start&&q.a<sel.end), dfm=dfs.reduce((a,q)=>a+(Math.min(q.b,sel.end)-Math.max(q.a,sel.start))/60000,0), st=(v,l)=>`<div class="lzstat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
     h+=`<div class="lzcard" id="lz_detail"><div class="lzcardh"><div class="lzselhead"><span class="lzpill" style="background:${LZ_C[sel.type]||LZ_C.CO}">${sel.type}</span><h2>${lzSpanTxt(sel)}</h2></div><div class="sub">${sel.valve?'Typ z zaworu CO/CWU':'Typ z przyrostu temp. zasobnika T08'}</div></div>`
      +(sel.cut?`<div class="warnline bad" style="margin:0 0 8px">Początek tego cyklu wypada przed pobranym zakresem danych — prawdziwy start jest wcześniejszy, a czas trwania dłuższy.</div>`:'')
-     +`<div class="lzstats">${st((sel.cut?'≥ ':'')+lzDur(sel.min),'czas cyklu (start → koniec)')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','moc grzewcza (szac.)')}${st(lzF1(sel.t04)+' °C','śr. temp. zewn. w trakcie cyklu')}</div>`
+     +`<div class="lzstats">${st((sel.cut?'≥ ':'')+lzDur(sel.min),'czas cyklu (start → koniec)')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','moc grzewcza (szac.)')}${st(lzF1(sel.t04)+' °C','śr. temp. zewn. w trakcie cyklu')}${st(dfs.length?'❄ '+dfs.length+'× · '+lzDur(Math.max(1,dfm)):'brak','odszranianie w cyklu')}</div>`
      +`<div class="lzmini">Temperatura wody <span>wylot T02 i wlot T01</span></div><div class="lzstage" id="lz_tStage">${D.tsvg}<div class="lztip" id="lz_tip2"></div></div>`
      +`<div class="lzmini">Sprężarka <span>częstotliwość [Hz]</span></div><div class="lzstage" id="lz_hStage">${D.hsvg}</div>`
      +(D.osvg?`<div class="lzmini">Temperatura zewnętrzna <span>T04 [°C]</span></div><div class="lzstage" id="lz_oStage">${D.osvg}</div>`:'')+`</div>`; }
@@ -4428,7 +4301,7 @@ function liveBind(){
       const x=D.L+Math.max(0,Math.min(D.span,best.m))/D.span*(D.W-D.L-D.Rr);
       ['lz_tSvg','lz_hSvg','lz_oSvg'].forEach(id=>{ const s=$w(id), c=s&&s.querySelector('.lz-cur'); if(c){ c.setAttribute('x1',x); c.setAttribute('x2',x); c.setAttribute('opacity','.7'); } });
       const dt=(best.T01!=null&&best.T02!=null)?best.T02-best.T01:null;
-      if(tip2) lzTipShow(tip2,ts,`<b>${lzHM(D.start+best.m*60000)}</b> <span class="m">· ${Math.round(best.m)} min od startu</span><br><span class="k" style="background:#e8643f"></span><b>${best.T02!=null?lzF1(best.T02)+' °C':'—'}</b> <span class="m">T02 wylot</span><br><span class="k" style="background:#3a86e0"></span><b>${best.T01!=null?lzF1(best.T01)+' °C':'—'}</b> <span class="m">T01 wlot · ΔT ${lzF1(dt)} K</span><br><span class="k" style="background:#9aa8b5"></span><b>${lzF0(best.T30>0?best.T30:0)} Hz</b> <span class="m">· T04 ${lzF1(best.T04)} °C</span>`,x/D.W*b.width,6); };
+      if(tip2) lzTipShow(tip2,ts,`<b>${lzHM(D.start+best.m*60000)}</b> <span class="m">· ${Math.round(best.m)} min od startu</span><br><span class="k" style="background:#e8643f"></span><b>${best.T02!=null?lzF1(best.T02)+' °C':'—'}</b> <span class="m">T02 wylot</span><br><span class="k" style="background:#3a86e0"></span><b>${best.T01!=null?lzF1(best.T01)+' °C':'—'}</b> <span class="m">T01 wlot · ΔT ${lzF1(dt)} K</span>${lzIsDef(best)?'<br><b style="color:'+LZ_DEF+'">❄ odszranianie</b>':''}<br><span class="k" style="background:#9aa8b5"></span><b>${lzF0(best.T30>0?best.T30:0)} Hz</b> <span class="m">· T04 ${lzF1(best.T04)} °C</span>`,x/D.W*b.width,6); };
     const off=()=>{ if(tip2) tip2.style.display='none'; document.querySelectorAll('#lz_detail .lz-cur').forEach(c=>c.setAttribute('opacity','0')); };
     [ts,hs,os].forEach(s=>{ if(!s) return; s.onpointermove=cross; s.onpointerdown=cross; s.onpointerleave=off; });
   }
@@ -4505,7 +4378,7 @@ function labelRc(){
   paginateTables();
   fitRc();
 }
-function renderAll(){ try{ pvNormalize(); }catch(e){} try{ hubRunHint(); renderTodo(); }catch(e){} renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); cycleInfo(); updateStoreBar(); renderDiskInfo(); renderApiTab(); renderLive(); labelRc(); }
+function renderAll(){ try{ pvNormalize(); }catch(e){} try{ hubRunHint(); renderTodo(); }catch(e){} renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); updateStoreBar(); renderDiskInfo(); renderApiTab(); renderLive(); labelRc(); }
 renderAll();
 startupInit();
 setTimeout(()=>{ if(hubCfg()){ hubLoadAllDays(); hubAutoCycles(); } },4000); setInterval(()=>{ if(hubCfg()){ hubAutoCycles(); hubLoadAllDays(); } },10*60000);
