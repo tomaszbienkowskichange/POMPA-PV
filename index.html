@@ -116,11 +116,24 @@ table:not(.rc) th,table:not(.rc) td{white-space:normal;overflow-wrap:anywhere}
 .dashGrid .dc{min-width:0;margin-bottom:0;padding:12px 14px}
 .dashGrid h2{font-size:.9rem;margin:0 0 8px}.dashGrid h3{font-size:.85rem;margin:0 0 6px}
 @media(min-width:900px){.dashGrid{grid-template-columns:repeat(12,1fr)}.dc.w4{grid-column:span 4}.dc.w6{grid-column:span 6}}
-.kv{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--line);font-size:.78rem}
-.kv span{color:var(--muted);min-width:0}.kv b{font-family:'IBM Plex Mono',monospace;text-align:right;white-space:nowrap}
+.kv{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:2px 10px;padding:3px 0;border-bottom:1px dashed var(--line);font-size:.78rem}
+.kv span{color:var(--muted);flex:0 1 auto;min-width:0;overflow-wrap:normal;word-break:normal}.kv b{font-family:'IBM Plex Mono',monospace;text-align:right;white-space:normal;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.kv b .note{display:block;font-family:inherit;font-weight:400;text-align:right;margin:1px 0 0}
 .kv.sub{border-bottom:0;padding:1px 0 1px 10px;font-size:.72rem}
 .sharebar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:4px 0 8px;background:var(--line)}
 .dashGrid table{font-size:.74rem}.dashGrid th,.dashGrid td{padding:4px 6px}
+/* --- Raporty: nagłówek, KPI, pasek udziału --- */
+.repRow{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end}
+.repF{display:flex;flex-direction:column;gap:3px;min-width:0}.repF label{font-size:.7rem;color:var(--muted)}
+.repF select,.repF input{width:auto;min-width:0;max-width:100%}.repF .rng{display:flex;gap:6px}
+#repPeriod{min-width:210px;font-weight:600}
+.repHead{padding:14px 16px}
+.shareBar{display:flex;height:30px;border-radius:8px;overflow:hidden;background:var(--panel2);margin:2px 0 6px}
+.shareBar>div{display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;color:#10151a;min-width:0;white-space:nowrap;overflow:hidden}
+.shareLeg{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:.8rem;margin-bottom:14px;color:var(--muted)}.shareLeg b{color:var(--text)}
+.shareLeg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.cov{font-family:'IBM Plex Mono',monospace}.cov.part{color:var(--warn,#d9a441)}
+.repTone{color:var(--muted)}
 .panelGrid{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:14px}
 @media(min-width:760px){.panelGrid{grid-template-columns:1fr 1fr}}
 .panel{border-radius:10px;padding:16px;background:var(--panel);border:1px solid var(--line)}
@@ -542,34 +555,28 @@ details.card[open]>summary{margin-bottom:12px}
 
 <div class="tab" id="raporty">
   <div class="wxbar" data-wxbar></div>
-  <div class="toolbar">
-    <label>Grupuj wg</label><select id="repGroupBy" onchange="renderReports()">
-      <option value="period">Okresu czasu</option><option value="temp">Temperatury zewnętrznej</option>
-    </select>
-    <span id="tempBinWrap" style="display:none"><label>Krok temperatury</label><select id="repTempBin" onchange="renderReports()"><option value="1" selected>1 °C</option><option value="2">2 °C</option><option value="5">5 °C</option></select></span>
-    <span id="granWrap"><label>Granulacja</label><select id="gran" onchange="renderReports()">
-      <option value="day">Dziennie</option><option value="week">Tygodniowo</option>
-      <option value="month" selected>Miesięcznie</option><option value="quarter">Kwartalnie</option>
-      <option value="half">Półrocznie</option><option value="year">Rocznie (wielolecie)</option>
-    </select></span>
-    <label>Metryka</label><select id="repMetric" onchange="renderReports()">
-      <option value="kwh">Zużycie (kWh)</option><option value="koszt">Koszt (zł)</option>
-      <option value="czas">Czas trwania (h)</option><option value="cykle">Liczba cykli</option>
-    </select>
-    <label>Wykres</label><select id="repChartType" onchange="renderReports()">
-      <option value="bar">Słupkowy</option><option value="line">Liniowy</option>
-    </select>
-    <span class="rng"><label>Od</label><input type="date" id="repFrom" onchange="renderReports()">
-    <label>Do</label><input type="date" id="repTo" onchange="renderReports()"></span>
+  <div class="card repHead">
+    <div class="repRow">
+      <div class="repF"><label>Okres analizy</label><select id="repPeriod" onchange="repPeriodChanged()"></select></div>
+      <div class="repF" id="repCustom" style="display:none"><label>Od – do</label><span class="rng"><input type="date" id="repFrom" onchange="renderReports()"><input type="date" id="repTo" onchange="renderReports()"></span></div>
+      <div class="repF"><label>Pokaż</label><select id="repMetric" onchange="renderReports()">
+        <option value="kwh">Zużycie (kWh)</option><option value="koszt">Koszt (zł)</option>
+        <option value="czas">Czas pracy (h)</option><option value="cykle">Liczba cykli</option></select></div>
+      <div class="repF"><label>Grupuj wg</label><select id="repGroupBy" onchange="renderReports()">
+        <option value="period">Czasu</option><option value="temp">Temperatury zewnętrznej</option></select></div>
+      <div class="repF" id="granWrap"><label>Granulacja</label><select id="gran" onchange="renderReports()">
+        <option value="day">Dzień</option><option value="week">Tydzień</option><option value="month" selected>Miesiąc</option>
+        <option value="quarter">Kwartał</option><option value="half">Półrocze</option><option value="year">Rok</option></select></div>
+      <div class="repF" id="tempBinWrap" style="display:none"><label>Krok temp.</label><select id="repTempBin" onchange="renderReports()"><option value="1" selected>1 °C</option><option value="2">2 °C</option><option value="5">5 °C</option></select></div>
+      <div class="repF"><label>Wykres</label><select id="repChartType" onchange="renderReports()"><option value="bar">Słupkowy</option><option value="line">Liniowy</option></select></div>
+    </div>
+    <div class="cap" id="repCap" style="margin:10px 0 0"></div>
   </div>
-  <div class="card"><h2>Udział CO / CWU — w wybranym zakresie dat (kWh)</h2><div id="splitChartWrap"></div></div>
-  <div class="panelGrid">
-    <div class="panel panel-co"><h3>🔥 CO — ogrzewanie domu</h3><div id="panelCoWrap"></div></div>
-    <div class="panel panel-cwu"><h3>💧 CWU — ciepła woda</h3><div id="panelCwuWrap"></div></div>
-  </div>
-  <div class="card" style="border-left:4px solid var(--pv)"><h3 style="margin:0 0 12px;font-size:.95rem;font-weight:700;display:flex;align-items:center;gap:8px"><span class="dot pv"></span>☀️ PV — produkcja (ta sama granulacja co powyżej)</h3><div id="panelPvWrap"></div></div>
-  <div class="card tbl-wrap"><h2 style="margin-bottom:6px">Zestawienie szczegółowe</h2><div class="cap" id="repCap"></div><table class="rc"><thead><tr id="repThead"></tr></thead><tbody id="repTbody"></tbody></table>
-    <p class="note" id="repPvNote" style="margin-top:8px;display:none">Kolumna PV pojawia się tylko przy grupowaniu „wg okresu czasu” i metryce kWh/koszt (zł) — produkcja PV nie jest powiązana z temperaturą zewnętrzną ani z „cyklami”/„czasem trwania” pompy.</p>
+  <div class="stats" id="repKpi"></div>
+  <div class="card"><h2><span class="dot co"></span><span class="dot cwu"></span><span id="repMainTitle">Pompa ciepła</span></h2><div id="repSplit"></div><div id="repMainChart"></div></div>
+  <div class="card" style="border-left:4px solid var(--pv)"><h2><span class="dot pv"></span>☀️ Produkcja PV w tym samym okresie</h2><div id="panelPvWrap"></div></div>
+  <div class="card tbl-wrap"><h2 style="margin-bottom:6px">Zestawienie szczegółowe</h2><div class="cap" id="repTblCap"></div><table class="rc"><thead><tr id="repThead"></tr></thead><tbody id="repTbody"></tbody></table>
+    <p class="note" id="repPvNote" style="margin-top:8px;display:none">Kolumna PV pojawia się przy grupowaniu wg czasu i metryce kWh / koszt. „Dni z wpisami pompy” pokazuje, ile dni danego okresu ma wpisy (pompa nie pracuje codziennie, więc to informacja o pokryciu danymi, nie błąd). Okres oznaczony „(trwa)” jest jeszcze niepełny — nie porównuj jego sumy z pełnymi okresami; kreska „—” oznacza brak wpisów pompy.</p>
   </div>
 </div>
 
@@ -2433,7 +2440,6 @@ function outdoorTemp(r){ if(r.type==='CO'){ const vals=[r.out1,r.out2].filter(v=
 function ensureAgg(map,k){ if(!map.has(k)) map.set(k,{dayKwh:0,dayCost:0,dates:new Set(),coKwh:0,cwuKwh:0,coCost:0,cwuCost:0,coMin:0,cwuMin:0,coCount:0,cwuCount:0}); }
 function addAgg(o,r){ if(r.date) o.dates.add(r.date); const min=durMin(r.start,r.end)||0, c=recCost(r), fd=pvFracRec(r); o.dayKwh+=(r.kwh||0)*fd; o.dayCost+=c*fd; if(r.type==='CO'){o.coKwh+=r.kwh||0;o.coCost+=c;o.coMin+=min;o.coCount++;} else {o.cwuKwh+=r.kwh||0;o.cwuCost+=c;o.cwuMin+=min;o.cwuCount++;} }
 function inRange(d,rg){ return !rg||((!rg.from||d>=rg.from)&&(!rg.to||d<=rg.to)); }
-function repRange(){ const g=id=>(document.getElementById(id)||{}).value||''; return {from:g('repFrom'),to:g('repTo')}; }
 function buildAgg(groupBy,gran,rg){
   const map=new Map(); const RR=R.filter(r=>inRange(r.date,rg)&&wxPass(r.date));
   if(groupBy==='temp'){
@@ -2448,20 +2454,6 @@ function metricVal(o,t,metric){ if(metric==='kwh') return t==='co'?o.coKwh:o.cwu
   if(metric==='czas') return (t==='co'?o.coMin:o.cwuMin)/60;
   return t==='co'?o.coCount:o.cwuCount; }
 function dateList(set){ return [...set].sort().map(d=>d.slice(8,10)+'.'+d.slice(5,7)).join(', '); }
-function buildTable(headId,bodyId,keys,map,metric,headLabel,pvMap,withDates){
-  const lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric];
-  const showPv = !!pvMap && (metric==='kwh'||metric==='koszt');
-  const cols=[headLabel,'CO '+lbl,'CWU '+lbl,'Razem '+lbl];
-  if(showPv) cols.push('PV '+(metric==='koszt'?'zł (wartość)':lbl));
-  if(withDates) cols.push('Daty wpisów');
-  document.getElementById(headId).innerHTML=cols.map(c=>`<th>${c}</th>`).join('');
-  document.getElementById(bodyId).innerHTML = keys.length ? keys.map(k=>{ const o=map.get(k);
-    const co=metricVal(o,'co',metric), cwu=metricVal(o,'cwu',metric);
-    let pvCell='';
-    if(showPv){ const p=pvMap.get(k); const pv = p ? (metric==='koszt'?p.value:p.kwh) : 0; pvCell=`<td class="num" style="color:var(--pv)">${pv.toFixed(2)}</td>`; }
-    return `<tr><td>${k}</td><td class="num">${co.toFixed(2)}</td><td class="num">${cwu.toFixed(2)}</td><td class="num">${(co+cwu).toFixed(2)}</td>${pvCell}${withDates?`<td class="notecell">${dateList(o.dates)} <span class="note">(${o.coCount+o.cwuCount} wpis.)</span></td>`:''}</tr>`; }).join('')
-    : `<tr><td colspan="${cols.length}" class="empty">Brak danych.</td></tr>`;
-}
 function periodKey(date,g){
   const d=new Date(date+'T00:00:00'); if(isNaN(d)) return 'brak daty'; const y=d.getFullYear(), m=d.getMonth();
   if(g==='day') return date;
@@ -2471,33 +2463,96 @@ function periodKey(date,g){
   if(g==='half') return y+'-P'+(m<6?1:2);
   return ''+y;
 }
+/* ===== RAPORTY v30: widok sezonowy, jeden wykres CO+CWU, pokrycie danymi ===== */
+function repSeasonStart(d){ const y=+d.slice(0,4), m=+d.slice(5,7); return m>=9?y:y-1; }
+function repSeasonLbl(sy){ return sy+'/'+String(sy+1).slice(2); }
+function repFillPeriods(){
+  const sel=document.getElementById('repPeriod'); if(!sel) return;
+  const today=ymd(new Date()), cur=repSeasonStart(today);
+  const ds=R.map(r=>r.date).concat(PV.map(p=>p.date)).filter(Boolean).sort();
+  const first=ds.length?repSeasonStart(ds[0]):cur, pumpBy={}; R.forEach(r=>{ if(r.date){ const y=repSeasonStart(r.date); pumpBy[y]=(pumpBy[y]||0)+1; } });
+  let saved=sel.value; if(!saved){ try{ saved=localStorage.getItem('hp_rep_p')||''; }catch(e){} } if(!saved) saved='s'+cur;
+  let o='<optgroup label="Sezony (wrzesień – sierpień)">';
+  for(let y=cur;y>=first;y--) o+=`<option value="s${y}">Sezon ${repSeasonLbl(y)}${y===cur?' (bieżący)':''}${pumpBy[y]?' · '+pumpBy[y]+' wpisów pompy':' · brak wpisów pompy'}</option>`;
+  o+='</optgroup><optgroup label="Inne"><option value="d30">Ostatnie 30 dni</option><option value="all">Cała historia</option><option value="custom">Własny zakres…</option></optgroup>';
+  if(sel.dataset.sig!==o){ sel.dataset.sig=o; sel.innerHTML=o; }
+  if(![...sel.options].some(x=>x.value===saved)) saved='s'+cur;
+  sel.value=saved;
+}
+function repRange(){
+  const sel=document.getElementById('repPeriod'), v=sel?sel.value:'all', today=ymd(new Date()), g=id=>(document.getElementById(id)||{}).value||'';
+  if(v&&v[0]==='s'&&/^s\d{4}$/.test(v)){ const y=+v.slice(1), end=(y+1)+'-08-31'; return {from:y+'-09-01',to:end<today?end:today}; }
+  if(v==='d30') return {from:addDaysS(today,-29),to:today};
+  if(v==='custom') return {from:g('repFrom'),to:g('repTo')};
+  const ds=R.map(r=>r.date).concat(PV.map(p=>p.date)).filter(Boolean).sort(); return {from:ds[0]||'',to:today};
+}
+function repPeriodChanged(){
+  const sel=document.getElementById('repPeriod'); try{ localStorage.setItem('hp_rep_p',sel.value); }catch(e){}
+  document.getElementById('repCustom').style.display=sel.value==='custom'?'':'none';
+  if(sel.value==='custom'){ const rg0=repRange0(); if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value=rg0.from; if(!document.getElementById('repTo').value) document.getElementById('repTo').value=rg0.to; }
+  const rg=repRange(), days=rg.from&&rg.to?Math.round((Date.parse(rg.to)-Date.parse(rg.from))/864e5)+1:0;
+  document.getElementById('gran').value= days<=45?'day':(days>800?'quarter':'month');
+  renderReports();
+}
+function repRange0(){ const t=ymd(new Date()); return {from:addDaysS(t,-29),to:t}; }
+function repKeysIn(from,to,gran){ const out=[]; if(!from||!to) return out; let d=from, last=''; for(let i=0;i<4000&&d<=to;i++){ const k=periodKey(d,gran); if(k!==last){ out.push(k); last=k; } d=addDaysS(d,1); } return out; }
+function repPerDays(k,gran,rg){ const b=periodBounds(k,gran); if(!b) return 0; const a=b[0]<rg.from?rg.from:b[0], e=b[1]>rg.to?rg.to:b[1]; return e<a?0:Math.round((Date.parse(e)-Date.parse(a))/864e5)+1; }
+const repF2=v=>(+v).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}), repF1=v=>(+v).toLocaleString('pl-PL',{minimumFractionDigits:1,maximumFractionDigits:1});
+function buildTable(headId,bodyId,keys,map,metric,headLabel,pvMap,withDates,cov){
+  const lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric], showPv=!!pvMap&&(metric==='kwh'||metric==='koszt');
+  const cols=[headLabel,'CO '+lbl,'CWU '+lbl,'Razem '+lbl]; if(showPv) cols.push('PV '+(metric==='koszt'?'zł (wartość)':lbl)); if(cov) cols.push('Dni z wpisami pompy'); if(withDates) cols.push('Daty wpisów');
+  document.getElementById(headId).innerHTML=cols.map(c=>`<th>${c}</th>`).join('');
+  const tb=document.getElementById(bodyId); let T={co:0,cwu:0,pv:0};
+  tb.innerHTML=keys.length?keys.map(k=>{ const o=map.get(k), co=o?metricVal(o,'co',metric):0, cwu=o?metricVal(o,'cwu',metric):0; T.co+=co; T.cwu+=cwu;
+    let pvCell=''; if(showPv){ const p=pvMap.get(k), pv=p?(metric==='koszt'?p.value:p.kwh):0; T.pv+=pv; pvCell=`<td class="num" style="color:var(--pv)">${p?repF2(pv):'—'}</td>`; }
+    const f=v=>o?repF2(v):'<span class="repTone">—</span>', c=cov?cov(k,o):null;
+    return `<tr><td>${k}${c&&c.live?' <span class="note">(trwa)</span>':''}</td><td class="num">${f(co)}</td><td class="num">${f(cwu)}</td><td class="num"><b>${f(co+cwu)}</b></td>${pvCell}${cov?`<td class="num cov">${o?o.dates.size+' / '+c.days:'—'}</td>`:''}${withDates?`<td class="notecell">${o?dateList(o.dates)+' <span class="note">('+(o.coCount+o.cwuCount)+' wpis.)</span>':''}</td>`:''}</tr>`; }).join('')
+    : `<tr><td colspan="${cols.length}" class="empty">Brak danych w wybranym okresie.</td></tr>`;
+  let tf=tb.parentElement.tFoot; if(!tf) tf=tb.parentElement.createTFoot();
+  tf.innerHTML=keys.length?`<tr style="font-weight:700"><td>Razem</td><td class="num">${repF2(T.co)}</td><td class="num">${repF2(T.cwu)}</td><td class="num">${repF2(T.co+T.cwu)}</td>${showPv?`<td class="num" style="color:var(--pv)">${repF2(T.pv)}</td>`:''}${cov?'<td></td>':''}${withDates?'<td></td>':''}</tr>`:'';
+}
 function renderReports(){
-  const groupBy=document.getElementById('repGroupBy').value, gran=document.getElementById('gran').value;
-  const metric=document.getElementById('repMetric').value, chartType=document.getElementById('repChartType').value;
-  document.getElementById('granWrap').style.display = groupBy==='temp' ? 'none' : ''; document.getElementById('tempBinWrap').style.display = groupBy==='temp' ? '' : 'none'; { const g=document.querySelector('#raporty .panelGrid'); if(g) g.style.gridTemplateColumns = groupBy==='temp' ? '1fr' : ''; }
-  const rg=repRange(); const {keys, map} = buildAgg(groupBy,gran,rg);
-  const show = groupBy==='temp' ? keys : keys.slice(-24);
-  const per=PER_LBL[groupBy==='temp'?'temp':gran], cols=groupBy==='temp'?1:2;
-  const _dd=[...R.filter(r=>inRange(r.date,rg)&&wxPass(r.date)).map(r=>r.date),...PV.filter(p=>inRange(p.date,rg)&&wxPass(p.date)).map(p=>p.date)].filter(Boolean).sort(), dFrom=_dd[0]||'', dTo=_dd[_dd.length-1]||'', partial=groupBy==='temp'?[]:partialKeys(keys,gran,dFrom,dTo);
-  const rngTxt=rangeText(R.filter(r=>inRange(r.date,rg)&&wxPass(r.date)).map(r=>r.date).filter(Boolean).sort(),rg);
-  const totalCo=[...map.values()].reduce((s,o)=>s+o.coKwh,0), totalCwu=[...map.values()].reduce((s,o)=>s+o.cwuKwh,0);
-  document.getElementById('splitChartWrap').innerHTML = (totalCo+totalCwu)>0 ? '<div class="cap">Zakres: <b>'+rngTxt+'</b> · suma CO + CWU: <b>'+(totalCo+totalCwu).toFixed(2)+' kWh</b></div>'+svgDonut([{label:'CO',value:totalCo,color:'#e0904f'},{label:'CWU',value:totalCwu,color:'#49b4cf'}],'kWh') : '<div class="empty">Brak danych.</div>';
-  const lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric];
-  const mv=t=>k=>+metricVal(map.get(k),t,metric).toFixed(2);
-  setCW('panelCoWrap',cols); document.getElementById('panelCoWrap').innerHTML = panelChart('#e0904f',show,show.map(mv('co')),lbl,chartType,{allKeys:keys,allVals:keys.map(mv('co')),per,range:rngTxt,partial,dFrom});
-  setCW('panelCwuWrap',cols); document.getElementById('panelCwuWrap').innerHTML = panelChart('#49b4cf',show,show.map(mv('cwu')),lbl,chartType,{allKeys:keys,allVals:keys.map(mv('cwu')),per,range:rngTxt,partial,dFrom});
-
-  const {keys:pvKeysAll, map:pvMapAll} = buildPvAgg(gran,rg);
-  const pvShow = pvKeysAll.slice(-24);
-  const pvRng=rangeText(PV.filter(p=>inRange(p.date,rg)&&wxPass(p.date)).map(p=>p.date).filter(Boolean).sort(),rg);
-  setCW('panelPvWrap',1); document.getElementById('panelPvWrap').innerHTML = pvShow.length
-    ? panelChart('#e8c547', pvShow, pvShow.map(k=>+pvMapAll.get(k).kwh.toFixed(2)), 'kWh', chartType,{allKeys:pvKeysAll,allVals:pvKeysAll.map(k=>+pvMapAll.get(k).kwh.toFixed(2)),per:PER_LBL[gran],range:pvRng,partial:partialKeys(pvKeysAll,gran,dFrom,dTo),dFrom})
-    : '<div class="empty">Brak wpisów PV — dodaj je w zakładce „☀️ PV”.</div>';
-
-  const pvMapForTable = groupBy==='period' ? pvMapAll : null;
-  document.getElementById('repPvNote').style.display = (metric==='kwh'||metric==='koszt') && groupBy==='period' ? 'block' : 'none';
-  buildTable('repThead','repTbody',show,map,metric, groupBy==='temp'?'Temp. zewn. (°C)':'Okres', pvMapForTable, groupBy==='temp');
-  document.getElementById('repCap').innerHTML='Zakres: <b>'+rngTxt+'</b> · '+(groupBy==='temp'?'wiersze = przedziały temperatury zewnętrznej':'wiersze = '+per+' (granulacja)')+' · pokazano '+show.length+' z '+keys.length+(show.length<keys.length?' (najnowsze)':'')+' · jednostka: '+lbl;
+  repFillPeriods();
+  const $=id=>document.getElementById(id), groupBy=$('repGroupBy').value, gran=$('gran').value, metric=$('repMetric').value, chartType=$('repChartType').value, pv=$('repPeriod').value;
+  $('granWrap').style.display=groupBy==='temp'?'none':''; $('tempBinWrap').style.display=groupBy==='temp'?'':'none'; $('repCustom').style.display=pv==='custom'?'':'none';
+  const rg=repRange(), today=ymd(new Date()), lbl={kwh:'kWh',koszt:'zł',czas:'h',cykle:'szt.'}[metric], dec=metric==='cykle'?0:2;
+  const RR=R.filter(r=>r.date&&inRange(r.date,rg)&&wxPass(r.date)), rangeDays=rg.from&&rg.to?Math.round((Date.parse(rg.to)-Date.parse(rg.from))/864e5)+1:0;
+  const pumpDates=[...new Set(RR.map(r=>r.date))].sort(), {keys:dataKeys,map}=buildAgg(groupBy,gran,rg), {keys:pvKeys,map:pvMap}=buildPvAgg(gran,rg);
+  const all=[...map.values()], sum=f=>all.reduce((s,o)=>s+f(o),0), coK=sum(o=>o.coKwh), cwuK=sum(o=>o.cwuKwh), tot=coK+cwuK, cost=sum(o=>o.coCost+o.cwuCost);
+  const pvSum=[...pvMap.values()].reduce((s,o)=>s+o.kwh,0), pvDays=PV.filter(p=>pvOk(p)&&p.date&&inRange(p.date,rg)&&wxPass(p.date)).length;
+  /* nagłówek: jednoznaczny zakres + skąd faktycznie są dane pompy */
+  $('repCap').innerHTML='Okres: <b>'+(rg.from?fmtDpl(rg.from):'—')+' – '+(rg.to?fmtDpl(rg.to):'—')+'</b> ('+rangeDays+' dni) · '+(RR.length?'wpisy pompy: <b>'+RR.length+'</b> w <b>'+pumpDates.length+'</b> dniach (od '+fmtDpl(pumpDates[0])+' do '+fmtDpl(pumpDates[pumpDates.length-1])+')':'<b>brak wpisów pompy w tym okresie</b>')+' · PV: <b>'+pvDays+'</b> dni z wpisami';
+  /* KPI */
+  const st=(v,l,c)=>`<div class="stat"><div class="v"${c?` style="color:${c}"`:''}>${v}</div><div class="l">${l}</div></div>`;
+  $('repKpi').innerHTML= st(repF1(tot)+' kWh','Pompa — zużycie<br>CO '+repF1(coK)+' · CWU '+repF1(cwuK))
+    +st(repF1(cost)+' zł','Pompa — koszt wg cen z wpisów')
+    +st(pumpDates.length?repF2(tot/pumpDates.length)+' kWh':'—','Średnio na dzień z wpisami pompy<br>('+pumpDates.length+' dni)')
+    +st(repF1(pvSum)+' kWh','Produkcja PV w okresie<br>('+pvDays+' dni z wpisami)','var(--pv)')
+    +st(rangeDays?Math.round(pumpDates.length/rangeDays*100)+'%':'—','Pokrycie okresu wpisami pompy<br>('+pumpDates.length+' z '+rangeDays+' dni)');
+  /* udział CO / CWU — jeden pasek zamiast „pączka” */
+  const pc=tot>0?Math.round(coK/tot*100):0;
+  $('repSplit').innerHTML= tot>0?`<div class="shareBar"><div style="width:${tot?coK/tot*100:0}%;background:var(--amber)">${coK/tot>.08?'CO '+pc+'%':''}</div><div style="width:${tot?cwuK/tot*100:0}%;background:var(--cyan)">${cwuK/tot>.08?'CWU '+(100-pc)+'%':''}</div></div>
+    <div class="shareLeg"><span><i style="background:var(--amber)"></i>CO (ogrzewanie): <b>${repF1(coK)} kWh</b> · ${pc}%</span><span><i style="background:var(--cyan)"></i>CWU (ciepła woda): <b>${repF1(cwuK)} kWh</b> · ${100-pc}%</span><span>razem <b>${repF1(tot)} kWh</b></span></div>`:'';
+  /* oś: pełna lista okresów zakresu (luki widać jako puste miejsca), dla temperatury — przedziały z danymi */
+  let keys, chartKeys;
+  if(groupBy==='temp'){ keys=dataKeys; chartKeys=dataKeys; }
+  else { const full=repKeysIn(rg.from,rg.to,gran); keys=full.length<=400?full:dataKeys; chartKeys=full.length<=60?full:[...new Set([...dataKeys,...pvKeys])].sort(); }
+  const lim=gran==='day'?62:36, shown=groupBy==='temp'?chartKeys:chartKeys.slice(-lim), mv=t=>k=>{ const o=map.get(k); return o?+metricVal(o,t,metric).toFixed(dec):0; };
+  const perName=groupBy==='temp'?'przedziałów temperatury':({day:'dni',week:'tygodni',month:'miesięcy',quarter:'kwartałów',half:'półroczy',year:'lat'})[gran];
+  $('repMainTitle').textContent='Pompa ciepła — '+({kwh:'zużycie',koszt:'koszt',czas:'czas pracy',cykle:'liczba cykli'})[metric]+' ('+lbl+') '+(groupBy==='temp'?'wg temperatury zewnętrznej':'wg okresów: '+({day:'dzień',week:'tydzień',month:'miesiąc',quarter:'kwartał',half:'półrocze',year:'rok'})[gran]);
+  const series=[{name:'CO',color:'#e0904f',values:shown.map(mv('co'))},{name:'CWU',color:'#49b4cf',values:shown.map(mv('cwu'))}];
+  setCW('repMainChart',1);
+  $('repMainChart').innerHTML=(RR.length?(chartType==='line'?svgLine(shown,series,lbl):svgBars(shown,series,lbl)):'<div class="empty">Brak wpisów pompy w wybranym okresie — wybierz inny sezon.</div>')
+    +(RR.length&&shown.length<chartKeys.length?`<div class="cap" style="margin:6px 0 0">Wykres: ostatnie ${shown.length} z ${chartKeys.length} ${perName}; tabela poniżej zawiera wszystkie.</div>`:'');
+  /* PV w tym samym okresie */
+  const pvShown=(groupBy==='temp'?repKeysIn(rg.from,rg.to,gran):chartKeys).slice(-lim), pvVals=pvShown.map(k=>{ const o=pvMap.get(k); return o?+o.kwh.toFixed(1):0; });
+  setCW('panelPvWrap',1);
+  $('panelPvWrap').innerHTML=pvDays?`<div class="cap" style="margin:0 0 8px">Suma w okresie: <b>${repF1(pvSum)} kWh</b> · ${pvDays} dni z wpisami${groupBy==='temp'?' · wykres wg miesięcy/okresów granulacji':''}</div>`+(chartType==='line'?svgLine(pvShown,[{name:'PV',color:'#e8c547',values:pvVals}],'kWh'):svgBars(pvShown,[{name:'PV',color:'#e8c547',values:pvVals}],'kWh')):'<div class="empty">Brak wpisów PV w tym okresie.</div>';
+  /* tabela */
+  const tblKeys= groupBy==='temp'?dataKeys:[...new Set([...dataKeys,...pvKeys])].sort().reverse();
+  $('repPvNote').style.display=(metric==='kwh'||metric==='koszt')&&groupBy==='period'?'block':'none';
+  $('repTblCap').textContent=(groupBy==='temp'?'Wiersze = przedziały temperatury zewnętrznej (tylko z wpisami pompy).':'Wiersze = '+perName+' z danymi (najnowsze na górze).')+' Jednostka: '+lbl+'.';
+  buildTable('repThead','repTbody',tblKeys,map,metric,groupBy==='temp'?'Temp. zewn. (°C)':'Okres',groupBy==='period'?pvMap:null,groupBy==='temp',groupBy==='period'?((k,o)=>{ const b=periodBounds(k,gran); return {days:repPerDays(k,gran,rg),live:!!(b&&b[0]<=today&&b[1]>=today&&rg.to>=today)}; }):null);
 }
 
 function xmlEsc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -2509,10 +2564,10 @@ async function exportXLSX(){
   const cols=['id','type','date','start','end','rad','out1','out2','slope','offset','target1','target2','t1','t2','out','kwh','note'];
   const headers=['ID','Typ','Data','Start','Koniec','Grzejniki','Temp.zewn.start','Temp.zewn.koniec','Nachylenie','Przesunięcie','Cel@start','Cel@koniec','Temp.wody pocz.','Temp.wody docel.','Temp.zewn.','kWh','Notatka'];
   const dataRows=[headers,...R.map(r=>cols.map(c=>r[c]??''))];
-  const {keys:pk,map:pm}=buildAgg('period',document.getElementById('gran').value);
+  const {keys:pk,map:pm}=buildAgg('period',document.getElementById('gran').value,repRange());
   const repRows=[['Okres','CO kWh','CWU kWh','Razem kWh','Koszt CO','Koszt CWU','Koszt razem'],
     ...pk.map(k=>{const o=pm.get(k); return [k,+o.coKwh.toFixed(2),+o.cwuKwh.toFixed(2),+(o.coKwh+o.cwuKwh).toFixed(2),+o.coCost.toFixed(2),+o.cwuCost.toFixed(2),+(o.coCost+o.cwuCost).toFixed(2)];})];
-  const {keys:tk,map:tm}=buildAgg('temp');
+  const {keys:tk,map:tm}=buildAgg('temp',null,repRange());
   const tempRows=[['Temp. zewn. (°C)','CO kWh','CWU kWh','Razem kWh','Koszt'],
     ...tk.map(k=>{const o=tm.get(k); return [k,+o.coKwh.toFixed(2),+o.cwuKwh.toFixed(2),+(o.coKwh+o.cwuKwh).toFixed(2),+(o.coCost+o.cwuCost).toFixed(2)];})];
   const per=M.slice().sort((a,b)=>a.start.localeCompare(b.start)).map(m=>({m,r:calcPeriod(m,{noCompare:true})}));
@@ -4205,7 +4260,7 @@ function renderLive(){
       if(!r.end||a===b){ if(d===a) s+=r.kwh; return; }
       const al=allocDays({start:r.start,end:r.end}).find(x=>x.day===d); if(al) s+=r.kwh*al.f; });
     return {kwh:s,miss}; };
-  $w('live_days').innerHTML=ds.length?`<table class="rc"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Import z sieci (kWh)</th><th>Eksport do sieci (kWh)</th><th>Zużycie domu (kWh)</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=Object.assign({},HUBC.days[d]||{}), pm=pvm(d), W=wxRec({date:d}), pk=pumpDay(d); let manE=false; if(pm){ x.y=pm.kwh; ['imp:im','exp:ex','load:ld'].forEach(z=>{ const [a,b]=z.split(':'); if(pm[a]!=null){ x[b]=pm[a]; manE=true; } }); } const noMeter=!manE&&(x.im===0&&x.ex===0&&x.ld!=null&&x.y!=null&&Math.abs(x.ld-x.y)<0.15); return `<tr><td class="num">${d}${pm?' <span title="wpis ręczny / import z pliku">✎</span>':''}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${noMeter?'<span title="Falownik nie ma licznika (CT): SolaX zwraca import = 0, eksport = 0 i zużycie = produkcja. To nie są pomiary.">—</span>':(x.im!=null?(+x.im).toFixed(1):'—')}</td><td class="num">${noMeter?'—':(x.ex!=null?(+x.ex).toFixed(1):'—')}</td><td class="num">${noMeter?'—':(x.ld!=null?(+x.ld).toFixed(1):'—')}</td><td class="num">${pk.kwh>0?pk.kwh.toFixed(1):'—'}${pk.miss?` <span title="${pk.miss} cykli tego dnia bez wpisanego zużycia (kWh) — nie wliczone" style="color:var(--warn,#c90)">⚠</span>`:''}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table><div class="note" style="margin-top:6px">„Pompa tego dnia”: zużycie cykli rozdzielone na doby proporcjonalnie do czasu (cykl przez północ liczy się w obu dniach); ⚠ = są cykle bez wpisanego kWh. Import/eksport/zużycie domu: „—” gdy falownik nie ma licznika (SolaX zwraca wtedy 0 / 0 / zużycie = produkcja).</div>`+(HUBC.daysErr?`<div class="warnline bad">Odświeżenie dni z huba nie powiodło się: ${wxEsc(HUBC.daysErr)} — pokazuję dane zapamiętane wcześniej.</div>`:(HUBC.daysInfo&&HUBC.daysInfo.n<rg*0.5&&HUBC.daysInfo.rg===rg?`<div class="note" style="margin-top:6px">Hub zwrócił ${HUBC.daysInfo.n} dni (${wxEsc(HUBC.daysInfo.from)} → ${wxEsc(HUBC.daysInfo.to)}) z ${rg} żądanych — brakujące dni dociągnij przyciskiem „⬇ Pobierz historię SolaX”.</div>`:'')):'<div class="empty">Brak dni w historii za ten okres'+(HUBC.daysErr?' — błąd pobierania z huba: '+wxEsc(HUBC.daysErr):(HUBC.daysInfo&&HUBC.daysInfo.n===0?' — hub nie zwrócił żadnego dnia (arkusz DNI jest pusty albo ma uszkodzone daty: w Arkuszu uruchom Monitor PC+PV → 5. Napraw daty, potem „Wdróż → Nowa wersja”)':''))+'. Kliknij „Pobierz historię SolaX” powyżej albo uruchom w Arkuszu: Monitor PC+PV → 4. Pobierz historię SolaX.</div>';
+  $w('live_days').innerHTML=ds.length?`<table class="rc"><thead><tr><th>Data</th><th>Produkcja PV (kWh)</th><th>Szczyt mocy</th><th>PV pracowało</th><th>Pompa tego dnia (kWh)</th><th>Temp. dnia (min · śr. · max)</th><th>Nasłonecznienie</th></tr></thead><tbody>${ds.map(d=>{ const x=Object.assign({},HUBC.days[d]||{}), pm=pvm(d), W=wxRec({date:d}), pk=pumpDay(d); if(pm){ x.y=pm.kwh; } return `<tr><td class="num">${d}${pm?' <span title="wpis ręczny / import z pliku">✎</span>':''}</td><td class="num"><b>${x.y!=null?(+x.y).toFixed(1):'—'}</b></td><td class="num">${x.pk!=null?(x.pk/1000).toFixed(2)+' kW':'—'}</td><td class="num">${x.h0?x.h0+' – '+x.h1:'—'}</td><td class="num">${pk.kwh>0?pk.kwh.toFixed(1):'—'}${pk.miss?` <span title="${pk.miss} cykli tego dnia bez wpisanego zużycia (kWh) — nie wliczone" style="color:var(--warn,#c90)">⚠</span>`:''}</td><td class="w2">${wxTempsHtml(W)}</td><td class="num">${wxRadHtml(W)}</td></tr>`; }).join('')}</tbody></table><div class="note" style="margin-top:6px">„Pompa tego dnia”: zużycie cykli rozdzielone na doby proporcjonalnie do czasu (cykl przez północ liczy się w obu dniach); ⚠ = są cykle bez wpisanego kWh. Import/eksport/zużycie domu: „—” gdy falownik nie ma licznika (SolaX zwraca wtedy 0 / 0 / zużycie = produkcja).</div>`+(HUBC.daysErr?`<div class="warnline bad">Odświeżenie dni z huba nie powiodło się: ${wxEsc(HUBC.daysErr)} — pokazuję dane zapamiętane wcześniej.</div>`:(HUBC.daysInfo&&HUBC.daysInfo.n<rg*0.5&&HUBC.daysInfo.rg===rg?`<div class="note" style="margin-top:6px">Hub zwrócił ${HUBC.daysInfo.n} dni (${wxEsc(HUBC.daysInfo.from)} → ${wxEsc(HUBC.daysInfo.to)}) z ${rg} żądanych — brakujące dni dociągnij przyciskiem „⬇ Pobierz historię SolaX”.</div>`:'')):'<div class="empty">Brak dni w historii za ten okres'+(HUBC.daysErr?' — błąd pobierania z huba: '+wxEsc(HUBC.daysErr):(HUBC.daysInfo&&HUBC.daysInfo.n===0?' — hub nie zwrócił żadnego dnia (arkusz DNI jest pusty albo ma uszkodzone daty: w Arkuszu uruchom Monitor PC+PV → 5. Napraw daty, potem „Wdróż → Nowa wersja”)':''))+'. Kliknij „Pobierz historię SolaX” powyżej albo uruchom w Arkuszu: Monitor PC+PV → 4. Pobierz historię SolaX.</div>';
 }
 setInterval(()=>{ const t=$w('live'); if(t&&t.classList.contains('on')&&hubCfg()&&!HUBC.liveBusy&&Date.now()-HUBC.liveAt>60000) hubRefreshLive(false); },15000);
 function hubInit(){ if(hubCfg()&&Date.now()-(HUBC.sxAt||0)>10*60000) setTimeout(hubPrefetchSx,1200); }
