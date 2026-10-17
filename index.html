@@ -4231,7 +4231,9 @@ async function hubRefreshLive(fresh){
 /* [klucz zakresu, etykieta, liczba wierszy-dób] */
 const LIVE_RGS=[[1,'24 h',2],[3,'3 dni',3],[7,'7 dni',7],[14,'14 dni',14],[30,'30 dni',30]];
 let LIVE_RG=(function(){ try{ const v=+localStorage.getItem('hp_live_rg'); return LIVE_RGS.some(x=>x[0]===v)?v:1; }catch(e){ return 1; } })();
-let LIVE_SEL=null;   /* id wybranego cyklu = znacznik czasu jego pierwszego odczytu */
+let LIVE_SEL=null, LIVE_TYPE='CO';   /* CO = główny widok (długie cykle grzewcze); CWU to krótki cykl raz dziennie */
+const LZ_LOOK=4*864e5;   /* dociągamy dane z wyprzedzeniem, żeby cykl zaczęty przed oknem nie był ucięty */
+function liveTypeSet(t){ LIVE_TYPE=t; renderLiveChart(); }   /* id wybranego cyklu = znacznik czasu jego pierwszego odczytu */
 const LZ_C={CO:'#cf7a36',CWU:'#2f94b4'}, LZ_WD=['ndz','pon','wt','śr','czw','pt','sob'];
 const lzP=n=>String(n).padStart(2,'0'), lzHM=ms=>{ const d=new Date(ms); return lzP(d.getHours())+':'+lzP(d.getMinutes()); }, lzDM=ms=>{ const d=new Date(ms); return lzP(d.getDate())+'.'+lzP(d.getMonth()+1); };
 const lzF1=v=>(v==null||isNaN(v))?'—':(Math.round(v*10)/10).toString().replace('.',','), lzF0=v=>(v==null||isNaN(v))?'—':Math.round(v).toString();
@@ -4243,11 +4245,11 @@ function liveSelect(id,scroll){ LIVE_SEL=id; renderLiveChart(); if(scroll){ cons
 async function liveChartLoad(force){
   if(!hubCfg()) return; const d=LIVE_RG, days=LIVE_RGS.find(x=>x[0]===d)[2], c=HUBC.wlR=HUBC.wlR||{}, e=c[d]; HUBC.wlRBusy=HUBC.wlRBusy||{};
   if(HUBC.wlRBusy[d]||(!force&&e&&Date.now()-e.at<90000)) return; HUBC.wlRBusy[d]=true;
-  const step=5, end=Date.now(), start=lzDay0(days-1), chunk=8*864e5, jobs=[];
+  const step=5, end=Date.now(), start=lzDay0(days-1)-LZ_LOOK, chunk=8*864e5, jobs=[];
   for(let t=start;t<end;t+=chunk) jobs.push(hubGet('wl',{from:toLocalStr(t),to:toLocalStr(Math.min(end,t+chunk)),step},50000).then(j=>j.rows||[]).catch(()=>null));
   const parts=await Promise.all(jobs), m=new Map(); let fail=0;
   parts.forEach(p=>{ if(!p){ fail++; return; } p.forEach(r=>m.set(String(r.ts).slice(0,16),r)); });
-  HUBC.wlRBusy[d]=false; c[d]={at:Date.now(),rows:[...m.values()].sort((a,b)=>String(a.ts)<String(b.ts)?-1:1),fail};
+  HUBC.wlRBusy[d]=false; c[d]={at:Date.now(),rows:[...m.values()].sort((a,b)=>String(a.ts)<String(b.ts)?-1:1),fail,from:start};
   renderLiveChart();
 }
 function liveNiceStep(span,n){ const raw=span/n, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p; return (f<=1?1:f<=2?2:f<=5?5:10)*p; }
@@ -4262,7 +4264,7 @@ function lzRuns(rows){
   let segs=[]; try{ segs=wlSegments(rows); }catch(e){ segs=[]; }
   const ix=new Map(rows.map((r,i)=>[r.ts,i])), rho=(+SET.rho||1000), cp=(+SET.cpw||4.186);
   return segs.map(g=>{
-    const rs=g.rows, start=Date.parse(g.first), end0=Date.parse(segEnd(g)), items=rs.map(r=>{ const i=ix.get(r.ts), t=Date.parse(r.ts), n=rows[i+1], nx=n?(Date.parse(n.ts)-t)/60000:5; return {t,w:Math.max(1,Math.min(15,nx))}; });
+    const rs=g.rows, start=Date.parse(g.first), end0=Date.parse(segEnd(g)), items=rs.map(r=>{ const i=ix.get(r.ts), t=Date.parse(r.ts), n=rows[i+1], nx=n?(Date.parse(n.ts)-t)/60000:5; return {t,w:Math.max(1,Math.min(15,nx)),ty:g.mode}; });
     const hz=rs.map(r=>r.T30).filter(v=>v>0), okdt=r=>r.T01!=null&&r.T02!=null&&r.T02>=r.T01;
     let base=rs.filter(r=>r.T30>=40&&okdt(r)); if(!base.length) base=rs.filter(r=>r.T30>0&&okdt(r));
     const t2=rs.map(r=>r.T02).filter(v=>v!=null), t4=rs.map(r=>r.T04).filter(v=>v!=null), qs=base.filter(r=>r.T39!=null).map(r=>r.T39*rho*cp*(r.T02-r.T01)/3600);
@@ -4275,26 +4277,29 @@ function lzPrep(){
   if(!e.prep||e.prep.at!==e.at){ const rows=e.rows.map(r=>Object.assign({},hubVals(r),{ts:String(r.ts).slice(0,16)})).filter(r=>r.ts).sort((a,b)=>a.ts<b.ts?-1:1); e.prep={at:e.at,rows,runs:lzRuns(rows)}; }
   return e.prep;
 }
-const lzRunTip=r=>`<b>${r.type} · ${lzDur(r.min)}</b><br><span class="m">${lzDM(r.start)} ${lzHM(r.start)} → ${lzHM(r.end)}${r.live?' (trwa)':''}</span><br>śr. ${lzF0(r.hzAvg)} Hz · ΔT ${lzF1(r.dt)} K · T04 ${lzF1(r.t04)} °C`;
+const lzSpanTxt=r=>`${r.cut?'≥ ':''}${lzDM(r.start)} ${lzHM(r.start)} → ${lzDM(r.start)===lzDM(r.end)?'':lzDM(r.end)+' '}${lzHM(r.end)}${r.live?' (trwa)':''}`;
+const lzRunTip=r=>`<b>${r.type} · ${r.cut?'≥ ':''}${lzDur(r.min)}</b><br><span class="m">${lzSpanTxt(r)}</span><br>śr. ${lzF0(r.hzAvg)} Hz · ΔT ${lzF1(r.dt)} K · T04 ${lzF1(r.t04)} °C`;
 function lzKpis(runs,rows,from,now){
-  const rs=runs.filter(r=>r.end>from), items=rs.flatMap(r=>r.items).filter(x=>x.t>=from), tot=items.reduce((a,x)=>a+x.w,0);
-  const co=rs.filter(r=>r.type==='CO').length, cw=rs.filter(r=>r.type==='CWU').length, dts=rs.filter(r=>r.dt!=null), dtw=dts.reduce((a,r)=>a+r.work,0);
-  const dtAvg=dts.length&&dtw>0?dts.reduce((a,r)=>a+r.dt*r.work,0)/dtw:null, t4=rows.filter(r=>Date.parse(r.ts)>=from&&r.T04!=null).map(r=>r.T04);
+  const rs=runs.filter(r=>r.end>from), co=rs.filter(r=>r.type==='CO'), cw=rs.filter(r=>r.type==='CWU');
+  const wk=a=>a.flatMap(r=>r.items).filter(x=>x.t>=from).reduce((q,x)=>q+x.w,0), hm=m=>`${Math.floor(m/60)}<small>h</small> ${lzP(Math.round(m%60))}<small>min</small>`;
+  const dts=co.filter(r=>r.dt!=null), dtw=dts.reduce((a,r)=>a+r.work,0), dtAvg=dts.length&&dtw>0?dts.reduce((a,r)=>a+r.dt*r.work,0)/dtw:null;
+  const t4=rows.filter(r=>Date.parse(r.ts)>=from&&r.T04!=null).map(r=>r.T04);
   const Lw=HUBC.live&&HUBC.live.wl, lv=Lw?hubVals(Lw.v):null, lvAge=Lw?(now-Date.parse(String(Lw.ts).slice(0,16)))/60000:1e9, liveRun=runs.find(r=>r.live), last=runs[runs.length-1];
   const on=lv&&lvAge<=20?lv.T30>0:!!liveRun;
-  const hzTxt=on?lzF0(lv&&lvAge<=20&&lv.T30>0?lv.T30:(liveRun&&liveRun.g.rows[liveRun.g.rows.length-1].T30))+' Hz'+(liveRun?' · od '+lzHM(liveRun.start):''):(last?'ostatnio '+lzDM(last.end)+' o '+lzHM(last.end):'brak cykli w danych');
+  const hzTxt=on?lzF0(lv&&lvAge<=20&&lv.T30>0?lv.T30:(liveRun&&liveRun.g.rows[liveRun.g.rows.length-1].T30))+' Hz'+(liveRun?' · '+liveRun.type+' od '+lzDM(liveRun.start)+' '+lzHM(liveRun.start):''):(last?'ostatnio '+last.type+' do '+lzDM(last.end)+' '+lzHM(last.end):'brak cykli w danych');
   const k=(v,l)=>`<div class="lzkpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
   return `<div class="lzkpi"><div class="v"><span class="lzdot" style="background:${on?'var(--ok)':'var(--muted)'}"></span>${on?'pracuje':'stoi'}</div><div class="l">${hzTxt}</div></div>`
-    +k(`${Math.floor(tot/60)}<small>h</small> ${lzP(Math.round(tot%60))}<small>min</small>`,'praca sprężarki w zakresie')
-    +k(`${rs.length}`,`cykli: <span style="color:var(--text)">${co} CO · ${cw} CWU</span>`)
-    +k(`${lzF1(dtAvg)}<small>K</small>`,'średnia ΔT (T02−T01) w pracy')
-    +k(t4.length?`${lzF0(Math.min(...t4))}…${lzF0(Math.max(...t4))}<small>°C</small>`:'—','temp. zewnętrzna, min…max');
+    +k(hm(wco0(co,wk)),`<span style="color:${LZ_C.CO}">●</span> CO — praca sprężarki · <span style="color:var(--text)">${co.length} ${co.length===1?'cykl':'cykli'}</span>`)
+    +k(hm(wk(cw)),`<span style="color:${LZ_C.CWU}">●</span> CWU — praca sprężarki · <span style="color:var(--text)">${cw.length} ${cw.length===1?'cykl':'cykli'}</span>`)
+    +k(`${lzF1(dtAvg)}<small>K</small>`,'średnia ΔT (T02−T01) w cyklach CO')
+    +k(t4.length?`śr. ${lzF0(lzAvg(t4))}<small>°C</small>`:'—',t4.length?`temp. zewnętrzna w zakresie: min <span style="color:var(--text)">${lzF0(Math.min(...t4))} °C</span> · max <span style="color:var(--text)">${lzF0(Math.max(...t4))} °C</span>`:'temp. zewnętrzna — brak odczytów');
 }
+const wco0=(co,wk)=>wk(co);
 function lzRowsSvg(runs,rows,days,W,now){
   const narrow=W<560, rowH=days<=3?34:days<=7?30:days<=14?24:19, bh=rowH-8, L=narrow?78:78, Rr=narrow?48:128, top=26, X0=L, X1=W-Rr, H=top+days*rowH+6, fx=n=>n.toFixed(1);
   const xm=m=>X0+Math.max(0,Math.min(1440,m))/1440*(X1-X0), wStart=lzDay0(days-1), gapMs=150*60000, gaps=[];
   if(rows.length){ const t=rows.map(r=>Date.parse(r.ts)); if(t[0]-wStart>gapMs) gaps.push([wStart,t[0]]); for(let i=1;i<t.length;i++) if(t[i]-t[i-1]>gapMs) gaps.push([t[i-1]+30*60000,t[i]]); if(now-t[t.length-1]>gapMs) gaps.push([t[t.length-1]+30*60000,now]); }
-  const t4all=rows.map(r=>r.T04).filter(v=>v!=null), hasT4=t4all.length>0, tMin=hasT4?Math.floor(Math.min(...t4all)/5)*5:0, tMax=hasT4?Math.max(tMin+5,Math.ceil(Math.max(...t4all)/5)*5):1;
+  const t4all=rows.filter(r=>Date.parse(r.ts)>=wStart).map(r=>r.T04).filter(v=>v!=null), hasT4=t4all.length>0, tMin=hasT4?Math.floor(Math.min(...t4all)/5)*5:0, tMax=hasT4?Math.max(tMin+5,Math.ceil(Math.max(...t4all)/5)*5):1;
   const allItems=runs.flatMap(r=>r.items);
   let s=`<defs><pattern id="lzhatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#9aa8b5" opacity=".06"/><line x1="0" y1="0" x2="0" y2="6" stroke="#9aa8b5" stroke-width="1.4" opacity=".35"/></pattern></defs>`;
   [0,3,6,9,12,15,18,21,24].forEach(h=>{ const x=xm(h*60), lab=!(narrow&&h%6)&&h<24; s+=`<line x1="${fx(x)}" x2="${fx(x)}" y1="${top-6}" y2="${H-4}" stroke="#222c35"/>`+(lab?`<text x="${fx(x)}" y="14" text-anchor="middle" font-size="11.5" fill="#9aa8b5">${lzP(h)}:00</text>`:''); });
@@ -4305,76 +4310,89 @@ function lzRowsSvg(runs,rows,days,W,now){
     gaps.forEach(([a,b])=>{ const a2=Math.max(a,d0), b2=Math.min(b,d1); if(b2>a2) s+=`<rect x="${fx(xm((a2-d0)/60000))}" y="${y+3}" width="${fx(Math.max(2,xm((b2-d0)/60000)-xm((a2-d0)/60000)))}" height="${bh+2}" fill="url(#lzhatch)"/>`; });
     let hit='';
     runs.forEach(r=>{ const a=Math.max(r.start,d0), b=Math.min(r.end,d1); if(b<=a) return; const x=xm((a-d0)/60000), w=Math.max(4,xm((b-d0)/60000)-x), sel=LIVE_SEL===r.id;
-      s+=`<rect x="${fx(x+1)}" y="${y+5}" width="${fx(Math.max(2,w-2))}" height="${bh-2}" rx="4" fill="${LZ_C[r.type]||LZ_C.CO}"${sel?' stroke="#e7edf2" stroke-width="2"':''}/>`;
+      if(r.type==='CWU'){ const th=Math.max(5,Math.round(bh*.38)); s+=`<rect x="${fx(x+1)}" y="${fx(y+3+(bh+2-th)/2)}" width="${fx(Math.max(3,w-2))}" height="${th}" rx="3" fill="${LZ_C.CWU}"${sel?' stroke="#e7edf2" stroke-width="2"':''}/>`; }
+      else s+=`<rect x="${fx(x+1)}" y="${y+5}" width="${fx(Math.max(2,w-2))}" height="${bh-2}" rx="4" fill="${LZ_C.CO}"${sel?' stroke="#e7edf2" stroke-width="2"':''}/>`;
       hit+=`<rect class="lz-hit" data-id="${r.id}" data-ty="${y+rowH+2}" x="${fx(x-5)}" y="${y}" width="${fx(w+10)}" height="${rowH}" fill="transparent"/>`; });
     s+=hit;
     const lab=i===0?'dziś':i===1?'wczoraj':null;
     s+=`<text x="${L-8}" y="${mid}" text-anchor="end" font-size="${narrow?11.5:12}" fill="${we?'#9aa8b5':'#e7edf2'}" font-weight="${i===0?700:500}">${(lab&&!narrow&&days<=3)?lab:LZ_WD[wk]+' '+lzDM(d0)}</text>`;
-    const hrs=allItems.reduce((a,x)=>a+(x.t>=d0&&x.t<d1?x.w:0),0)/60;
-    s+=`<text x="${narrow?W-4:X1+46}" y="${mid}" text-anchor="end" font-size="12" fill="#e7edf2" font-weight="600">${hrs>0?lzF1(hrs)+' h':'—'}</text>`;
+    const hrs=allItems.reduce((a,x)=>a+(x.ty==='CO'&&x.t>=d0&&x.t<d1?x.w:0),0)/60, hrw=allItems.reduce((a,x)=>a+(x.ty==='CWU'&&x.t>=d0&&x.t<d1?x.w:0),0)/60;
+    s+=`<text x="${narrow?W-4:X1+46}" y="${mid}" text-anchor="end" font-size="12" fill="#e7edf2" font-weight="600"><title>CO ${lzF1(hrs)} h · CWU ${lzF1(hrw)} h</title>${hrs>0?lzF1(hrs)+' h':'—'}</text>`;
     if(!narrow&&hasT4){ const dr=rows.filter(r=>{ const t=Date.parse(r.ts); return t>=d0&&t<d1&&r.T04!=null; }).map(r=>r.T04);
       if(dr.length){ const a=Math.min(...dr), b=Math.max(...dr), sx=v=>X1+58+(v-tMin)/(tMax-tMin)*52, cy=y+rowH/2;
         s+=`<line x1="${X1+58}" x2="${X1+110}" y1="${cy}" y2="${cy}" stroke="#26313b" stroke-width="2" stroke-linecap="round"/><line x1="${fx(sx(a))}" x2="${fx(Math.max(sx(b),sx(a)+3))}" y1="${cy}" y2="${cy}" stroke="#8fbf7f" stroke-width="4" stroke-linecap="round"><title>T04 ${lzF1(a)}…${lzF1(b)} °C</title></line>`; } } }
-  if(!narrow) s+=`<text x="${X1+46}" y="14" text-anchor="end" font-size="11.5" fill="#9aa8b5">praca</text><text x="${X1+84}" y="14" text-anchor="middle" font-size="11.5" fill="#9aa8b5">T04 °C</text>`;
+  if(!narrow) s+=`<text x="${X1+46}" y="14" text-anchor="end" font-size="11.5" fill="#9aa8b5">CO</text><text x="${X1+84}" y="14" text-anchor="middle" font-size="11.5" fill="#9aa8b5">T04 °C</text>`;
   return {svg:`<svg id="lz_rowsSvg" viewBox="0 0 ${W} ${H}">${s}</svg>`,rowH};
 }
 function lzDetail(r,rows,W){
   const narrow=W<560, L=narrow?38:46, Rr=narrow?76:80, span=Math.max(10,(r.end-r.start)/60000), fx=n=>n.toFixed(1);
   const pts=rows.filter(x=>{ const t=Date.parse(x.ts); return t>=r.start-1000&&t<=r.end+1000; }).map(x=>Object.assign({m:(Date.parse(x.ts)-r.start)/60000},x));
-  const X=m=>L+Math.max(0,Math.min(span,m))/span*(W-L-Rr), st=liveNiceStep(span,narrow?4:7);
-  const grid=(top,bot)=>{ let o=''; for(let m=0;m<=span+1e-6;m+=st) o+=`<line x1="${fx(X(m))}" x2="${fx(X(m))}" y1="${top}" y2="${bot}" stroke="#222c35"/>`; return o; };
-  const lbls=y=>{ let o=''; for(let m=0;m<=span+1e-6;m+=st) o+=`<text x="${fx(X(m))}" y="${y}" text-anchor="middle" font-size="11.5" fill="#9aa8b5">${lzHM(r.start+m*60000)}</text>`; return o; };
+  const X=m=>L+Math.max(0,Math.min(span,m))/span*(W-L-Rr);
+  const STEPS=[5,10,15,30,60,120,180,360,720,1440,2880], maxT=narrow?4:7, step=STEPS.find(q=>span/q<=maxT)||2880, stMs=step*60000, b0=new Date(r.start); b0.setHours(0,0,0,0);
+  const ticks=[]; for(let t=b0.getTime()+Math.ceil((r.start-b0.getTime())/stMs)*stMs;t<=r.end+1;t+=stMs) ticks.push(t);
+  const grid=(top,bot)=>ticks.map(t=>`<line x1="${fx(X((t-r.start)/60000))}" x2="${fx(X((t-r.start)/60000))}" y1="${top}" y2="${bot}" stroke="#222c35"/>`).join('');
+  const lbls=H=>ticks.map((t,i)=>{ const d=new Date(t), x=fx(X((t-r.start)/60000)), nd=d.getHours()===0&&d.getMinutes()===0||i===0; return `<text x="${x}" y="${H-19}" text-anchor="middle" font-size="11.5" fill="#9aa8b5">${lzHM(t)}</text>`+(nd?`<text x="${x}" y="${H-6}" text-anchor="middle" font-size="11" font-weight="600" fill="#cfd8e0">${lzDM(t)}</text>`:''); }).join('');
   const cur=(top,bot)=>`<line class="lz-cur" x1="0" x2="0" y1="${top-4}" y2="${bot}" stroke="#e7edf2" stroke-width="1" opacity="0"/>`;
-  let tsvg='', hsvg='';
-  { const H=230, top=10, bot=H-26, vals=pts.flatMap(p=>[p.T01,p.T02]).filter(v=>v!=null);
+  const panelLine=(id,H,vals,minSpan,k,color,unit)=>{ const top=10, bot=H-34;
+    if(vals.length<2) return ''; const R=liveNiceRange(vals,minSpan), Y=v=>top+(1-(v-R.lo)/(R.hi-R.lo))*(bot-top); let o='';
+    for(let v=R.lo;v<=R.hi+1e-9;v+=R.st) o+=`<line x1="${L}" x2="${W-Rr}" y1="${fx(Y(v))}" y2="${fx(Y(v))}" stroke="#26313b"/><text x="${L-7}" y="${fx(Y(v)+4)}" text-anchor="end" font-size="11.5" fill="#9aa8b5">${Math.round(v*10)/10}${unit}</text>`;
+    o+=grid(top,bot)+lbls(H);
+    let d='',pv=false,last=null; pts.forEach(q=>{ if(q[k]==null){ pv=false; return; } d+=(pv?' L':' M')+fx(X(q.m))+','+fx(Y(q[k])); pv=true; last=q; });
+    o+=`<path d="${d.trim()}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if(last) o+=`<circle cx="${fx(X(last.m))}" cy="${fx(Y(last[k]))}" r="4.5" fill="${color}" stroke="#171f26" stroke-width="2"/><text x="${W-Rr+10}" y="${fx(Y(last[k])+4)}" font-size="12" fill="#e7edf2" font-weight="700">${lzF1(last[k])}${unit}</text>`;
+    return `<svg id="${id}" viewBox="0 0 ${W} ${H}">${o}${cur(top,bot)}</svg>`; };
+  let tsvg='', hsvg='', osvg=panelLine('lz_oSvg',112,pts.map(q=>q.T04).filter(v=>v!=null),6,'T04','#8fbf7f','°');
+  { const H=240, top=10, bot=H-34, vals=pts.flatMap(q=>[q.T01,q.T02]).filter(v=>v!=null);
     if(!vals.length) tsvg=`<div class="empty">Brak odczytów T01/T02 w tym cyklu.</div>`;
     else { const R=liveNiceRange(vals,10), Y=v=>top+(1-(v-R.lo)/(R.hi-R.lo))*(bot-top); let o='';
       for(let v=R.lo;v<=R.hi+1e-9;v+=R.st) o+=`<line x1="${L}" x2="${W-Rr}" y1="${fx(Y(v))}" y2="${fx(Y(v))}" stroke="#26313b"/><text x="${L-7}" y="${fx(Y(v)+4)}" text-anchor="end" font-size="11.5" fill="#9aa8b5">${v}°</text>`;
-      o+=grid(top,bot)+lbls(H-8);
-      const line=(k,c)=>{ let d='',pv=false,last=null; pts.forEach(p=>{ if(p[k]==null){ pv=false; return; } d+=(pv?' L':' M')+fx(X(p.m))+','+fx(Y(p[k])); pv=true; last=p; });
+      o+=grid(top,bot)+lbls(H);
+      const line=(k,c)=>{ let d='',pv=false,last=null; pts.forEach(q=>{ if(q[k]==null){ pv=false; return; } d+=(pv?' L':' M')+fx(X(q.m))+','+fx(Y(q[k])); pv=true; last=q; });
         let o2=d?`<path d="${d.trim()}" fill="none" stroke="${c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`:''; if(last) o2+=`<circle cx="${fx(X(last.m))}" cy="${fx(Y(last[k]))}" r="4.5" fill="${c}" stroke="#171f26" stroke-width="2"/>`;
-        if(pts.length<=40) pts.forEach(p=>{ if(p[k]!=null) o2+=`<circle cx="${fx(X(p.m))}" cy="${fx(Y(p[k]))}" r="2.6" fill="${c}" stroke="#171f26" stroke-width="1"/>`; }); return {h:o2,last:last?last[k]:null}; };
+        if(pts.length<=40) pts.forEach(q=>{ if(q[k]!=null) o2+=`<circle cx="${fx(X(q.m))}" cy="${fx(Y(q[k]))}" r="2.6" fill="${c}" stroke="#171f26" stroke-width="1"/>`; }); return {h:o2,last:last?last[k]:null}; };
       const a=line('T01','#3a86e0'), b=line('T02','#e8643f'); o+=a.h+b.h;
       const yb=b.last!=null?Math.max(Y(b.last),top+8):null, ya=a.last!=null?(yb!=null?Math.min(Math.max(Y(a.last),yb+15),bot):Y(a.last)):null;
       if(yb!=null) o+=`<text x="${W-Rr+10}" y="${fx(yb+4)}" font-size="12" fill="#e7edf2" font-weight="700">T02 ${lzF1(b.last)}°</text><line x1="${W-Rr+2}" x2="${W-Rr+8}" y1="${fx(yb)}" y2="${fx(yb)}" stroke="#e8643f" stroke-width="2"/>`;
       if(ya!=null) o+=`<text x="${W-Rr+10}" y="${fx(ya+4)}" font-size="12" fill="#e7edf2" font-weight="700">T01 ${lzF1(a.last)}°</text><line x1="${W-Rr+2}" x2="${W-Rr+8}" y1="${fx(ya)}" y2="${fx(ya)}" stroke="#3a86e0" stroke-width="2"/>`;
       tsvg=`<svg id="lz_tSvg" viewBox="0 0 ${W} ${H}">${o}${cur(top,bot)}</svg>`; } }
-  { const H=120, top=8, bot=H-26, hi=Math.max(40,Math.ceil(Math.max(0,...pts.map(p=>p.T30||0))/20)*20), Y=v=>top+(1-v/hi)*(bot-top); let o='';
+  { const H=124, top=8, bot=H-34, hi=Math.max(40,Math.ceil(Math.max(0,...pts.map(q=>q.T30||0))/20)*20), Y=v=>top+(1-v/hi)*(bot-top); let o='';
     [0,hi/2,hi].forEach(v=>{ o+=`<line x1="${L}" x2="${W-Rr}" y1="${fx(Y(v))}" y2="${fx(Y(v))}" stroke="#26313b"/><text x="${L-7}" y="${fx(Y(v)+4)}" text-anchor="end" font-size="11.5" fill="#9aa8b5">${v}</text>`; });
-    o+=grid(top,bot)+lbls(H-8);
-    if(pts.length){ const d=pts.map((p,i)=>(i?'L':'M')+fx(X(p.m))+','+fx(Y(p.T30>0?p.T30:0))).join(' '), l=pts[pts.length-1];
+    o+=grid(top,bot)+lbls(H);
+    if(pts.length){ const d=pts.map((q,i)=>(i?'L':'M')+fx(X(q.m))+','+fx(Y(q.T30>0?q.T30:0))).join(' '), l=pts[pts.length-1];
       o+=`<path d="${d} L${fx(X(l.m))},${fx(Y(0))} L${fx(X(pts[0].m))},${fx(Y(0))}Z" fill="#9aa8b5" opacity=".12"/><path d="${d}" fill="none" stroke="#9aa8b5" stroke-width="2" stroke-linejoin="round"/>`
         +`<circle cx="${fx(X(l.m))}" cy="${fx(Y(l.T30>0?l.T30:0))}" r="4.5" fill="#9aa8b5" stroke="#171f26" stroke-width="2"/><text x="${W-Rr+10}" y="${fx(Y(l.T30>0?l.T30:0)+4)}" font-size="12" fill="#e7edf2" font-weight="700">${lzF0(l.T30>0?l.T30:0)} Hz</text>`; }
     hsvg=`<svg id="lz_hSvg" viewBox="0 0 ${W} ${H}">${o}${cur(top,bot)}</svg>`; }
   HUBC.lzD={W,L,Rr,span,pts,start:r.start};
-  return {tsvg,hsvg};
+  return {tsvg,hsvg,osvg};
 }
 function liveChartHtml(){
   const chips='<div class="lvchips">'+LIVE_RGS.map(x=>`<button type="button" class="${x[0]===LIVE_RG?'on':''}" onclick="liveChartSet(${x[0]})">${x[1]}</button>`).join('')+'</div>';
   const P=lzPrep();
   if(!P) return chips+'<div class="empty">Ładuję dane z huba…</div>';
-  const rows=P.rows, runs=P.runs, days=LIVE_RGS.find(x=>x[0]===LIVE_RG)[2], now=Date.now();
+  const rows=P.rows, runs=P.runs, days=LIVE_RGS.find(x=>x[0]===LIVE_RG)[2], now=Date.now(), f0=HUBC.wlR[LIVE_RG].from||0;
   if(rows.length<2) return chips+'<div class="empty">Za mało odczytów w tym zakresie ('+rows.length+'). Hub zbiera dane co 5 min.</div>';
-  runs.forEach(r=>{ r.live=segRunning(r.g); r.end=r.live?Math.max(now,r.end0):r.end0; r.min=Math.max(1,(r.end-r.start)/60000); });
+  runs.forEach(r=>{ r.live=segRunning(r.g); r.end=r.live?Math.max(now,r.end0):r.end0; r.min=Math.max(1,(r.end-r.start)/60000); r.cut=r.start-f0<45*60000; });
   HUBC.lzMap={}; runs.forEach(r=>HUBC.lzMap[r.id]=r);
   const from=LIVE_RG===1?now-864e5:lzDay0(days-1), inRg=runs.filter(r=>r.end>from);
-  let sel=runs.find(r=>r.id===LIVE_SEL); if(!sel) sel=[...runs].reverse().find(r=>!r.live)||runs[runs.length-1]||null; if(sel) LIVE_SEL=sel.id;
+  let sel=runs.find(r=>r.id===LIVE_SEL); if(!sel) sel=[...runs].reverse().find(r=>r.type==='CO')||runs[runs.length-1]||null; if(sel) LIVE_SEL=sel.id;
   const W=Math.max(300,chartWidth()-34), RS=lzRowsSvg(runs,rows,days,W,now);
   HUBC.lzR={W,rowH:RS.rowH};
   const fail=HUBC.wlR&&HUBC.wlR[LIVE_RG]&&HUBC.wlR[LIVE_RG].fail?'<div class="note" style="margin-top:6px">⚠ Część zakresu nie pobrała się — odśwież.</div>':'';
   let h=chips+`<div class="lzkpis">${lzKpis(runs,rows,from,now)}</div>`
-   +`<div class="lzcard"><div class="lzcardh"><h2>Kiedy pracowała pompa</h2><div class="lzlegend"><span><i style="background:${LZ_C.CO}"></i>CO</span><span><i style="background:${LZ_C.CWU}"></i>CWU</span><span><i class="hatch"></i>brak danych w hubie</span></div></div>`
+   +`<div class="lzcard"><div class="lzcardh"><h2>Kiedy grzało CO (i CWU)</h2><div class="lzlegend"><span><i style="background:${LZ_C.CO}"></i>CO — grube pasy</span><span><i style="background:${LZ_C.CWU};height:6px;vertical-align:1px"></i>CWU — cienkie znaczniki</span><span><i class="hatch"></i>brak danych w hubie</span></div></div>`
    +`<div class="lzstage" id="lz_rowsStage">${RS.svg}<div class="lztip" id="lz_tip1"></div></div>`
-   +`<div class="note">Każdy wiersz to doba (0–24 h). Kolorowy blok = jeden cykl pracy (CO lub CWU); kliknij blok, żeby zobaczyć go z bliska poniżej. Puste tło = postój (hub zapisuje wtedy 1 odczyt na godzinę). Kreskowane = hub nie zapisał nic przez ponad 2,5 h. „praca” = suma czasu pracy sprężarki w dobie.</div>${fail}</div>`;
+   +`<div class="note">Każdy wiersz to doba (0–24 h). Cykl CO trwa często wiele godzin, a nawet przechodzi przez północ — wtedy widać go w dwóch wierszach, a pełny czas startu i końca (z datami) pokazuje szczegół poniżej. CWU to krótkie grzanie zasobnika, stąd cienki znacznik. Kliknij pas, żeby zobaczyć cykl z bliska. Puste tło = postój (hub zapisuje wtedy 1 odczyt na godzinę), kreskowane = brak odczytów przez ponad 2,5 h. Liczba po prawej = godziny pracy CO w dobie.</div>${fail}</div>`;
   if(sel){ const D=lzDetail(sel,rows,W), st=(v,l)=>`<div class="lzstat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-    h+=`<div class="lzcard" id="lz_detail"><div class="lzcardh"><div class="lzselhead"><span class="lzpill" style="background:${LZ_C[sel.type]||LZ_C.CO}">${sel.type}</span><h2>${lzDM(sel.start)} ${lzHM(sel.start)} → ${lzHM(sel.end)}${sel.live?' · trwa':''}</h2></div><div class="sub">${sel.valve?'Typ z zaworu CO/CWU':'Typ z przyrostu temp. zasobnika T08'}</div></div>`
-     +`<div class="lzstats">${st(lzDur(sel.min),'czas cyklu')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','moc grzewcza (szac.)')}${st(lzF1(sel.t04)+' °C','temp. zewnętrzna')}</div>`
-     +`<div class="lzmini">Temperatura wody <span>wylot T02 i wlot T01, od startu cyklu</span></div><div class="lzstage" id="lz_tStage">${D.tsvg}<div class="lztip" id="lz_tip2"></div></div>`
-     +`<div class="lzmini">Sprężarka <span>częstotliwość [Hz]</span></div><div class="lzstage" id="lz_hStage">${D.hsvg}</div></div>`; }
-  const list=inRg.slice().reverse();
-  h+=`<div class="lzcard"><div class="lzcardh"><h2>Lista cykli</h2><div class="sub">${list.length} cykli w wybranym zakresie · kliknij wiersz</div></div><div class="lztblwrap"><table class="lztbl" id="lz_tbl"><thead><tr><th>Start</th><th>Typ</th><th>Czas</th><th>Śr. Hz</th><th>Max T02</th><th>ΔT</th><th>T04</th></tr></thead><tbody>`
-   +list.map(r=>`<tr class="lzrr${r.id===LIVE_SEL?' sel':''}" data-id="${r.id}"><td>${LZ_WD[new Date(r.start).getDay()]} ${lzDM(r.start)} ${lzHM(r.start)}</td><td><span class="lzdot" style="background:${LZ_C[r.type]||LZ_C.CO};margin-right:5px"></span>${r.type}</td><td>${lzDur(r.min)}${r.live?' ●':''}</td><td>${lzF0(r.hzAvg)}</td><td>${lzF1(r.t02max)}°</td><td>${lzF1(r.dt)} K</td><td>${lzF1(r.t04)}°</td></tr>`).join('')
-   +(list.length?'':'<tr><td colspan="7" class="empty">Brak cykli pracy w tym zakresie.</td></tr>')+'</tbody></table></div></div>';
+    h+=`<div class="lzcard" id="lz_detail"><div class="lzcardh"><div class="lzselhead"><span class="lzpill" style="background:${LZ_C[sel.type]||LZ_C.CO}">${sel.type}</span><h2>${lzSpanTxt(sel)}</h2></div><div class="sub">${sel.valve?'Typ z zaworu CO/CWU':'Typ z przyrostu temp. zasobnika T08'}</div></div>`
+     +(sel.cut?`<div class="warnline bad" style="margin:0 0 8px">Początek tego cyklu wypada przed pobranym zakresem danych — prawdziwy start jest wcześniejszy, a czas trwania dłuższy.</div>`:'')
+     +`<div class="lzstats">${st((sel.cut?'≥ ':'')+lzDur(sel.min),'czas cyklu (start → koniec)')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','moc grzewcza (szac.)')}${st(lzF1(sel.t04)+' °C','śr. temp. zewnętrzna')}</div>`
+     +`<div class="lzmini">Temperatura wody <span>wylot T02 i wlot T01</span></div><div class="lzstage" id="lz_tStage">${D.tsvg}<div class="lztip" id="lz_tip2"></div></div>`
+     +`<div class="lzmini">Sprężarka <span>częstotliwość [Hz]</span></div><div class="lzstage" id="lz_hStage">${D.hsvg}</div>`
+     +(D.osvg?`<div class="lzmini">Temperatura zewnętrzna <span>T04 [°C]</span></div><div class="lzstage" id="lz_oStage">${D.osvg}</div>`:'')+`</div>`; }
+  const list=inRg.filter(r=>LIVE_TYPE==='ALL'||r.type===LIVE_TYPE).reverse(), tc=(k,l)=>`<button type="button" class="${LIVE_TYPE===k?'on':''}" onclick="liveTypeSet('${k}')">${l}</button>`;
+  h+=`<div class="lzcard"><div class="lzcardh"><h2>Lista cykli</h2><div class="sub">${list.length} cykli w wybranym zakresie · kliknij wiersz</div></div><div class="lvchips">${tc('CO','CO')}${tc('CWU','CWU')}${tc('ALL','Wszystkie')}</div><div class="lztblwrap"><table class="lztbl" id="lz_tbl"><thead><tr><th>Start</th><th>Koniec</th><th>Typ</th><th>Czas</th><th>Śr. Hz</th><th>Max T02</th><th>ΔT</th><th>T04</th></tr></thead><tbody>`
+   +list.map(r=>`<tr class="lzrr${r.id===LIVE_SEL?' sel':''}" data-id="${r.id}"><td>${r.cut?'≥ ':''}${LZ_WD[new Date(r.start).getDay()]} ${lzDM(r.start)} ${lzHM(r.start)}</td><td>${r.live?'trwa ●':lzDM(r.end)+' '+lzHM(r.end)}</td><td><span class="lzdot" style="background:${LZ_C[r.type]||LZ_C.CO};margin-right:5px"></span>${r.type}</td><td>${r.cut?'≥ ':''}${lzDur(r.min)}</td><td>${lzF0(r.hzAvg)}</td><td>${lzF1(r.t02max)}°</td><td>${lzF1(r.dt)} K</td><td>${lzF1(r.t04)}°</td></tr>`).join('')
+   +(list.length?'':'<tr><td colspan="8" class="empty">Brak takich cykli w tym zakresie.</td></tr>')+'</tbody></table></div></div>';
   return h;
 }
 function lzTipShow(tip,stage,html,x,y){ tip.innerHTML=html; tip.style.display='block'; const w=tip.offsetWidth, W=stage.clientWidth; tip.style.left=Math.max(0,Math.min(W-w,x-w/2))+'px'; tip.style.top=Math.max(0,y)+'px'; }
@@ -4387,16 +4405,16 @@ function liveBind(){
     rs.onclick=ev=>{ const h=hitOf(ev); if(h) liveSelect(h.dataset.id); };
   }
   const tb=$w('lz_tbl'); if(tb) tb.onclick=ev=>{ const tr=ev.target.closest&&ev.target.closest('tr.lzrr'); if(tr) liveSelect(tr.dataset.id,true); };
-  const D=HUBC.lzD, ts=$w('lz_tStage'), hs=$w('lz_hStage'), tip2=$w('lz_tip2');
+  const D=HUBC.lzD, ts=$w('lz_tStage'), hs=$w('lz_hStage'), os=$w('lz_oStage'), tip2=$w('lz_tip2');
   if(D&&ts&&hs&&D.pts.length){
     const cross=ev=>{ const b=ev.currentTarget.getBoundingClientRect(), px=(ev.clientX-b.left)/b.width*D.W, mv=(px-D.L)/(D.W-D.L-D.Rr)*D.span; let best=null, bd=1e9;
       D.pts.forEach(p=>{ const d=Math.abs(p.m-mv); if(d<bd){ bd=d; best=p; } }); if(!best) return;
       const x=D.L+Math.max(0,Math.min(D.span,best.m))/D.span*(D.W-D.L-D.Rr);
-      ['lz_tSvg','lz_hSvg'].forEach(id=>{ const s=$w(id), c=s&&s.querySelector('.lz-cur'); if(c){ c.setAttribute('x1',x); c.setAttribute('x2',x); c.setAttribute('opacity','.7'); } });
+      ['lz_tSvg','lz_hSvg','lz_oSvg'].forEach(id=>{ const s=$w(id), c=s&&s.querySelector('.lz-cur'); if(c){ c.setAttribute('x1',x); c.setAttribute('x2',x); c.setAttribute('opacity','.7'); } });
       const dt=(best.T01!=null&&best.T02!=null)?best.T02-best.T01:null;
       if(tip2) lzTipShow(tip2,ts,`<b>${lzHM(D.start+best.m*60000)}</b> <span class="m">· ${Math.round(best.m)} min od startu</span><br><span class="k" style="background:#e8643f"></span><b>${best.T02!=null?lzF1(best.T02)+' °C':'—'}</b> <span class="m">T02 wylot</span><br><span class="k" style="background:#3a86e0"></span><b>${best.T01!=null?lzF1(best.T01)+' °C':'—'}</b> <span class="m">T01 wlot · ΔT ${lzF1(dt)} K</span><br><span class="k" style="background:#9aa8b5"></span><b>${lzF0(best.T30>0?best.T30:0)} Hz</b> <span class="m">· T04 ${lzF1(best.T04)} °C</span>`,x/D.W*b.width,6); };
     const off=()=>{ if(tip2) tip2.style.display='none'; document.querySelectorAll('#lz_detail .lz-cur').forEach(c=>c.setAttribute('opacity','0')); };
-    [ts,hs].forEach(s=>{ s.onpointermove=cross; s.onpointerdown=cross; s.onpointerleave=off; });
+    [ts,hs,os].forEach(s=>{ if(!s) return; s.onpointermove=cross; s.onpointerdown=cross; s.onpointerleave=off; });
   }
 }
 function renderLiveChart(){ const el=$w('live_chart'); if(!el) return; setCW('live_chart',1); el.innerHTML=liveChartHtml(); liveBind(); }
