@@ -4287,6 +4287,9 @@ function lzKpis(runs,rows,from,now){
   const wk=a=>a.flatMap(r=>r.items).filter(x=>x.t>=from).reduce((q,x)=>q+x.w,0), hm=m=>`${Math.floor(m/60)}<small>h</small> ${lzP(Math.round(m%60))}<small>min</small>`;
   const dts=co.filter(r=>r.dt!=null), dtw=dts.reduce((a,r)=>a+r.work,0), dtAvg=dts.length&&dtw>0?dts.reduce((a,r)=>a+r.dt*r.work,0)/dtw:null;
   const t4=rows.filter(r=>Date.parse(r.ts)>=from&&r.T04!=null).map(r=>r.T04);
+  /* średnia ważona czasem (hub zapisuje 5 min w pracy, 60 min w postoju — zwykła średnia z odczytów przeszacowałaby godziny pracy) */
+  let t4w=0,t4s=0; rows.forEach((r,i)=>{ const t=Date.parse(r.ts); if(t<from||r.T04==null) return; const n=rows[i+1], w=Math.min(90,n?(Date.parse(n.ts)-t)/60000:5); t4w+=w; t4s+=r.T04*w; });
+  const t4avg=t4w>0?t4s/t4w:null, coW=co.filter(r=>r.t04!=null), coWsum=coW.reduce((a,r)=>a+r.work,0), t4co=coWsum>0?coW.reduce((a,r)=>a+r.t04*r.work,0)/coWsum:null;
   const Lw=HUBC.live&&HUBC.live.wl, lv=Lw?hubVals(Lw.v):null, lvAge=Lw?(now-Date.parse(String(Lw.ts).slice(0,16)))/60000:1e9, liveRun=runs.find(r=>r.live), last=runs[runs.length-1];
   const on=lv&&lvAge<=20?lv.T30>0:!!liveRun;
   const hzTxt=on?lzF0(lv&&lvAge<=20&&lv.T30>0?lv.T30:(liveRun&&liveRun.g.rows[liveRun.g.rows.length-1].T30))+' Hz'+(liveRun?' · '+liveRun.type+' od '+lzDM(liveRun.start)+' '+lzHM(liveRun.start):''):(last?'ostatnio '+last.type+' do '+lzDM(last.end)+' '+lzHM(last.end):'brak cykli w danych');
@@ -4295,7 +4298,7 @@ function lzKpis(runs,rows,from,now){
     +k(hm(wco0(co,wk)),`<span style="color:${LZ_C.CO}">●</span> CO — praca sprężarki · <span style="color:var(--text)">${co.length} ${co.length===1?'cykl':'cykli'}</span>`)
     +k(hm(wk(cw)),`<span style="color:${LZ_C.CWU}">●</span> CWU — praca sprężarki · <span style="color:var(--text)">${cw.length} ${cw.length===1?'cykl':'cykli'}</span>`)
     +k(`${lzF1(dtAvg)}<small>K</small>`,'średnia ΔT (T02−T01) w cyklach CO')
-    +k(t4.length?`śr. ${lzF0(lzAvg(t4))}<small>°C</small>`:'—',t4.length?`temp. zewnętrzna w zakresie: min <span style="color:var(--text)">${lzF0(Math.min(...t4))} °C</span> · max <span style="color:var(--text)">${lzF0(Math.max(...t4))} °C</span>`:'temp. zewnętrzna — brak odczytów');
+    +k(t4.length?`${lzF0(Math.min(...t4))}…${lzF0(Math.max(...t4))}<small>°C</small>`:'—',t4.length?`temp. zewnętrzna w całym zakresie (min…max) · średnia <span style="color:var(--text)">${lzF1(t4avg)} °C</span>${t4co!=null?` · w trakcie pracy CO <span style="color:var(--text)">${lzF1(t4co)} °C</span>`:''}`:'temp. zewnętrzna — brak odczytów');
 }
 const wco0=(co,wk)=>wk(co);
 function lzRowsSvg(runs,rows,days,W,now){
@@ -4390,7 +4393,7 @@ function liveChartHtml(){
   if(sel){ const D=lzDetail(sel,rows,Wd), st=(v,l)=>`<div class="lzstat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
     h+=`<div class="lzcard" id="lz_detail"><div class="lzcardh"><div class="lzselhead"><span class="lzpill" style="background:${LZ_C[sel.type]||LZ_C.CO}">${sel.type}</span><h2>${lzSpanTxt(sel)}</h2></div><div class="sub">${sel.valve?'Typ z zaworu CO/CWU':'Typ z przyrostu temp. zasobnika T08'}</div></div>`
      +(sel.cut?`<div class="warnline bad" style="margin:0 0 8px">Początek tego cyklu wypada przed pobranym zakresem danych — prawdziwy start jest wcześniejszy, a czas trwania dłuższy.</div>`:'')
-     +`<div class="lzstats">${st((sel.cut?'≥ ':'')+lzDur(sel.min),'czas cyklu (start → koniec)')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','moc grzewcza (szac.)')}${st(lzF1(sel.t04)+' °C','śr. temp. zewnętrzna')}</div>`
+     +`<div class="lzstats">${st((sel.cut?'≥ ':'')+lzDur(sel.min),'czas cyklu (start → koniec)')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','moc grzewcza (szac.)')}${st(lzF1(sel.t04)+' °C','śr. temp. zewn. w trakcie cyklu')}</div>`
      +`<div class="lzmini">Temperatura wody <span>wylot T02 i wlot T01</span></div><div class="lzstage" id="lz_tStage">${D.tsvg}<div class="lztip" id="lz_tip2"></div></div>`
      +`<div class="lzmini">Sprężarka <span>częstotliwość [Hz]</span></div><div class="lzstage" id="lz_hStage">${D.hsvg}</div>`
      +(D.osvg?`<div class="lzmini">Temperatura zewnętrzna <span>T04 [°C]</span></div><div class="lzstage" id="lz_oStage">${D.osvg}</div>`:'')+`</div>`; }
