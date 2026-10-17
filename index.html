@@ -3736,6 +3736,9 @@ function hubDedupeCycles(){
   if(mg.size){ M=M.filter(m=>!mg.has(m.id)); R.forEach(r=>{ if(r.mid&&mg.has(r.mid)){ r.mid=mg.get(r.mid); const m=M.find(x=>x.id===r.mid); if(m) m.rid=r.id; } }); }
   return ch;
 }
+/* rekord założony przez automat (id arCO…/arCWU…) zostaje pod opieką automatu także po ręcznym „Uzupełnij/Edytuj” (zapis kasuje flagę auto) —
+   inaczej cykl zapisany jako „w toku” nigdy nie dostawał końca z Warmlinka */
+const autoOwned=r=>!!r&&(!!r.auto||/^ar(CO|CWU)\d+$/.test(r.id||''));
 async function hubAutoCycles(){
   if(!hubCfg()||HUBC.acBusy) return; HUBC.acBusy=true;
   try{
@@ -3751,11 +3754,11 @@ async function hubAutoCycles(){
       const running=gi===segs.length-1&&segRunning(g), st=g.first.slice(0,16), en=running?null:segEnd(g);
       if(!running&&(Date.parse(en)-Date.parse(st))/60000<10) return;
       const endMs=en?Date.parse(en):nowMs, ov=(a0,a1)=>Date.parse(a0)<endMs&&(a1?Date.parse(a1):nowMs)>Date.parse(st);
-      if(R.some(r=>!r.auto&&r.start&&ov(r.start,r.end))||M.some(m=>!m.auto&&m.start&&ov(m.start,m.end))) return;      // użytkownik prowadzi to sam
+      if(R.some(r=>!autoOwned(r)&&r.start&&ov(r.start,r.end))||M.some(m=>!m.auto&&m.start&&ov(m.start,m.end))) return;      // użytkownik prowadzi to sam
       const Sm=hubWlSummary(g.rows,st,en||nowLocal()), pause=Math.max(0,Math.round((endMs-Date.parse(st))/60000-Sm.runMin));
       const wls=Sm.n&&Sm.cover?{run:Math.round(Sm.runMin),def:Math.round(Sm.defMin),defN:Sm.defN||0,pause,t04:Sm.t04!=null?+Sm.t04.toFixed(1):undefined,hz:Sm.hz||undefined,src:'warmlink'}:undefined;
       const tEnd=en?(()=>{ const L=Date.parse(g.last); let b=null; rows.forEach(r=>{ const t=Date.parse(r.ts); if(t>=L-5*60000&&t<=L+20*60000&&r.T08>0&&(b==null||r.T08>b)) b=r.T08; }); return b; })():null;   /* maks. T08 od ostatniej próbki z pracą do 20 min po stopie */
-      let ex=R.find(r=>r.auto&&r.start&&Math.abs(Date.parse(r.start)-Date.parse(st))<=15*60000);
+      let ex=R.find(r=>autoOwned(r)&&r.start&&Math.abs(Date.parse(r.start)-Date.parse(st))<=15*60000);
       if(ex&&ex.type!==g.mode&&ex.guess){ const mi=M.findIndex(m=>m.id===ex.mid); if(mi>-1) M.splice(mi,1); R.splice(R.indexOf(ex),1); ex=null; changed=true; }      // typ okazał się inny — zakładam wpis od nowa
       if(ex){ const mm=ex.mid&&M.find(m=>m.id===ex.mid);
         if(en&&(!ex.end||(ex.guess&&ex.end!==en))){ ex.end=en; ex.open=undefined; if(ex.type==='CWU'&&tEnd!=null&&ex.t2==null) ex.t2=tEnd; changed=true; }
@@ -3779,10 +3782,15 @@ function syncAutoEnergy(){ R.forEach(r=>{ if(!r.mid) return; const m=M.find(x=>x
   if(r.kwh>0&&!(m.kwh>0)&&!(m.rd||[]).some(x=>x&&x.k!=null)) m.kwh=r.kwh;               /* zużycie wpisane raz (w cyklu) trafia też do okresu COP */
   if(r.end&&!m.end){ m.end=r.end; m.open=undefined; if(m.rd&&m.rd.length) m.rd[m.rd.length-1].ts=r.end; } }); }
 function renderTodo(){
-  const todo=R.filter(r=>r.auto&&(r.kwh==null||r.kwh==='')).sort((a,b)=>b.start.localeCompare(a.start)), openM=M.filter(m=>m.start&&!m.end);
-  const html=(todo.length||HUBC.acErr)?`<div class="card todo"><h2 style="margin-bottom:6px">📝 Do uzupełnienia: ${todo.length} ${todo.length===1?'cykl':'cykle/cykli'} wykryte automatycznie</h2><div class="note" style="margin:0 0 6px">System sam wykrył uruchomienia pompy z Warmlinka i dopisał dane z pompy i falownika. Brakuje tylko <b>zużycia energii (kWh)</b> — nie ma jej w żadnym monitoringu. Wpisz stan licznika (lub kWh) w „Uzupełnij”. Typ CO/CWU jest zgadnięty na podstawie temperatury zasobnika — popraw, jeśli się pomylił.</div>`
+  const todo=R.filter(r=>autoOwned(r)&&(r.kwh==null||r.kwh==='')).sort((a,b)=>b.start.localeCompare(a.start)), openM=M.filter(m=>m.start&&!m.end);
+  const openR=R.filter(r=>r.start&&!r.end).sort((a,b)=>b.start.localeCompare(a.start)), Lw=HUBC.live&&HUBC.live.wl, lv=Lw?hubVals(Lw.v):null;
+  const compNow=lv?((lv.T30>0||lv.O01===1)?'sprężarka pracuje'+(lv.T30?' · '+lv.T30+' Hz':''):'sprężarka stoi'):'', compOn=lv&&(lv.T30>0||lv.O01===1);
+  const ongoing=openR.length?`<div class="card" style="border-color:${compOn?'var(--ok)':'var(--pv)'}"><h2 style="margin-bottom:6px">⏳ Trwający cykl${openR.length>1?' ('+openR.length+')':''}</h2>`
+    +(compNow?`<div class="note" style="margin:0 0 6px">Warmlink teraz: <b style="color:${compOn?'var(--ok)':'var(--muted)'}">${compNow}</b> · odczyt ${wxEsc(String(Lw.ts).slice(11,16))}${(!compOn&&openR.length)?' — wpis zamknie się sam po potwierdzeniu postoju':''}</div>`:'')
+    +openR.slice(0,4).map(r=>`<div class="it"><span class="pill ${r.type==='CWU'?'cwu':'co'}">${r.type}</span><b>${fmtY(r.start)}</b> → <span class="pill open">w toku</span> · trwa ${fmtDur(Math.max(0,Math.round((Date.now()-Date.parse(r.start))/60000)))}<span style="flex:1"></span><button class="btn2 edit" onclick="editRecord('${r.id}')">Edytuj</button></div>`).join('')+'</div>':'';
+  const html=ongoing+((todo.length||HUBC.acErr)?`<div class="card todo"><h2 style="margin-bottom:6px">📝 Do uzupełnienia: ${todo.length} ${todo.length===1?'cykl':'cykle/cykli'} wykryte automatycznie</h2><div class="note" style="margin:0 0 6px">System sam wykrył uruchomienia pompy z Warmlinka i dopisał dane z pompy i falownika. Brakuje tylko <b>zużycia energii (kWh)</b> — nie ma jej w żadnym monitoringu. Wpisz stan licznika (lub kWh) w „Uzupełnij”. Typ CO/CWU jest zgadnięty na podstawie temperatury zasobnika — popraw, jeśli się pomylił.</div>`
     +todo.slice(0,12).map(r=>`<div class="it"><span class="pill ${r.type==='CWU'?'cwu':'co'}">${r.type}</span><b>${fmtY(r.start)}</b> → ${r.end?fmtY(r.end):'<span class="pill open">w toku</span>'} · ${r.end?fmtDur(durMin(r.start,r.end)):''}${r.wls&&r.wls.run!=null?' · sprężarka '+r.wls.run+' min':''}<span style="flex:1"></span><button class="btn2 edit" onclick="editRecord('${r.id}')">Uzupełnij zużycie</button><button class="btn2 del" onclick="delRec('${r.id}')">Usuń</button></div>`).join('')
-    +(todo.length>12?`<div class="note">…i ${todo.length-12} starszych (zakładka „Dane”).</div>`:'')+(HUBC.acErr?`<div class="warnline bad">Automat cykli: ${wxEsc(HUBC.acErr)}</div>`:'')+'</div>':'';
+    +(todo.length>12?`<div class="note">…i ${todo.length-12} starszych (zakładka „Dane”).</div>`:'')+(HUBC.acErr?`<div class="warnline bad">Automat cykli: ${wxEsc(HUBC.acErr)}</div>`:'')+'</div>':'');
   document.querySelectorAll('.todoBox').forEach(e=>{ e.innerHTML=html; });
 }
 
