@@ -2615,7 +2615,7 @@ function dashStats(from,to){
   const sl=(t,fn)=>SL.filter(o=>o.r.type===t).reduce((a,o)=>a+(fn(o)||0),0), slAll=fn=>SL.reduce((a,o)=>a+(fn(o)||0),0);
   const co=sl('CO',o=>(o.r.kwh||0)*o.x.f), cwu=sl('CWU',o=>(o.r.kwh||0)*o.x.f);
   const recs=[...new Set(SL.map(o=>o.r))], noKwh=recs.filter(r=>r.kwh==null||r.kwh==='').length, zeroLen=recs.filter(r=>r.kwh>0&&r.start&&r.end&&r.end<=r.start).length;
-  let ovl=0; { const q=recs.filter(r=>r.start).sort((a,b)=>a.start.localeCompare(b.start)); let mx=''; q.forEach(r=>{ if(r.start<mx) ovl++; const e=r.end||r.start; if(e>mx) mx=e; }); }
+  let ovl=0; ['CO','CWU'].forEach(ty=>{ const q=recs.filter(r=>r.start&&r.type===ty).sort((a,b)=>a.start.localeCompare(b.start)); let mx=''; q.forEach(r=>{ if(r.start<mx) ovl++; const e=r.end||r.start; if(e>mx) mx=e; }); });
   return {RR,coR,cwuR,PP,items,withH,co,cwu,noKwh,zeroLen,ovl,hp:co+cwu,hpDay:slAll(o=>(o.r.kwh||0)*o.x.f*o.x.pvf),cost:slAll(o=>recCost(o.r)*o.x.f),coCost:sl('CO',o=>recCost(o.r)*o.x.f),cwuCost:sl('CWU',o=>recCost(o.r)*o.x.f),
     coMin:sl('CO',o=>o.x.min),cwuMin:sl('CWU',o=>o.x.min),
     pv:sum(PP,p=>p.kwh),pvCredit:sum(PP,p=>p.creditKwh??p.kwh),pvVal:sum(PP,p=>p.value),
@@ -2650,7 +2650,7 @@ function renderDashboard(){
   $('dashPeriodInfo').innerHTML=`<b>${P.label}:</b> ${fmtD(P.from)} – ${fmtD(P.to)} (${P.days} dni)${P.prev?` · porównanie z ${fmtD(P.prev.from)} – ${fmtD(P.prev.to)}`:''}<br>`
     +`Dane w okresie: pompa — ${S.hpDays} dni (${S.RR.length} cykli) · PV — ${S.pvDays} dni (${S.PP.length} wpisów) · okresy COP — ${S.items.length}${lastDt?` · ostatni wpis: ${fmtD(lastDt)}`:''}`
     +(S.noKwh?`<br><span style="color:var(--amber)">⚠ ${S.noKwh} cykli bez kWh — ich energia nie jest wliczona (uzupełnij w Cykle → Dodaj).</span>`:'')
-    +(S.ovl?`<br><span style="color:var(--amber)">⚠ ${S.ovl} cykli nakłada się na inny cykl — czas i energia mogą być liczone podwójnie.</span>`:'')
+    +(S.ovl?`<br><span style="color:var(--amber)">⚠ ${S.ovl} cykli nakłada się na inny cykl tego samego typu — czas i energia mogą być liczone podwójnie.</span>`:'')
     +(S.zeroLen?`<br><span style="color:var(--amber)">⚠ ${S.zeroLen} cykli ma start = koniec, ale niezerowe kWh (pewnie import) — rozkład na doby nie jest możliwy.</span>`:'')
     +`<br><span style="color:var(--muted)">Energia, koszt i czas cyklu przechodzącego przez północ są dzielone na doby proporcjonalnie do czasu.</span>`;
   if(!S.RR.length&&!S.PP.length){ $('dashKpis').innerHTML=''; ['dashBal','dashPump','dashCop','dashBalance','dashMonths','dashPeriods','dashDays','dashCoWrap','dashBalChart'].forEach(i=>{ if($(i)) $(i).innerHTML=''; });
@@ -3618,6 +3618,9 @@ function hubDedupeCycles(){
       ['kwh','note','t1','t2','out','out1','out2','rad','slope','offset'].forEach(k=>{ if((w[k]==null||w[k]==='')&&l[k]!=null&&l[k]!=='') w[k]=l[k]; });
       gone.add(l.id); ch=true; if(l===a) break; } }
   if(gone.size){ rs.filter(r=>gone.has(r.id)).forEach(l=>{ const w=rs.find(r=>!gone.has(r.id)&&r.type===l.type&&within(r.start,l.start)); if(l.mid&&w&&w.mid&&w.mid!==l.mid){ const mi=M.findIndex(m=>m.id===l.mid&&(m.auto||m.src==='warmlink-auto')); if(mi>-1) M.splice(mi,1); } }); R=R.filter(r=>!gone.has(r.id)); }
+  { const kill=new Set(); R.filter(b=>b.start&&b.end&&b.type==='CO'&&autoOwned(b)&&b.guess&&(b.kwh==null||b.kwh==='')).forEach(b=>{
+      if(R.some(a=>a!==b&&a.type===b.type&&a.start&&a.end&&a.start<=b.start&&a.end>=b.end&&!kill.has(a.id)&&!(a.start===b.start&&a.end===b.end&&a.id>b.id))) kill.add(b.id); });
+    if(kill.size){ R.filter(r=>kill.has(r.id)).forEach(l=>{ const mi=M.findIndex(m=>m.id===l.mid&&(m.auto||m.src==='warmlink-auto')); if(mi>-1) M.splice(mi,1); }); R=R.filter(r=>!kill.has(r.id)); ch=true; } }
   const linked=new Set(R.map(r=>r.mid).filter(Boolean)), isAutoM=m=>m.auto||m.src==='warmlink-auto';
   const scM=m=>(m.auto?0:4)+(m.kwh>0?2:0)+((m.rd||[]).some(x=>x&&x.k!=null)?2:0)+(linked.has(m.id)?1:0)+(m.end?0.5:0);
   const ms=M.filter(m=>m.start&&m.mode).sort((a,b)=>a.start<b.start?-1:1), mg=new Map();
@@ -3636,15 +3639,15 @@ async function hubAutoCycles(){
   if(!hubCfg()||HUBC.acBusy) return; HUBC.acBusy=true;
   try{
     const from0=SET.acLast&&SET.acLast>ymd(new Date(Date.now()-14*864e5))?SET.acLast:ymd(new Date(Date.now()-10*864e5));
-    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs=wlSegments(rows);
-    let changed=hubDedupeCycles(); const nowMs=Date.now();
+    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs=wlMergeCO(wlSegments(rows)), lastG=segs.reduce((m,g)=>!m||Date.parse(g.last)>Date.parse(m.last)?g:m,null);
+    syncAutoEnergy(); let changed=hubDedupeCycles(); const nowMs=Date.now();
     const rdOf=(r0,ts,def)=>{ const r=wlFill(rows,r0); return {ts,c1:true,c2:true,def:!!def,k:null,t01:r?r.T01:null,t02:r?r.T02:null,t04:r?r.T04:null,flow:r?r.T39:null,hz:r?r.T30:null,volt:r?r.T34:null,amp:r?r.T35:null,p:null}; };
     const isDef=r=>r&&r.T01!=null&&r.T02!=null&&r.T02<r.T01-1;
     const buildRd=(g,st,en)=>{ const rd=[rdOf(g.rows[0],st,isDef(g.rows[0]))], endMs=en?Date.parse(en):nowMs; let t=Date.parse(st)+3600000;
       while(t<endMs-20*60000&&rd.length<9){ const c=g.rows.filter(r=>Math.abs(Date.parse(r.ts)-t)<=10*60000).sort((a,b)=>Math.abs(Date.parse(a.ts)-t)-Math.abs(Date.parse(b.ts)-t))[0]; if(c) rd.push(rdOf(c,c.ts,isDef(c))); t+=3600000; }
       rd.push(rdOf(en?g.rows[g.rows.length-1]:null,en||'',en?isDef(g.rows[g.rows.length-1]):false)); return rd; };
     segs.forEach((g,gi)=>{
-      const running=gi===segs.length-1&&segRunning(g), st=g.first.slice(0,16), en=running?null:segEnd(g);
+      const running=g===lastG&&segRunning(g), st=g.first.slice(0,16), en=running?null:segEnd(g);
       if(!running&&(Date.parse(en)-Date.parse(st))/60000<10) return;
       const endMs=en?Date.parse(en):nowMs, ov=(a0,a1)=>Date.parse(a0)<endMs&&(a1?Date.parse(a1):nowMs)>Date.parse(st);
       if(R.some(r=>!autoOwned(r)&&r.start&&ov(r.start,r.end))||M.some(m=>!m.auto&&m.start&&ov(m.start,m.end))) return;      // użytkownik prowadzi to sam
@@ -3652,12 +3655,14 @@ async function hubAutoCycles(){
       const wls=Sm.n&&Sm.cover?{run:Math.round(Sm.runMin),def:Math.round(Sm.defMin),defN:Sm.defN||0,pause,t04:Sm.t04!=null?+Sm.t04.toFixed(1):undefined,hz:Sm.hz||undefined,src:'warmlink'}:undefined;
       const tEnd=en?(()=>{ const L=Date.parse(g.last); let b=null; rows.forEach(r=>{ const t=Date.parse(r.ts); if(t>=L-5*60000&&t<=L+20*60000&&r.T08>0&&(b==null||r.T08>b)) b=r.T08; }); return b; })():null;   /* maks. T08 od ostatniej próbki z pracą do 20 min po stopie */
       let ex=R.find(r=>autoOwned(r)&&r.start&&Math.abs(Date.parse(r.start)-Date.parse(st))<=15*60000);
+      /* odcinek mieści się już w istniejącym cyklu tego samego typu (scalonym ręcznie albo uciętym oknem odczytów o północy) — nie zakładam drugiego wpisu */
+      if(!ex&&R.some(r=>r.type===g.mode&&r.start&&ov(r.start,r.end))) return;
       if(ex&&ex.type!==g.mode&&ex.guess){ const mi=M.findIndex(m=>m.id===ex.mid); if(mi>-1) M.splice(mi,1); R.splice(R.indexOf(ex),1); ex=null; changed=true; }      // typ okazał się inny — zakładam wpis od nowa
       if(ex){ const mm=ex.mid&&M.find(m=>m.id===ex.mid);
         if(en&&(!ex.end||(ex.guess&&ex.end!==en))){ ex.end=en; ex.open=undefined; if(ex.type==='CWU'&&tEnd!=null&&ex.t2==null) ex.t2=tEnd; changed=true; }
         if(ex.type==='CWU'&&ex.guess&&tEnd!=null&&ex.t2!==tEnd){ ex.t2=tEnd; changed=true; }
         if(wls){ ex.wls=wls; changed=true; }
-        if(mm&&mm.auto&&!(mm.rd||[]).some(x=>x&&x.k!=null)){ mm.end=en||''; mm.open=en?undefined:true; mm.rd=buildRd(g,st,en); if(wls){ mm.runMin=wls.run; mm.defMin=wls.def; mm.pauseMin=wls.pause; mm.defN=wls.defN; } changed=true; }
+        if(mm&&mm.auto&&!(mm.rd||[]).some(x=>x&&x.k!=null)){ if(!ex.guess){ mm.start=ex.start; mm.date=ex.start.slice(0,10); mm.end=ex.end||''; mm.open=ex.end?undefined:true; } else { mm.end=en||''; mm.open=en?undefined:true; } mm.rd=buildRd(g,st,en); if(wls){ mm.runMin=wls.run; mm.defMin=wls.def; mm.pauseMin=wls.pause; mm.defN=wls.defN; } changed=true; }
         return; }
       const type=g.mode, kk=type+Math.floor(Date.parse(st)/60000), mid='am'+kk, rid='ar'+kk;      /* id z czasu startu: to samo urządzenie/drugie urządzenie nie utworzy drugiego wpisu */
       if(TOMB.some(t=>t.id===rid)||R.some(r=>r.id===rid)) return;                              /* usunięty przez użytkownika albo już jest */
@@ -3666,14 +3671,17 @@ async function hubAutoCycles(){
                        :{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,t1:a.T08>0?a.T08:null,t2:tEnd,out:t04,kwh:null,price,note:'',auto:true,guess:true,wls});
       M.push({id:mid,rid,mode:type,date:st.slice(0,10),start:st,end:en||'',open:en?undefined:true,kwh:null,defMin:wls?wls.def:0,runMin:wls?wls.run:0,pauseMin:wls?wls.pause:0,defN:wls?wls.defN:0,rd:buildRd(g,st,en),res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true});
       changed=true; });
-    SET.acLast=ymd(new Date(Date.now()-2*864e5)); if(changed){ await persist(); }
+    SET.acLast=ymd(new Date(Date.now()-5*864e5)); if(changed){ await persist(); }
     renderTodo(); setTimeout(()=>hubRepairM(true),500);
   }catch(e){ HUBC.acErr=e.message; } finally{ HUBC.acBusy=false; }
 }
 /* „Do uzupełnienia” — jedyne, co musi dopisać użytkownik (zużycie energii) */
 function syncAutoEnergy(){ R.forEach(r=>{ if(!r.mid) return; const m=M.find(x=>x.id===r.mid); if(!m) return;
   if(r.kwh>0&&!(m.kwh>0)&&!(m.rd||[]).some(x=>x&&x.k!=null)) m.kwh=r.kwh;               /* zużycie wpisane raz (w cyklu) trafia też do okresu COP */
-  if(r.end&&!m.end){ m.end=r.end; m.open=undefined; if(m.rd&&m.rd.length) m.rd[m.rd.length-1].ts=r.end; } }); }
+  if(r.end&&!m.end){ m.end=r.end; m.open=undefined; if(m.rd&&m.rd.length) m.rd[m.rd.length-1].ts=r.end; }
+  if(!r.guess&&r.start&&(m.auto||m.src==='warmlink-auto')&&!(m.rd||[]).some(x=>x&&x.k!=null)){      /* cykl poprawiony ręcznie: auto-okres COP ma te same czasy (nie „00:02” z uciętego okna ani koniec sprzed edycji) */
+    if(m.start!==r.start){ m.start=r.start; m.date=r.start.slice(0,10); if(m.rd&&m.rd[0]) m.rd[0].ts=r.start; }
+    if(r.end&&m.end!==r.end){ m.end=r.end; m.open=undefined; if(m.rd&&m.rd.length) m.rd[m.rd.length-1].ts=r.end; } } }); }
 function renderTodo(){
   const todo=R.filter(r=>autoOwned(r)&&(r.kwh==null||r.kwh==='')).sort((a,b)=>b.start.localeCompare(a.start)), openM=M.filter(m=>m.start&&!m.end);
   const openR=R.filter(r=>r.start&&!r.end).sort((a,b)=>b.start.localeCompare(a.start)), Lw=HUBC.live&&HUBC.live.wl, lv=Lw?hubVals(Lw.v):null;
@@ -3690,6 +3698,7 @@ function renderTodo(){
 /* przebiegi sprężarki podzielone na fazy CO / CWU: w CWU temperatura zasobnika (T08) rośnie o kilka K, w CO nie */
 /* Tryb CO/CWU z zaworu O10 (otwarty = CWU, zamknięty = CO); sprężarka: O01 (ON/OFF) lub T30 > 0.
    Polaryzację (czy 1 znaczy CWU) uczymy się z danych: w CWU temperatura zasobnika T08 rośnie. Bez O10 → stara metoda (wzrost T08). */
+const WL_CO_CWU_GAP=150;       /* min: CO przerwane wyłącznie grzaniem CWU (zawór na chwilę na zasobnik) to nadal jedno grzanie */
 const WL_CO_GAP=75;           /* min: przerwy sprężarki w jednym cyklu CO (zawór nadal na CO) nie dzielą cyklu */
 let WL_O10POL=null;
 const wlIsRun=r=>r.T30>0||r.O01===1;
@@ -3719,6 +3728,16 @@ function wlSegments(rows){
   out.forEach((g,ix)=>{ g.first=g.rows[0].ts; g.last=g.rows[g.rows.length-1].ts; const n=out[ix+1]; g.boundaryEnd=(n&&(T(n.rows[0])-Date.parse(g.last))/60000<=25)?n.rows[0].ts:null; });
   return out;
 }
+/* Wieloletnia praktyka z Twojej instalacji: jedno grzanie CO trwa kilka dób i bywa tylko przerywane krótkim CWU. Odcinki CO przedzielone wyłącznie CWU
+   sklejam w jeden cykl (CWU zostaje osobnym wpisem) — inaczej każdy odcinek lądował w „Do uzupełnienia” jako osobny cykl i energia była liczona kilka razy. */
+function wlMergeCO(segs){ const out=segs.slice();
+  for(let i=0;i<out.length;){ const a=out[i]; if(a.mode!=='CO'){ i++; continue; }
+    const nx=out.findIndex((g,k)=>k>i&&g.mode==='CO'); if(nx<0){ i++; continue; }
+    const mid=out.slice(i+1,nx), b=out[nx];
+    if(mid.length&&mid.every(g=>g.mode==='CWU')&&(Date.parse(b.first)-Date.parse(a.last))/60000<=WL_CO_CWU_GAP){
+      out[i]=Object.assign({},a,{rows:a.rows.concat(b.rows),last:b.last,boundaryEnd:b.boundaryEnd,valve:a.valve||b.valve,merged:(a.merged||1)+1}); out.splice(nx,1); }
+    else i++; }
+  return out; }
 function wlSegmentsOld(rows){
   const T=r=>Date.parse(r.ts), run=rows.filter(r=>r.T30>0), segs=[];
   run.forEach(r=>{ const L=segs[segs.length-1]; if(L&&T(r)-T(L[L.length-1])<=25*60000) L.push(r); else segs.push([r]); });
