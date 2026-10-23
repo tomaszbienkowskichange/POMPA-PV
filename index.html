@@ -1081,6 +1081,7 @@ details.card[open]>summary{margin-bottom:12px}
     <div class="fgrid"><div class="fld"><div class="fhead"><span class="code nocode">V</span><span class="fname">Ilość wody w instalacji</span></div><div class="fdesc">Orientacyjnie, razem z buforem.</div><div class="finp"><input type="number" id="inst_water" step="1" min="0" onchange="instSave()"><span class="unit">l</span></div></div></div>
     <div class="tbl-wrap" style="margin-top:10px"><table class="rc" id="inst_tbl"></table></div>
     <div class="toolbar" style="margin-top:8px"><button type="button" class="apibtn" onclick="instAdd()">+ Dodaj składnik</button></div>
+    <p class="note" id="app_build" style="margin-top:10px"></p>
   </div>
   <div class="card">
     <h2>⚡ COP — stałe założenia obliczeń</h2>
@@ -2198,7 +2199,7 @@ function editRecord(id){
     document.getElementById('w_note').value=r.note||''; liveW(); wxLoadForm('w',r); hubLoadForm('w',r); wlLoadForm('w',r);
     document.getElementById('cwuSubmitBtn').textContent='Zapisz zmiany (CWU)';
   }
-  if(hubCfg()) hubAuto(r.type==='CO'?'co':'w',false,'end');      /* edycja: dosyp z huba tylko puste pola (nic nie nadpisuje) */
+  /* edycja zapisanego cyklu: żadne źródło nie pobiera się samo — Warmlink i SolaX tylko własnymi przyciskami „↻ Pobierz z …” */
 }
 
 async function addCO(){
@@ -3114,6 +3115,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
+const APP_BUILD='2026-10-23 · v41';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -3121,7 +3123,7 @@ const INST_DEFAULT=()=>[
   {name:'Separator zanieczyszczeń',maker:'Flamco',model:'Smart Clean 1" DN25',param:'',note:''}];
 function renderInstall(){
   const t=document.getElementById('inst_tbl'); if(!t) return; if(!Array.isArray(SET.install)) SET.install=INST_DEFAULT(); if(SET.waterL==null) SET.waterL=465;
-  const w=document.getElementById('inst_water'); if(w) w.value=SET.waterL;
+  const w=document.getElementById('inst_water'); if(w) w.value=SET.waterL; const ab=document.getElementById('app_build'); if(ab) ab.textContent='Wersja aplikacji: '+APP_BUILD+' (jeśli widzisz starszą, odśwież stronę — po zmianie wersji aplikacja sama pobiera nowy kod).';
   const inp=(i,k,ph)=>`<input type="text" data-i="${i}" data-k="${k}" value="${escH(SET.install[i][k]||'')}" placeholder="${ph||''}" onchange="instSave()" style="width:100%;min-width:110px">`;
   t.innerHTML='<thead><tr><th>Składnik</th><th>Producent</th><th>Model</th><th>Parametr</th><th>Uwagi</th><th></th></tr></thead><tbody>'+SET.install.map((x,i)=>`<tr><td>${inp(i,'name')}</td><td>${inp(i,'maker')}</td><td>${inp(i,'model','do uzupełnienia')}</td><td>${inp(i,'param')}</td><td>${inp(i,'note')}</td><td><button type="button" class="apibtn" title="Usuń składnik" onclick="instDel(${i})">✕</button></td></tr>`).join('')+'</tbody>';
 }
@@ -3794,7 +3796,7 @@ async function hubSnapForm(p){
     const ns=g.first.slice(0,16), ne=running?'':segEnd(g);
     if(editId&&(ns!==st||ne!==en)&&!confirm('Dopasowanie zmieni czasy zapisanego wpisu:\n'+st.replace('T',' ')+' → '+(en||'—').replace('T',' ')+'\nna:\n'+ns.replace('T',' ')+' → '+(ne||'—').replace('T',' ')+'\n(tylko ta faza pracy sprężarki). Kontynuować?')){ if(wi) wi.textContent='Anulowano — czasy bez zmian.'; return; }
     $w(c.start).value=ns; $w(c.end).value=ne; $w(c.start).dataset.userTouched='1'; $w(c.end).dataset.userTouched='1'; $w(c.start).dispatchEvent(new Event('change',{bubbles:true}));
-    await hubAuto(p,true); if(wi) wi.textContent='Dopasowano: faza '+g.mode+' '+g.first.slice(5,16).replace('T',' ')+(running?' → trwa nadal':' → '+segEnd(g).slice(5,16).replace('T',' '))+'. '+wi.textContent;
+    await hubAuto(p,true,undefined,c.ed()?'wl':undefined); if(wi) wi.textContent='Dopasowano: faza '+g.mode+' '+g.first.slice(5,16).replace('T',' ')+(running?' → trwa nadal':' → '+segEnd(g).slice(5,16).replace('T',' '))+'. '+wi.textContent;
   }catch(e){ if(wi) wi.textContent='Warmlink: '+e.message; }
 }
 async function cpSnap(){
@@ -4006,7 +4008,7 @@ function wlEndT08(all,endTs){ const e=Date.parse(endTs); if(isNaN(e)) return nul
   all.forEach(r=>{ const t=Date.parse(r.ts); if(t>=e-5*60000&&t<=lim&&r.T08>0&&(best==null||r.T08>best.v)) best={v:r.T08,ts:r.ts}; }); return best; }
 /* scope: 'wl' = tylko Warmlink, 'pv' = tylko SolaX, brak = oba (automat po wyborze startu/końca). Przycisk jednego źródła nie rusza pól drugiego. */
 async function hubAuto(p,force,trig,scope){
-  const c=WXP[p]; if(!c||!hubCfg()) return; if(!force&&c.ed()&&trig!=='end') return;
+  const c=WXP[p]; if(!c||!hubCfg()) return; if(!force&&c.ed()) return;      /* w trybie edycji tylko ręczne przyciski */
   const st=$w(c.start).value, en=c.end?$w(c.end).value:'', info=$w(p+'_hubinfo'), wi=$w(p+'_wlinfo'); if(!info) return;
   if(!st){ info.textContent=''; if(wi) wi.textContent=''; return; }
   if(en&&Date.parse(en)<=Date.parse(st)){ info.textContent='Koniec musi być późniejszy niż start.'; if(wi) wi.textContent=''; return; }

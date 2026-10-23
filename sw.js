@@ -1,4 +1,4 @@
-const CACHE = 'pompa-pv-v40';
+const CACHE = 'pompa-pv-v41';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
@@ -16,18 +16,14 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   if (new URL(e.request.url).origin !== self.location.origin) return; // np. api.github.com — bez cache SW
+  // najpierw sieć: po wgraniu nowej wersji od razu działa nowy kod (wcześniej pierwsze otwarcie dawało starą wersję z cache);
+  // cache służy tylko do pracy offline
   e.respondWith(
-    caches.match(e.request).then((cached) => {
-      const fetchPromise = fetch(e.request)
-        .then((res) => {
-          if (res && res.ok && e.request.url.startsWith(self.location.origin)) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
-          }
-          return res;
-        })
-        .catch(() => cached);
-      return cached || fetchPromise;
-    })
+    fetch(e.request)
+      .then((res) => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
+        return res;
+      })
+      .catch(() => caches.match(e.request).then((m) => m || caches.match('./index.html')))
   );
 });
