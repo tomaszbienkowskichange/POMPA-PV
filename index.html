@@ -439,7 +439,7 @@ details.card[open]>summary{margin-bottom:12px}
       <div><label>Koniec (data i godz.) <span class="opt">opcjonalnie</span></label><input type="datetime-local" id="co_end"><div class="hint">Puste = pompa jeszcze pracuje. Cykl zapisze się bez końca (koniec dopiszesz później przez „Edytuj”), a dane z Warmlinka i PV policzą się do chwili obecnej.</div></div>
       <div class="sectitle">2 · Z pompy</div>
       <div class="full wxform" id="co_wl" style="border-left-color:var(--amber)">
-        <div class="wxform-h"><b>🔥 Pompa (Warmlink) — podstawia się po wyborze startu i końca</b><span class="note" id="co_wlinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('co',true)">↻ Pobierz z Warmlinka</button></span></div>
+        <div class="wxform-h"><b>🔥 Pompa (Warmlink) — podstawia się po wyborze startu i końca</b><span class="note" id="co_wlinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('co',true,undefined,'wl')">↻ Pobierz z Warmlinka</button></span></div>
         <div class="wxform-g"><div><label>Temp. zewn. na starcie (°C)</label><input type="number" id="co_out1" step="0.1" ></div><div><label>Temp. zewn. na końcu (°C)</label><input type="number" id="co_out2" step="0.1" ></div>
           <div><label>Sprężarka pracowała (min)</label><input type="number" id="co_wlrun" step="1" min="0" data-wxm="1"><div class="hint">Łączny czas, gdy sprężarka faktycznie grzała.</div></div>
           <div><label>w tym odszranianie (min)</label><input type="number" id="co_wldef" step="1" min="0" data-wxm="1"></div>
@@ -451,7 +451,7 @@ details.card[open]>summary{margin-bottom:12px}
       <div><label>Liczba grzejników</label><input type="number" id="co_rad" step="1" ></div><div><label>Nachylenie krzywej</label><input type="number" id="co_slope" step="0.1" ></div><div><label>Przesunięcie krzywej (°C)</label><input type="number" id="co_offset" step="0.1" ></div><div><label>Zużycie z licznika (kWh)</label><input type="number" id="co_kwh" step="0.01" ></div><div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="co_price" step="0.01" min="0"></div>
       <div class="sectitle">4 · Falownik PV</div>
       <div class="full wxform" id="co_hub" style="border-left-color:var(--pv)">
-        <div class="wxform-h"><b>☀️ Falownik PV w czasie pracy pompy</b><span class="note" id="co_hubinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('co',true)">↻ Pobierz z huba</button></span></div>
+        <div class="wxform-h"><b>☀️ Falownik PV w czasie pracy pompy</b><span class="note" id="co_hubinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('co',true,undefined,'pv')">↻ Pobierz z SolaX</button></span></div>
         <h4>W chwili startu pompy</h4>
         <div class="wxform-g">
           <div><label>Falownik PV</label><select id="co_pvon"><option value="">—</option><option value="1">pracuje</option><option value="0">nie pracuje</option></select></div>
@@ -495,7 +495,7 @@ details.card[open]>summary{margin-bottom:12px}
       <div><label>Koniec (data i godz.) <span class="opt">opcjonalnie</span></label><input type="datetime-local" id="w_end"><div class="hint">Puste = pompa jeszcze pracuje. Cykl zapisze się bez końca (koniec dopiszesz później przez „Edytuj”), a dane z Warmlinka i PV policzą się do chwili obecnej.</div></div>
       <div class="sectitle">2 · Z pompy</div>
       <div class="full wxform" id="w_wl" style="border-left-color:var(--amber)">
-        <div class="wxform-h"><b>🔥 Pompa (Warmlink) — podstawia się po wyborze startu i końca</b><span class="note" id="w_wlinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('w',true)">↻ Pobierz z Warmlinka</button></span></div>
+        <div class="wxform-h"><b>🔥 Pompa (Warmlink) — podstawia się po wyborze startu i końca</b><span class="note" id="w_wlinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('w',true,undefined,'wl')">↻ Pobierz z Warmlinka</button></span></div>
         <div class="wxform-g"><div><label>Temp. wody na starcie (°C)</label><input type="number" id="w_t1" step="0.1" ></div><div><label>Temp. wody na końcu (°C)</label><input type="number" id="w_t2" step="0.1" ></div><div><label>Temp. zewn. na starcie (°C)</label><input type="number" id="w_out" step="0.1" ></div>
           <div><label>Sprężarka pracowała (min)</label><input type="number" id="w_wlrun" step="1" min="0" data-wxm="1"><div class="hint">Łączny czas, gdy sprężarka faktycznie grzała.</div></div>
           <div><label>w tym odszranianie (min)</label><input type="number" id="w_wldef" step="1" min="0" data-wxm="1"></div>
@@ -507,7 +507,7 @@ details.card[open]>summary{margin-bottom:12px}
       <div><label>Zużycie z licznika (kWh)</label><input type="number" id="w_kwh" step="0.01" ></div><div><label>Cena zastosowana w tym cyklu (zł/kWh)</label><input type="number" id="w_price" step="0.01" min="0"></div>
       <div class="sectitle">4 · Falownik PV</div>
       <div class="full wxform" id="w_hub" style="border-left-color:var(--pv)">
-        <div class="wxform-h"><b>☀️ Falownik PV w czasie pracy pompy</b><span class="note" id="w_hubinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('w',true)">↻ Pobierz z huba</button></span></div>
+        <div class="wxform-h"><b>☀️ Falownik PV w czasie pracy pompy</b><span class="note" id="w_hubinfo"></span><span class="wxform-btns"><button type="button" class="apibtn" onclick="hubAuto('w',true,undefined,'pv')">↻ Pobierz z SolaX</button></span></div>
         <h4>W chwili startu pompy</h4>
         <div class="wxform-g">
           <div><label>Falownik PV</label><select id="w_pvon"><option value="">—</option><option value="1">pracuje</option><option value="0">nie pracuje</option></select></div>
@@ -1074,6 +1074,13 @@ details.card[open]>summary{margin-bottom:12px}
     <h2>Cena energii — zużycie pompy ciepła</h2>
     <div class="grid"><div><label>Domyślna cena za 1 kWh (zł)</label><input type="number" id="priceInput" step="0.01" onchange="updatePrice()"></div></div>
     <p style="font-size:.8rem;color:var(--muted);margin-top:10px">To tylko podpowiedź, która wpisuje się automatycznie w pole „Cena zastosowana w tym cyklu” w nowym wpisie CO/CWU. Zmiana tej wartości <b>nie przelicza</b> już zapisanych cykli — każdy zapisany wpis zachowuje cenę z dnia, w którym został dodany (widoczną i edytowalną per wpis w formularzu „+ Dodaj”, tak samo jak przy PV). Dzięki temu historia kosztów zostaje poprawna nawet gdy cena zakupu energii się zmieni.</p>
+  </div>
+  <div class="card" id="inst_card">
+    <h2>🏠 Instalacja — woda, bufor i osprzęt</h2>
+    <p class="note" style="margin-bottom:10px">Dane opisowe instalacji (nie wpływają na obliczenia). Każde pole możesz zmienić, dopisać nowy składnik albo usunąć — osprzęt bywa wymieniany. Zapis następuje od razu po zmianie pola.</p>
+    <div class="fgrid"><div class="fld"><div class="fhead"><span class="code nocode">V</span><span class="fname">Ilość wody w instalacji</span></div><div class="fdesc">Orientacyjnie, razem z buforem.</div><div class="finp"><input type="number" id="inst_water" step="1" min="0" onchange="instSave()"><span class="unit">l</span></div></div></div>
+    <div class="tbl-wrap" style="margin-top:10px"><table class="rc" id="inst_tbl"></table></div>
+    <div class="toolbar" style="margin-top:8px"><button type="button" class="apibtn" onclick="instAdd()">+ Dodaj składnik</button></div>
   </div>
   <div class="card">
     <h2>⚡ COP — stałe założenia obliczeń</h2>
@@ -3106,8 +3113,25 @@ function liveCop(){
   cpEl('cp_offval').textContent=(+SET.dtOff).toFixed(1); { const f=cpEl('cp_offfld'); if(f) f.style.display=(+SET.dtOff||cpEl('cp_useoff').checked)?'':'none'; } cpEl('cal_cur').textContent=(SET.dtOff>=0?'+':'')+(+SET.dtOff).toFixed(1)+' K';
 }
 document.getElementById('cop').addEventListener('input',liveCop);
+/* ===================== INSTALACJA (opis, edytowalny) ===================== */
+const INST_DEFAULT=()=>[
+  {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
+  {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
+  {name:'Pompa obiegowa',maker:'Grundfos',model:'',param:'',note:''},
+  {name:'Separator zanieczyszczeń',maker:'Flamco',model:'Smart Clean 1" DN25',param:'',note:''}];
+function renderInstall(){
+  const t=document.getElementById('inst_tbl'); if(!t) return; if(!Array.isArray(SET.install)) SET.install=INST_DEFAULT(); if(SET.waterL==null) SET.waterL=465;
+  const w=document.getElementById('inst_water'); if(w) w.value=SET.waterL;
+  const inp=(i,k,ph)=>`<input type="text" data-i="${i}" data-k="${k}" value="${escH(SET.install[i][k]||'')}" placeholder="${ph||''}" onchange="instSave()" style="width:100%;min-width:110px">`;
+  t.innerHTML='<thead><tr><th>Składnik</th><th>Producent</th><th>Model</th><th>Parametr</th><th>Uwagi</th><th></th></tr></thead><tbody>'+SET.install.map((x,i)=>`<tr><td>${inp(i,'name')}</td><td>${inp(i,'maker')}</td><td>${inp(i,'model','do uzupełnienia')}</td><td>${inp(i,'param')}</td><td>${inp(i,'note')}</td><td><button type="button" class="apibtn" title="Usuń składnik" onclick="instDel(${i})">✕</button></td></tr>`).join('')+'</tbody>';
+}
+async function instSave(){ const w=parseFloat(document.getElementById('inst_water').value); SET.waterL=isNaN(w)?null:w;
+  document.querySelectorAll('#inst_tbl input[data-k]').forEach(e=>{ const i=+e.dataset.i; if(SET.install[i]) SET.install[i][e.dataset.k]=e.value.trim(); });
+  await persist(); }
+async function instAdd(){ await instSave(); SET.install.push({name:'',maker:'',model:'',param:'',note:''}); await persist(); renderInstall(); }
+async function instDel(i){ const x=SET.install[i]; if(!x||!confirm('Usunąć składnik „'+(x.name||'bez nazwy')+'”?')) return; SET.install.splice(i,1); await persist(); renderInstall(); }
 function syncCopSettingsUI(){
-  ensureCopDefaults();
+  ensureCopDefaults(); try{ renderInstall(); }catch(e){}
   cpEl('set_rho').value=SET.rho; cpEl('set_cpw').value=SET.cpw; cpEl('set_hzmax').value=SET.hzMax;
   cpEl('set_c1').value=SET.c1Name; cpEl('set_c2').value=SET.c2Name; cpEl('set_dtoff').value=SET.dtOff;
   collectRd(); buildRdUi(); liveCop();
@@ -3653,7 +3677,7 @@ async function hubAutoCycles(){
       if(R.some(r=>!autoOwned(r)&&r.start&&ov(r.start,r.end))||M.some(m=>!m.auto&&m.start&&ov(m.start,m.end))) return;      // użytkownik prowadzi to sam
       const Sm=hubWlSummary(g.rows,st,en||nowLocal()), pause=Math.max(0,Math.round((endMs-Date.parse(st))/60000-Sm.runMin));
       const wls=Sm.n&&Sm.cover?{run:Math.round(Sm.runMin),def:Math.round(Sm.defMin),defN:Sm.defN||0,pause,t04:Sm.t04!=null?+Sm.t04.toFixed(1):undefined,hz:Sm.hz||undefined,src:'warmlink'}:undefined;
-      const tEnd=en?(()=>{ const L=Date.parse(g.last); let b=null; rows.forEach(r=>{ const t=Date.parse(r.ts); if(t>=L-5*60000&&t<=L+20*60000&&r.T08>0&&(b==null||r.T08>b)) b=r.T08; }); return b; })():null;   /* maks. T08 od ostatniej próbki z pracą do 20 min po stopie */
+      const tEnd=en?(()=>{ const q=wlEndT08(rows,en); return q?q.v:null; })():null;   /* maks. T08 od ostatniej próbki z pracą do 20 min po stopie */
       let ex=R.find(r=>autoOwned(r)&&r.start&&Math.abs(Date.parse(r.start)-Date.parse(st))<=15*60000);
       /* odcinek mieści się już w istniejącym cyklu tego samego typu (scalonym ręcznie albo uciętym oknem odczytów o północy) — nie zakładam drugiego wpisu */
       if(!ex&&R.some(r=>r.type===g.mode&&r.start&&ov(r.start,r.end))) return;
@@ -3976,13 +4000,19 @@ function hubWlCtx(all,s,e){
   const pick=(ts,dir)=>{ const r=near(ts,12); return (r&&r.T30>0)?r:(runNear(ts,dir)||r); };
   return {rows,near:(a,b)=>wlFill(all,near(a,b)),runNear:(a,b)=>wlFill(all,runNear(a,b)),pick:(a,b)=>wlFill(all,pick(a,b))};
 }
-async function hubAuto(p,force,trig){
+/* temperatura zasobnika po grzaniu CWU: maks. T08 od końca−5 min do końca+45 min, ale nie po starcie następnej pracy sprężarki (hub w postoju zapisuje rzadko, a T08 jeszcze chwilę rośnie) */
+function wlEndT08(all,endTs){ const e=Date.parse(endTs); if(isNaN(e)) return null;
+  const nx=all.filter(r=>r.T30>0&&Date.parse(r.ts)>e+2*60000).map(r=>Date.parse(r.ts))[0], lim=Math.min(e+45*60000,nx==null?1e18:nx); let best=null;
+  all.forEach(r=>{ const t=Date.parse(r.ts); if(t>=e-5*60000&&t<=lim&&r.T08>0&&(best==null||r.T08>best.v)) best={v:r.T08,ts:r.ts}; }); return best; }
+/* scope: 'wl' = tylko Warmlink, 'pv' = tylko SolaX, brak = oba (automat po wyborze startu/końca). Przycisk jednego źródła nie rusza pól drugiego. */
+async function hubAuto(p,force,trig,scope){
   const c=WXP[p]; if(!c||!hubCfg()) return; if(!force&&c.ed()&&trig!=='end') return;
   const st=$w(c.start).value, en=c.end?$w(c.end).value:'', info=$w(p+'_hubinfo'), wi=$w(p+'_wlinfo'); if(!info) return;
   if(!st){ info.textContent=''; if(wi) wi.textContent=''; return; }
   if(en&&Date.parse(en)<=Date.parse(st)){ info.textContent='Koniec musi być późniejszy niż start.'; if(wi) wi.textContent=''; return; }
   const seq=++HUBSEQ[p], open=!en, past=Date.parse(st)<Date.now()-6*60000, to=en||(past?nowLocal():'');
-  info.textContent='Pobieram z huba…'; if(wi) wi.textContent='Pobieram z Warmlinka…';
+  const doWl=!scope||scope==='wl', doPv=!scope||scope==='pv';
+  if(doPv) info.textContent='Pobieram z SolaX…'; if(wi&&doWl) wi.textContent='Pobieram z Warmlinka…';
   const lbl=open&&to?' (okres w toku — do teraz, '+to.slice(11,16)+')':'';
   /* --- Warmlink (niezależnie od SolaX: błąd falownika nie blokuje danych pompy) --- */
   const wlPart=async()=>{ const wmsg=[];
@@ -3993,9 +4023,10 @@ async function hubAuto(p,force,trig){
       if(!all.length){ wmsg.push('hub nie ma odczytów Warmlink z okolic tego terminu'); return wmsg; }
       const a=X.pick(st,1), b=en?X.pick(en,-1):null;
       if(a&&a.T04!=null) hubPut($w(c.out[0][0]),a.T04,force,'wl'); if(en&&b&&b.T04!=null&&c.out[1]) hubPut($w(c.out[1][0]),b.T04,force,'wl');
-      if(p==='w'){ if(a&&a.T08>0) hubPut($w('w_t1'),a.T08,force,'wl'); if(b&&b.T08>0) hubPut($w('w_t2'),b.T08,force,'wl'); }
+      const pk=(p==='w'&&en)?wlEndT08(all,en):null;      /* T08 „po cyklu” = to, co pokazuje aplikacja pompy chwilę po stopie, nie odczyt z samej sekundy stopu */
+      if(p==='w'){ if(a&&a.T08>0) hubPut($w('w_t1'),a.T08,force,'wl'); const t2=pk?pk.v:(b&&b.T08>0?b.T08:null); if(t2!=null) hubPut($w('w_t2'),t2,force,'wl'); }
       wmsg.push(a?('start: T04 = '+(a.T04!=null?a.T04+' °C':'—')+(p==='w'&&a.T08>0?', woda CWU '+a.T08+' °C':'')+(a.T30>0?'':' (sprężarka jeszcze stała)')):'brak odczytu dla chwili startu');
-      if(b) wmsg.push('koniec: T04 = '+(b.T04!=null?b.T04+' °C':'—')+(p==='w'&&b.T08>0?', woda CWU '+b.T08+' °C':''));
+      if(b) wmsg.push('koniec: T04 = '+(b.T04!=null?b.T04+' °C':'—')+(p==='w'?(pk?', woda CWU: w chwili stopu '+(b.T08>0?b.T08:'—')+' °C, maks. po stopie '+pk.v+' °C ('+pk.ts.slice(11,16)+') — wpisano '+pk.v:(b.T08>0?', woda CWU '+b.T08+' °C':'')):''));
       if(to&&Date.parse(to)>Date.parse(st)+4*60000){
         const S=hubWlSummary(all,st,to);
         if(!S.n) wmsg.push('brak odczytów w samym okresie pracy');
@@ -4009,21 +4040,24 @@ async function hubAuto(p,force,trig){
     return wmsg; };
   /* --- SolaX (falownik) --- */
   const pvPart=async()=>{ const msg=[];
-    try{ const a=await hubNear(st), b=null; if(seq!==HUBSEQ[p]) return msg; const s=a.sx;
+    try{ let a=await hubNear(st), b=null; if(seq!==HUBSEQ[p]) return msg;
+      if(!(a&&a.sx)){ await new Promise(r=>setTimeout(r,2500)); if(seq!==HUBSEQ[p]) return msg; a=await hubNear(st); }      /* SolaX czasem dociąga dzień z historii dopiero za drugim razem */
+      const s=a.sx;
       if(s){ hubPut($w(p+'_pvon'),s.on?'1':'0',force); if(s.pw!=null) hubPut($w(p+'_pvkw'),+(s.pw/1000).toFixed(2),force); if(s.yt!=null) hubPut($w(p+'_pvday'),s.yt,force);
         msg.push('w chwili startu PV '+(s.on?'pracuje':'nie pracuje')+(s.pw!=null?' ('+(s.pw/1000).toFixed(2)+' kW)':'')+(s.yt!=null?', od rana '+s.yt+' kWh':'')); }
       else msg.push('brak próbki falownika dla chwili startu');
       if(to&&Date.parse(to)>Date.parse(st)+4*60000){
-        const w=await hubGet('pvwin',{from:st.slice(0,16),to:to.slice(0,16)},60000); if(seq!==HUBSEQ[p]) return msg;
+        let w=await hubGet('pvwin',{from:st.slice(0,16),to:to.slice(0,16)},60000); if(seq!==HUBSEQ[p]) return msg;
+        if(!(w.n>0)){ await new Promise(r=>setTimeout(r,2500)); if(seq!==HUBSEQ[p]) return msg; w=await hubGet('pvwin',{from:st.slice(0,16),to:to.slice(0,16)},60000); if(seq!==HUBSEQ[p]) return msg; }
         if(w.n>0){ hubPut($w(p+'_pvwin'),w.kwh,force); if(w.runKwh!=null) hubPut($w(p+'_pvrun'),w.runKwh,force);
           msg.push('w całym okresie'+lbl+' PV wyprodukowało '+(w.kwh!=null?w.kwh+' kWh':'—')+' (szczyt '+(w.peakW/1000).toFixed(2)+' kW'+(w.covPct<80?', dane tylko z '+w.covPct+'% okresu':'')+')'+(w.runKwh!=null?'; w minutach pracy sprężarki ('+w.runMin+' min) '+w.runKwh+' kWh':'')); }
-        else msg.push('brak próbek falownika w okresie pracy'); }
+        else msg.push('brak próbek falownika w okresie pracy'+(w&&w.errs&&w.errs.length?' ('+w.errs.join('; ')+')':'')); }
     }catch(e2){ msg.push('SolaX: '+e2.message+' (dane pompy z Warmlinka nie zależą od tego błędu)'); }
     return msg; };
-  const [wm,pm]=await Promise.all([wlPart(),pvPart()]); if(seq!==HUBSEQ[p]) return;
+  const [wm,pm]=await Promise.all([doWl?wlPart():null,doPv?pvPart():null]); if(seq!==HUBSEQ[p]) return;
   c.live(); hubCover(p); wxNowChips(p);
-  info.textContent='Z huba (SolaX): '+(pm||[]).join('; ')+'. Możesz zmienić ręcznie.';
-  if(wi) wi.textContent='Z Warmlinka: '+(wm||[]).join('; ')+'.'+(open?' Koniec nieznany — cykl można zapisać bez końca.':'')+' Możesz zmienić ręcznie.';
+  if(doPv) info.textContent='Z huba (SolaX): '+(pm||[]).join('; ')+'. Możesz zmienić ręcznie.'+(doWl?'':' (pola pompy z Warmlinka nie zostały zmienione)');
+  if(wi&&doWl) wi.textContent='Z Warmlinka: '+(wm||[]).join('; ')+'.'+(open?' Koniec nieznany — cykl można zapisać bez końca.':'')+' Możesz zmienić ręcznie.';
   renderApiTab();
 }
 /* ⚡ wykryj ostatni cykl pracy sprężarki z Warmlinka i wpisz start/koniec */
