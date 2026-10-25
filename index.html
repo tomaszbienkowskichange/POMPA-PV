@@ -598,7 +598,7 @@ details.card[open]>summary{margin-bottom:12px}
 <div class="tab" id="pv">
   <div class="wxbar" data-wxbar></div>
   <div class="card" id="pvDayCard">
-    <div class="statusrow"><h2 style="margin:0">☀️ Produkcja PV i warunki pogodowe</h2><input type="date" id="pvd_date" style="width:auto" onchange="renderPvDay(true)"><button class="apibtn" id="pvd_btn" onclick="pvDayRefresh()">↻ Odśwież</button><span class="note" id="pvd_status"></span><button class="apibtn" onclick="$w('pvd_date').value=ymd(new Date());renderPvDay(true)">Dziś</button></div>
+    <div class="statusrow"><h2 style="margin:0">☀️ Produkcja PV i warunki pogodowe</h2><input type="date" id="pvd_date" style="width:auto" onchange="renderPvDay(true)"><button class="apibtn" id="pvd_btn" onclick="pvDayRefresh()">↻ Odśwież</button><span class="note" id="pvd_status"></span><button class="apibtn" onclick="pvGoToday()">Dziś</button></div>
     <div id="pvDayBody"></div>
   </div>
   <div id="pvBadMsg"></div>
@@ -1066,9 +1066,11 @@ details.card[open]>summary{margin-bottom:12px}
       <div style="flex:3 1 320px"><label>Adres huba (zawiera klucz dostępu)</label><input id="hub_url" type="password" autocomplete="off" onchange="hubSaveUrl()"></div>
       <div style="flex:0 0 auto"><button class="apibtn pri" onclick="hubTest()">Test połączenia</button></div>
       <div style="flex:0 0 auto"><button class="apibtn" onclick="hubBfRun()">⬇ Pobierz historię SolaX</button></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubDayFix()" title="Poprawia sumy dzienne PV zawyżone starym odczytem z poprzedniej doby (wymaga nowego Code.gs)">🛠 Napraw sumy dzienne PV</button></div>
     </div>
     <div id="hub_status" class="note" style="margin-top:8px"></div>
     <div id="hub_bf" class="note" style="margin-top:6px"></div>
+    <div id="hub_dayfix" class="note" style="margin-top:6px"></div>
   </div>
     <div class="card">
     <h2>Cena energii — zużycie pompy ciepła</h2>
@@ -1622,13 +1624,16 @@ function buildPvAgg(gran,rg){
   return {keys:[...map.keys()].sort(), map};
 }
 const PVD_TRIED={};
+function pvGoToday(){ $w('pvd_date').value=ymd(new Date()); pvDayRefresh(); }
 async function pvDayLoad(d,force){
   if(!hubCfg()) return; const today=d===ymd(new Date());
-  try{ if(today){ if(force||!HUBC.live){ HUBC.live=await hubGet('live',force?{fresh:'1'}:{},45000); } }
-    else if(!HUBC.days[d]||force){ let j=await hubGet('days',{from:d,to:d}); let row=(j.rows||[])[0]; if(!row){ try{ await hubGet('sxfill',{d},45000); j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; }catch(e){} } if(row){ HUBC.days[d]=row; hubSave(); } }
+  try{ if(today){ if(force||!HUBC.live){ HUBC.live=Object.assign({},HUBC.live||{},await hubGet('live',force?{fresh:'1',src:'sx'}:{},60000)); } }
+    else if(!HUBC.days[d]||force){ let j=await hubGet('days',{from:d,to:d}); let row=(j.rows||[])[0]; if(!row){ try{ await hubGet('sxfill',{d},45000); j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; }catch(e){} } if(row){ HUBC.days[d]=row; hubSave(); pvDayCheck(d); } }
   }catch(e){ PVD_TRIED[d+'err']=e.message; }
   renderPvDay(false);
 }
+/* kontrola sumy dziennej: całka z krzywej mocy tego dnia (suma w arkuszu bywa zawyżona starym odczytem z poprzedniej doby) */
+async function pvDayCheck(d){ try{ const w=await hubGet('pvwin',{from:d+'T00:00',to:d+'T23:59'},60000), row=(HUBC.days||{})[d]; if(row&&w&&w.n>0&&w.covPct>=70&&w.kwhInt!=null){ row.chk=+w.kwhInt; hubSave(); renderPvDay(false); } }catch(e){} }
 function renderPvDay(load,force){
   const box=$w('pvDayBody'); if(!box) return; const inp=$w('pvd_date'); if(!inp.value) inp.value=ymd(new Date()); const d=inp.value, today=d===ymd(new Date());
   if(load&&(force||!PVD_TRIED[d])){ PVD_TRIED[d]=1; pvDayLoad(d,force); }
@@ -1637,8 +1642,8 @@ function renderPvDay(load,force){
   const tile=(l,v,sub,col,txt)=>`<div class="tile"><div class="tv${txt?' txt':''}"${col?` style="color:${col}"`:''}>${v}</div><div class="tl">${l}</div>${sub?'<div class="ts">'+sub+'</div>':''}</div>`;
   const kw=x=>x==null?'—':(x/1000).toFixed(2)+' kW', prod=[], wx=[];
   if(today&&L){ prod.push(tile('Moc teraz',L.on?kw(L.pw):'0 kW',L.on?'falownik produkuje':'falownik nie produkuje',L.on?'var(--pv)':'var(--muted)')); }
-  const yDay=today?(L&&L.yt!=null?L.yt:null):(row&&row.y!=null?row.y:null);
-  prod.push(tile(today?'Produkcja dziś (do teraz)':'Produkcja dnia',yDay!=null?(+yDay).toFixed(1)+' kWh':(rec?(+rec.kwh).toFixed(1)+' kWh':'—'),yDay!=null?'z falownika (hub)':(rec?'z wpisu':'brak danych'),'var(--pv)'));
+  const yBad=!today&&row&&row.chk!=null&&row.y!=null&&row.y>row.chk*1.3+0.5, yDay=today?(L&&L.yt!=null?L.yt:null):(row&&row.y!=null?(yBad?row.chk:row.y):null);
+  prod.push(tile(today?'Produkcja dziś (do teraz)':'Produkcja dnia',yDay!=null?(+yDay).toFixed(1)+' kWh':(rec?(+rec.kwh).toFixed(1)+' kWh':'—'),yDay!=null?(yBad?'z krzywej mocy — suma dzienna w arkuszu ('+(+row.y).toFixed(1)+' kWh) jest zawyżona, użyj „Napraw sumy dzienne PV” w Na żywo':'z falownika (hub)'):(rec?'z wpisu':'brak danych'),'var(--pv)'));
   prod.push(tile('Szczyt mocy',row&&row.pk!=null?kw(row.pk):'—',row&&row.h0?'praca '+row.h0+' – '+row.h1:''));
   const est=wxPvEst(d); prod.push(tile('Szacunek z nasłonecznienia',est!=null?'≈ '+est.toFixed(1)+' kWh':'—',(yDay!=null||rec)&&est>0.5?'rzeczywiście '+Math.round((yDay!=null?yDay:rec.kwh)/est*100)+'%':''));
   if(row&&(row.ex!=null||row.im!=null)) prod.push(tile('Eksport / import',(row.ex!=null?(+row.ex).toFixed(1):'—')+' / '+(row.im!=null?(+row.im).toFixed(1):'—')+' kWh','do sieci / z sieci'));
@@ -3115,7 +3120,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-10-23 · v41';
+const APP_BUILD='2026-10-24 · v43';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -3607,6 +3612,11 @@ function wxSavePvWin(){
 
 /* ===================== AUTOMAT: produkcja PV z SolaX i cykle pompy z Warmlinka ===================== */
 /* sumy dzienne z falownika → wpisy PV (tylko dni zakończone, bez wpisu ręcznego); usunięty wpis auto nie wraca */
+async function hubDayFix(){ const out=$w('hub_dayfix'); if(!hubCfg()){ out.textContent='Najpierw skonfiguruj hub.'; return; } out.textContent='Sprawdzam sumy dzienne z próbek falownika…';
+  try{ const j=await hubGet('dayfix',{n:60},60000); HUBC.days={}; hubSave();
+    out.textContent=(j.fixed&&j.fixed.length)?'Poprawiono '+j.fixed.length+' dni: '+j.fixed.map(x=>fmtDpl(x.d)+' '+x.was+' → '+x.now+' kWh').join('; ')+'.':'Sumy dzienne w arkuszu są spójne (sprawdzono '+j.checked+' dni).';
+    if(j.fixed&&j.fixed.length){ try{ await hubLoadAllDays(true); }catch(e){} renderAll(); }
+  }catch(e){ out.textContent='Nie udało się: '+e.message+(/akcj|unknown|nieznan/i.test(e.message)?' — w Apps Script wklej nowy Code.gs i zrób „Nowa wersja → Wdróż”.':''); } }
 async function hubLoadAllDays(force){
   if(!hubCfg()||HUBC.adBusy) return; if(!force&&HUBC.adAt&&Date.now()-HUBC.adAt<4*3600000) return; HUBC.adBusy=true;
   try{
@@ -3786,17 +3796,20 @@ function wlSnapPick(segs,s,e,mode){
 }
 /* ⏱ „Dopasuj czasy do pracy sprężarki” — jedna zasada w Dodaj (CO/CWU) i w COP */
 async function wlSnapFetch(s,e){ const ext0=toLocalStr(Date.parse(s)-3*3600000), ext1=toLocalStr(Math.min(Date.now(),(e?Date.parse(e):Date.now())+90*60000)); const j=await hubGet('wl',{from:ext0,to:ext1,step:1},60000); return (j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1); }
+function wlPhaseChain(segs,g){ const srt=segs.slice().sort((a,b)=>a.first<b.first?-1:1); let a=srt.indexOf(g), b=a; if(a<0) return '';
+  const gap=(x,y)=>(Date.parse(y.first)-Date.parse(segEnd(x)))/60000; while(a>0&&gap(srt[a-1],srt[a])<=25) a--; while(b<srt.length-1&&gap(srt[b],srt[b+1])<=25) b++;
+  return b>a?srt.slice(a,b+1).map(x=>x.mode+' '+x.first.slice(11,16)+(segRunning(x)?' →':'–'+segEnd(x).slice(11,16))).join(' → '):''; }
 async function hubSnapForm(p){
   const c=WXP[p], wi=$w(p+'_wlinfo'), st=$w(c.start).value, en=$w(c.end).value; if(!hubCfg()){ if(wi) wi.textContent='Najpierw skonfiguruj hub (zakładka „Na żywo”).'; return; }
   if(!st){ if(wi) wi.textContent='Najpierw podaj przybliżony start — dopasuję go do pracy sprężarki.'; return; }
   if(wi) wi.textContent='Dopasowuję do pracy sprężarki…';
-  try{ const g=wlSnapPick(wlSegments(await wlSnapFetch(st,en)),st,en,p==='co'?'CO':'CWU');
+  try{ const segs=wlSegments(await wlSnapFetch(st,en)), g=wlSnapPick(segs,st,en,p==='co'?'CO':'CWU');
     if(!g){ if(wi) wi.textContent='Warmlink nie pokazuje pracy sprężarki w pobliżu tego terminu.'; return; }
-    const running=segRunning(g);
-    const ns=g.first.slice(0,16), ne=running?'':segEnd(g);
+    const running=segRunning(g), chain=wlPhaseChain(segs,g);
+    const ns=g.first.slice(0,16), ne=running?'':segEnd(g), same=(ns===st&&ne===en);
     if(editId&&(ns!==st||ne!==en)&&!confirm('Dopasowanie zmieni czasy zapisanego wpisu:\n'+st.replace('T',' ')+' → '+(en||'—').replace('T',' ')+'\nna:\n'+ns.replace('T',' ')+' → '+(ne||'—').replace('T',' ')+'\n(tylko ta faza pracy sprężarki). Kontynuować?')){ if(wi) wi.textContent='Anulowano — czasy bez zmian.'; return; }
     $w(c.start).value=ns; $w(c.end).value=ne; $w(c.start).dataset.userTouched='1'; $w(c.end).dataset.userTouched='1'; $w(c.start).dispatchEvent(new Event('change',{bubbles:true}));
-    await hubAuto(p,true,undefined,c.ed()?'wl':undefined); if(wi) wi.textContent='Dopasowano: faza '+g.mode+' '+g.first.slice(5,16).replace('T',' ')+(running?' → trwa nadal':' → '+segEnd(g).slice(5,16).replace('T',' '))+'. '+wi.textContent;
+    await hubAuto(p,true,undefined,c.ed()?'wl':undefined); if(wi) wi.textContent=(same?'Czasy bez zmian — zgadzają się z fazą ':'Dopasowano: faza ')+g.mode+' '+g.first.slice(5,16).replace('T',' ')+(running?' → trwa nadal':' → '+segEnd(g).slice(5,16).replace('T',' '))+'. '+(chain?'Sprężarka pracuje w ciągu: '+chain+' — faza zaczyna się od przełączenia zaworu, nie od startu sprężarki. ':'')+wi.textContent;
   }catch(e){ if(wi) wi.textContent='Warmlink: '+e.message; }
 }
 async function cpSnap(){
@@ -3877,7 +3890,7 @@ async function hubGet(a,params,ms){
     catch(e){ if(e.name==='AbortError') throw e; throw new Error(await hubExplainFetchFail(c.base)); }
     const txt=await r.text(); let j; try{ j=JSON.parse(txt); }catch(e){ throw new Error('hub nie zwrócił danych (HTTP '+r.status+'): zwykle wdrożenie wymaga logowania albo ma starą wersję kodu — zrób „Nowa wersja → Wdróż”'); }
     if(!j.ok) throw new Error(j.error==='token'?'zły klucz dostępu w adresie huba':(j.error||'błąd huba')); return j; }
-  catch(e){ throw new Error(e.name==='AbortError'?'hub nie odpowiada (timeout)':e.message); } finally{ clearTimeout(to); }
+  catch(e){ throw new Error(e.name==='AbortError'?'hub nie odpowiada w '+Math.round((ms||25000)/1000)+' s („'+a+'”) — SolaX/Warmlink odpowiada wolno, spróbuj za chwilę':e.message); } finally{ clearTimeout(to); }
 }
 const hubN=v=>{ if(v==null||v==='') return null; if(typeof v==='string'&&/^\d{4}-\d\d-\d\dT/.test(v)){ const d=new Date(v); if(!isNaN(d)) return parseFloat(d.getDate()+'.'+(d.getMonth()+1)); }   /* Arkusz (PL) zamienia „3.5” na datę 3 maja — odtwarzamy liczbę */ const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
 const HUB_RNG={T01:[-20,95],T02:[-20,95],T04:[-45,60],T30:[0,130],T32:[0,130],T34:[0,520],T35:[0,80],T39:[0,40],T08:[0,95]};
@@ -4096,7 +4109,8 @@ async function hubPvAuto(force){
   try{
     let y=null, txt='';
     if(d===ymd(new Date())){ const j=await hubGet('live',{}); y=j.sx&&j.sx.yt; txt='dotychczasowa produkcja dziś (dzień jeszcze trwa)'; }
-    else { let row=HUBC.days[d]; if(!row){ let j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; if(!row){ try{ await hubGet('sxfill',{d},45000); j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; }catch(e){} } if(row){ HUBC.days[d]=row; hubSave(); } } if(row){ y=row.y; txt='szczyt '+(row.pk!=null?(row.pk/1000).toFixed(2)+' kW':'—')+(row.h0?', praca '+row.h0+'–'+row.h1:''); } }
+    else { let row=force?null:HUBC.days[d]; if(!row){ let j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; if(!row){ try{ await hubGet('sxfill',{d},45000); j=await hubGet('days',{from:d,to:d}); row=(j.rows||[])[0]; }catch(e){} } if(row){ HUBC.days[d]=row; hubSave(); } } if(row){ y=row.y; txt='szczyt '+(row.pk!=null?(row.pk/1000).toFixed(2)+' kW':'—')+(row.h0?', praca '+row.h0+'–'+row.h1:'');
+        try{ const w=await hubGet('pvwin',{from:d+'T00:00',to:d+'T23:59'},60000); if(y!=null&&w&&w.n>0&&w.covPct>=70&&w.kwhInt!=null&&y>w.kwhInt*1.3+0.5){ txt+=' · ⚠ suma dzienna w arkuszu ('+(+y).toFixed(1)+' kWh) jest wyższa niż całka z krzywej mocy ('+(+w.kwhInt).toFixed(1)+' kWh) — wpisano wartość z krzywej (napraw sumy: Na żywo → „Napraw sumy dzienne PV”)'; y=+w.kwhInt; } }catch(e){} } }
     if(y==null){ info.textContent='Nie udało się pobrać produkcji z tego dnia z SolaX (krzywa mocy sięga roku wstecz, sumy dzienne — od startu instalacji). Wpisz ręcznie.'; return; }
     hubPut($w('pv_kwh'),y,force); info.textContent='';
     { let big=$w('pv_hubbig'); if(!big){ big=document.createElement('div'); big.id='pv_hubbig'; const hb=$w('pv_hub'); hb.insertBefore(big,hb.children[1]||null); }
@@ -4348,7 +4362,9 @@ function liveChartHtml(){
   if(!P) return chips+'<div class="empty">Ładuję dane z huba…</div>';
   const rows=P.rows, runs=P.runs, days=LIVE_RGS.find(x=>x[0]===LIVE_RG)[2], now=Date.now(), f0=HUBC.wlR[LIVE_RG].from||0;
   if(rows.length<2) return chips+'<div class="empty">Za mało odczytów w tym zakresie ('+rows.length+'). Hub zbiera dane co 5 min.</div>';
-  runs.forEach(r=>{ r.live=segRunning(r.g); r.end=r.live?Math.max(now,r.end0):r.end0; r.min=Math.max(1,(r.end-r.start)/60000); r.cut=r.start-f0<45*60000; });
+  runs.forEach(r=>{ r.live=segRunning(r.g); const lastT=Date.parse(r.g.last); r.end=r.live?Math.max(lastT,Math.min(now,lastT+15*60000)):r.end0;      /* trwa: do ostatniego odczytu (najwyżej +15 min), nie w przyszłość */
+    if(r.live){ r.items.forEach(x=>{ x.w=Math.max(0.5,Math.min(x.w,(r.end-x.t)/60000)); }); r.work=r.items.reduce((a,b)=>a+b.w,0); }
+    r.min=Math.max(1,(r.end-r.start)/60000); r.cut=r.start-f0<45*60000; });
   HUBC.lzMap={}; runs.forEach(r=>HUBC.lzMap[r.id]=r);
   const from=LIVE_RG===1?now-864e5:lzDay0(days-1), inRg=runs.filter(r=>r.end>from);
   let sel=runs.find(r=>r.id===LIVE_SEL); if(!sel) sel=[...runs].reverse().find(r=>r.type==='CO')||runs[runs.length-1]||null; if(sel) LIVE_SEL=sel.id;
@@ -4363,7 +4379,9 @@ function liveChartHtml(){
   if(sel){ const D=lzDetail(sel,rows,Wd), dfs=lzDefs(rows).filter(q=>q.b>sel.start&&q.a<sel.end), dfm=dfs.reduce((a,q)=>a+(Math.min(q.b,sel.end)-Math.max(q.a,sel.start))/60000,0), st=(v,l)=>`<div class="lzstat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
     h+=`<div class="lzcard" id="lz_detail"><div class="lzcardh"><div class="lzselhead"><span class="lzpill" style="background:${LZ_C[sel.type]||LZ_C.CO}">${sel.type}</span><h2>${lzSpanTxt(sel)}</h2></div><div class="sub">${sel.valve?'Typ z zaworu CO/CWU':'Typ z przyrostu temp. zasobnika T08'}</div></div>`
      +(sel.cut?`<div class="warnline bad" style="margin:0 0 8px">Początek tego cyklu wypada przed pobranym zakresem danych — prawdziwy start jest wcześniejszy, a czas trwania dłuższy.</div>`:'')
-     +`<div class="lzstats">${st((sel.cut?'≥ ':'')+lzDur(sel.min),'czas cyklu (start → koniec)')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','moc grzewcza (szac.)')}${st(lzF1(sel.t04)+' °C','śr. temp. zewn. w trakcie cyklu')}${st(dfs.length?'❄ '+dfs.length+'× · '+lzDur(Math.max(1,dfm)):'brak','odszranianie w cyklu')}</div>`
+     +(()=>{ if(!sel.live) return ''; const Lw=HUBC.live&&HUBC.live.wl, v=Lw?hubVals(Lw.v):null; if(!v||!(v.T30>0)) return ''; const dt=(v.T01!=null&&v.T02!=null)?v.T02-v.T01:null, q=(dt!=null&&v.T39!=null)?v.T39*(+SET.rho||1000)*(+SET.cpw||4.186)*dt/3600:null;
+        return `<div class="note" style="margin:0 0 8px">Cykl trwa — kafelki poniżej to <b>średnie od startu</b>. Wartości chwilowe z tabeli „Pompa — teraz” są inne: ${lzF0(v.T30)} Hz${dt!=null?' · ΔT '+lzF1(dt)+' K':''}${q!=null?' · Q ≈ '+dc(q.toFixed(2))+' kW':''}.</div>`; })()
+     +`<div class="lzstats">${st((sel.cut?'≥ ':'')+lzDur(sel.min),'czas cyklu (start → koniec)')}${sel.work<sel.min*0.85?st(lzDur(sel.work),'w tym praca sprężarki'):''}${st(lzF0(sel.hzAvg)+' Hz','średnio w cyklu · max '+lzF0(sel.hzMax))}${st(lzF1(sel.t02max)+' °C','najwyższa T02')}${st(lzF1(sel.dt)+' K','średnia ΔT w cyklu')}${st(sel.q!=null?lzF1(sel.q)+' kW':'—','śr. moc grzewcza w cyklu (szac.)')}${st(lzF1(sel.t04)+' °C','śr. temp. zewn. w trakcie cyklu')}${st(dfs.length?'❄ '+dfs.length+'× · '+lzDur(Math.max(1,dfm)):'brak','odszranianie w cyklu')}</div>`
      +`<div class="lzmini">Temperatura wody <span>wylot T02 i wlot T01</span></div><div class="lzstage" id="lz_tStage">${D.tsvg}<div class="lztip" id="lz_tip2"></div></div>`
      +`<div class="lzmini">Sprężarka <span>częstotliwość [Hz]</span></div><div class="lzstage" id="lz_hStage">${D.hsvg}</div>`
      +(D.osvg?`<div class="lzmini">Temperatura zewnętrzna <span>T04 [°C]</span></div><div class="lzstage" id="lz_oStage">${D.osvg}</div>`:'')+`</div>`; }
@@ -4396,6 +4414,7 @@ function liveBind(){
   }
 }
 function renderLiveChart(){ const el=$w('live_chart'); if(!el) return; setCW('live_chart',1); el.innerHTML=liveChartHtml(); liveBind(); }
+const dc=x=>String(x).replace('.',',');
 function renderLive(){
   const tab=$w('live'); if(!tab) return;
   const hu=$w('hub_url'); if(hu&&document.activeElement!==hu) hu.value=SET.hubUrl||'';
@@ -4416,14 +4435,14 @@ function renderLive(){
         if(on&&cwSeg&&segRunning(cwSeg)) return 'zawór na <b>'+cwSeg.mode+'</b>'+nt('wyliczone ze zmian T08');
         if(!on&&cwSeg) return 'sprężarka stoi · ostatnio <b>'+cwSeg.mode+'</b> (do '+segEnd(cwSeg).slice(11,16)+')'+nt('wyliczone ze zmian T08');
         return on?'zawór na <b>CO</b>'+nt('za mało danych o T08 — zakładam CO'):'—'+nt(why+'; sprężarka stoi'); }, run=v.T30>0, dt=(v.T01!=null&&v.T02!=null)?v.T02-v.T01:null, q=(run&&dt!=null&&v.T39!=null)?v.T39*(+SET.rho||1000)*(+SET.cpw||4.186)*dt/3600:null, S=(v.T34&&v.T35)?Math.sqrt(3)*v.T34*v.T35/1000:null;
-    $w('live_wl').innerHTML=`<div class="statusrow"><span class="big" style="color:${run?'var(--ok)':'var(--muted)'}">${run?'● sprężarka pracuje'+(v.T30?' · '+v.T30+' Hz':''):'○ sprężarka stoi'}</span><span class="note">dane ${age(L.wl.ts)}</span></div>`
-      +grid(lk('T01 — wlot do pompy',v.T01!=null?v.T01+' °C':'—')+lk('T02 — wylot z pompy',v.T02!=null?v.T02+' °C':'—')+lk('ΔT (T02 − T01)',dt!=null?dt.toFixed(1)+' K':'—')+lk('T04 — temp. zewnętrzna',v.T04!=null?v.T04+' °C':'—')+lk('T39 — przepływ',v.T39!=null?v.T39+' m³/h':'—')
-      +lk('Moc grzewcza Q (szac. z T39·ΔT)',q!=null?q.toFixed(2)+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?v.T34+' V':'—')+' / '+(v.T35!=null?v.T35+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?S.toFixed(2)+' kVA':'—')+lk('T32 — maks. częstotliwość',v.T32!=null?v.T32+' Hz':'—')+lk('T08 — temp. CWU',v.T08!=null?v.T08+' °C':'—')+lk('O01 — sprężarka',oo('O01'))+lk('O10 — zawór CO/CWU',oo('O10')))
+    $w('live_wl').innerHTML=`<div class="statusrow"><span class="big" style="color:${run?'var(--ok)':'var(--muted)'}">${run?'● sprężarka pracuje'+(v.T30?' · '+dc(v.T30)+' Hz':''):'○ sprężarka stoi'}</span><span class="note">dane ${age(L.wl.ts)}</span></div>`
+      +grid(lk('T01 — wlot do pompy',v.T01!=null?dc(v.T01)+' °C':'—')+lk('T02 — wylot z pompy',v.T02!=null?dc(v.T02)+' °C':'—')+lk('ΔT teraz (T02 − T01)',dt!=null?dc(dt.toFixed(1))+' K':'—')+lk('T04 — temp. zewnętrzna',v.T04!=null?dc(v.T04)+' °C':'—')+lk('T39 — przepływ',v.T39!=null?dc(v.T39)+' m³/h':'—')
+      +lk('Moc grzewcza Q teraz (szac. z T39·ΔT)',q!=null?dc(q.toFixed(2))+' kW':'—')+lk('T34 napięcie / T35 prąd',(v.T34!=null?dc(v.T34)+' V':'—')+' / '+(v.T35!=null?dc(v.T35)+' A':'—'))+lk('Moc pozorna √3·T34·T35',S!=null?dc(S.toFixed(2))+' kVA':'—')+lk('T32 — maks. częstotliwość',v.T32!=null?dc(v.T32)+' Hz':'—')+lk('T08 — temp. CWU',v.T08!=null?dc(v.T08)+' °C':'—')+lk('O01 — sprężarka',oo('O01'))+lk('O10 — zawór CO/CWU',oo('O10')))
       +`<details style="margin-top:8px"><summary style="font-size:.8rem;margin:0">Wszystkie kody Warmlink (do rozpoznania zaworu 2-drogowego CO/CWU)</summary><div class="chips" style="margin-top:6px">${Object.keys(L.wl.v||{}).sort().map(k=>`<span class="chipv"><i>${wxEsc(k)}${WL_DESC[k]?' ('+WL_DESC[k]+')':''}</i><b>${wxEsc(String(L.wl.v[k]))}</b></span>`).join('')}</div></details>`
       +(L.oRaw?`<div class="note" style="margin-top:6px">Hub — ostatni odczyt O01/O10: ${wxEsc(L.oRaw)}</div>`:'')+(L.errWl?`<div class="warnline bad">Ostatni błąd odczytu Warmlink: ${wxEsc(L.errWl)}</div>`:''); }
   else $w('live_wl').innerHTML='<div class="empty">Brak odczytów Warmlink'+(L&&L.errWl?': '+wxEsc(L.errWl):' (hub zbiera dane co 5 min)')+'.</div>';
-  if(L&&L.sx){ const s=L.sx; $w('live_sx').innerHTML=`<div class="statusrow"><span class="big" style="color:${s.on?'var(--pv)':'var(--muted)'}">${s.on?'● falownik produkuje':'○ falownik nie produkuje'}${s.pw!=null?' · '+(s.pw/1000).toFixed(2)+' kW':''}</span><span class="note">dane ${age(s.ts)}</span></div>`
-      +grid(lk('Produkcja dziś',s.yt!=null?s.yt+' kWh':'—')+lk('Produkcja łącznie',s.tot!=null?s.tot+' kWh':'—'))+(L.errSx?`<div class="warnline bad">Ostatni błąd odczytu SolaX: ${wxEsc(L.errSx)}</div>`:''); }
+  if(L&&L.sx){ const s=L.sx; $w('live_sx').innerHTML=`<div class="statusrow"><span class="big" style="color:${s.on?'var(--pv)':'var(--muted)'}">${s.on?'● falownik produkuje':'○ falownik nie produkuje'}${s.pw!=null?' · '+dc((s.pw/1000).toFixed(2))+' kW':''}</span><span class="note">dane ${age(s.ts)}</span></div>`
+      +grid(lk('Produkcja dziś',s.yt!=null?dc(s.yt)+' kWh':'—')+lk('Produkcja łącznie',s.tot!=null?dc(s.tot)+' kWh':'—'))+(L.errSx?`<div class="warnline bad">Ostatni błąd odczytu SolaX: ${wxEsc(L.errSx)}</div>`:''); }
   else $w('live_sx').innerHTML='<div class="empty">Brak odczytów SolaX'+(L&&L.errSx?': '+wxEsc(L.errSx):'')+'.</div>';
   renderLiveChart();
   const rg=parseInt(($w('live_range')||{}).value,10)||30, from=addDaysS(ymd(new Date()),-rg), pvm=d=>PV.find(p=>p.date===d&&!(p.src&&p.src.indexOf('hub-auto')===0)), dset=new Set(Object.keys(HUBC.days)); PV.forEach(p=>{ if(p.date&&pvm(p.date)===p) dset.add(p.date); }); const ds=[...dset].filter(d=>d>=from).sort().reverse();
