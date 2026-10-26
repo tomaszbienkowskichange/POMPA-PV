@@ -1067,10 +1067,12 @@ details.card[open]>summary{margin-bottom:12px}
       <div style="flex:0 0 auto"><button class="apibtn pri" onclick="hubTest()">Test połączenia</button></div>
       <div style="flex:0 0 auto"><button class="apibtn" onclick="hubBfRun()">⬇ Pobierz historię SolaX</button></div>
       <div style="flex:0 0 auto"><button class="apibtn" onclick="hubDayFix()" title="Poprawia sumy dzienne PV zawyżone starym odczytem z poprzedniej doby (wymaga nowego Code.gs)">🛠 Napraw sumy dzienne PV</button></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubRecalcRuns()" title="Przelicza zapisane czasy pracy sprężarki (cykle i okresy COP) z odczytów huba">🔄 Przelicz czasy pracy sprężarki</button></div>
     </div>
     <div id="hub_status" class="note" style="margin-top:8px"></div>
     <div id="hub_bf" class="note" style="margin-top:6px"></div>
     <div id="hub_dayfix" class="note" style="margin-top:6px"></div>
+    <div id="hub_recalc" class="note" style="margin-top:6px"></div>
   </div>
     <div class="card">
     <h2>Cena energii — zużycie pompy ciepła</h2>
@@ -3120,7 +3122,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-10-25 · v44';
+const APP_BUILD='2026-10-25 · v45';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -3612,6 +3614,23 @@ function wxSavePvWin(){
 
 /* ===================== AUTOMAT: produkcja PV z SolaX i cykle pompy z Warmlinka ===================== */
 /* sumy dzienne z falownika → wpisy PV (tylko dni zakończone, bez wpisu ręcznego); usunięty wpis auto nie wraca */
+/* Przeliczenie czasów pracy sprężarki dla WSZYSTKICH zapisanych cykli i okresów COP z odczytów huba (stare wpisy mają wartości sprzed poprawek:
+   zerowe/„5 min” przy scalonym CO, CWU wliczone do CO, ostatni wiersz liczony za pełne 5 min). Najpierw podgląd i potwierdzenie. */
+async function hubRecalcRuns(){ const out=$w('hub_recalc'); if(!hubCfg()){ out.textContent='Najpierw skonfiguruj hub.'; return; }
+  const cut=addDaysS(ymd(new Date()),-45), rs=R.filter(r=>r.start&&r.end&&r.start>=cut&&(autoOwned(r)||(r.wls&&r.wls.src==='warmlink'))), ms=M.filter(m=>m.start&&m.end&&m.start>=cut&&(m.auto||m.src==='warmlink-auto')), ch=[]; let done=0, miss=0;
+  for(const it of [...rs.map(x=>({k:'R',x})),...ms.map(x=>({k:'M',x}))]){ const x=it.x, mode=it.k==='R'?x.type:x.mode; out.textContent='Przeliczam… '+(++done)+' / '+(rs.length+ms.length);
+    try{ const rows=await wlSnapFetch(x.start,x.end), S=hubWlSummary(rows,x.start,x.end,mode); if(!S.n||!S.cover){ miss++; continue; }
+      const run=Math.round(S.runMin), old=it.k==='R'?(x.wls?x.wls.run:null):x.runMin;
+      if(old==null||!(old>0)||Math.abs(old-run)>=2) ch.push({k:it.k,x,mode,S,run,old}); }catch(e){ miss++; } }
+  if(!ch.length){ out.textContent='Wszystkie zapisane czasy pracy są zgodne z odczytami huba (sprawdzono '+(rs.length+ms.length)+' wpisów'+(miss?', '+miss+' bez odczytów w hubie':'')+').'; return; }
+  const ex=ch.slice(0,10).map(c=>(c.k==='R'?'cykl ':'okres COP ')+c.mode+' '+fmtY(c.x.start)+': '+(c.old==null?'brak':c.old)+' → '+c.run+' min').join('\n');
+  if(!confirm('Zmienię czas pracy sprężarki w '+ch.length+' wpisach (pozostałe '+(rs.length+ms.length-ch.length-miss)+' bez zmian):\n\n'+ex+(ch.length>10?'\n… i '+(ch.length-10)+' kolejnych':'')+'\n\nKontynuować? (zalecana kopia zapasowa pliku danych)')){ out.textContent='Anulowano — nic nie zmieniono.'; return; }
+  const now=Date.now();
+  ch.forEach(c=>{ const S=c.S, el=(Date.parse(c.x.end)-Date.parse(c.x.start))/60000, pause=Math.max(0,Math.round(el-S.runMin-S.otherMin));
+    if(c.k==='R'){ c.x.wls=Object.assign({},c.x.wls||{},{run:c.run,def:Math.round(S.defMin),defN:S.defN||0,pause,src:'warmlink'}); if(S.t04!=null&&c.x.wls.t04==null) c.x.wls.t04=+S.t04.toFixed(1); if(S.hz&&c.x.wls.hz==null) c.x.wls.hz=Math.round(S.hz); }
+    else { c.x.runMin=c.run; c.x.defMin=Math.round(S.defMin); c.x.defN=S.defN||0; c.x.pauseMin=pause; }
+    c.x.updatedAt=now; });
+  await persist(); renderAll(); out.textContent='Zaktualizowano czas pracy sprężarki w '+ch.length+' wpisach.'+(miss?' '+miss+' wpisów bez odczytów w hubie pominięto.':''); }
 async function hubDayFix(){ const out=$w('hub_dayfix'); if(!hubCfg()){ out.textContent='Najpierw skonfiguruj hub.'; return; } out.textContent='Sprawdzam sumy dzienne z próbek falownika…';
   try{ const j=await hubGet('dayfix',{n:60},60000); HUBC.days={}; hubSave();
     out.textContent=(j.fixed&&j.fixed.length)?'Poprawiono '+j.fixed.length+' dni: '+j.fixed.map(x=>fmtDpl(x.d)+' '+x.was+' → '+x.now+' kWh').join('; ')+'.':'Sumy dzienne w arkuszu są spójne (sprawdzono '+j.checked+' dni).';
