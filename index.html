@@ -3122,7 +3122,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-10-25 · v45';
+const APP_BUILD='2026-10-26 · v46';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -4044,6 +4044,15 @@ function hubWlCtx(all,s,e){
   const pick=(ts,dir)=>{ const r=near(ts,12); return (r&&r.T30>0)?r:(runNear(ts,dir)||r); };
   return {rows,near:(a,b)=>wlFill(all,near(a,b)),runNear:(a,b)=>wlFill(all,runNear(a,b)),pick:(a,b)=>wlFill(all,pick(a,b))};
 }
+/* Godziny pracy falownika z arkusza DNI (h0–h1). Po zachodzie i przed wschodem falownik nie wysyła próbek, a produkcja wynosi 0 —
+   brak próbek w nocy to nie awaria pobierania (CWU wieczorem, CO przez noc). */
+async function pvDayHours(d0,d1){ const out={}; try{ const j=await hubGet('days',{from:d0,to:d1},30000); (j.rows||[]).forEach(r=>{ out[r.d]=r; HUBC.days=HUBC.days||{}; HUBC.days[r.d]=r; }); }catch(e){} return out; }
+function pvNightAt(dh,ts){ const d=ts.slice(0,10), t=ts.slice(11,16), r=dh[d]; if(!r||!r.h0||!r.h1) return null;
+  if(t>r.h1&&d<ymd(new Date())) return {y:r.y||0,why:'po zachodzie (tego dnia falownik pracował '+r.h0+'–'+r.h1+')'};
+  if(t<r.h0) return {y:0,why:'przed wschodem (tego dnia falownik pracował '+r.h0+'–'+r.h1+')'}; return null; }
+function pvPeriodIsNight(dh,st,to){ const a=Date.parse(st), b=Date.parse(to); if(isNaN(a)||isNaN(b)) return false; let d=new Date(a); d.setHours(0,0,0,0);
+  for(let g=0;g<10&&d.getTime()<=b;g++){ const k=ymd(d), r=dh[k]; if(!r||!r.h0||!r.h1) return false; if(k>=ymd(new Date())) return false; const p0=Date.parse(k+'T'+r.h0), p1=Date.parse(k+'T'+r.h1); if(a<p1&&b>p0) return false; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1); }
+  return true; }
 /* temperatura zasobnika po grzaniu CWU: maks. T08 od końca−5 min do końca+45 min, ale nie po starcie następnej pracy sprężarki (hub w postoju zapisuje rzadko, a T08 jeszcze chwilę rośnie) */
 function wlEndT08(all,endTs){ const e=Date.parse(endTs); if(isNaN(e)) return null;
   const nx=all.filter(r=>r.T30>0&&Date.parse(r.ts)>e+2*60000).map(r=>Date.parse(r.ts))[0], lim=Math.min(e+45*60000,nx==null?1e18:nx); let best=null;
@@ -4086,17 +4095,23 @@ async function hubAuto(p,force,trig,scope){
     return wmsg; };
   /* --- SolaX (falownik) --- */
   const pvPart=async()=>{ const msg=[];
-    try{ let a=await hubNear(st,'sx'), b=null; if(!curP()) return msg;
-      if(!(a&&a.sx)){ await new Promise(r=>setTimeout(r,2500)); if(!curP()) return msg; a=await hubNear(st,'sx'); }      /* SolaX czasem dociąga dzień z historii dopiero za drugim razem */
-      const s=a.sx;
-      if(s){ hubPut($w(p+'_pvon'),s.on?'1':'0',force); if(s.pw!=null) hubPut($w(p+'_pvkw'),+(s.pw/1000).toFixed(2),force); if(s.yt!=null) hubPut($w(p+'_pvday'),s.yt,force);
+    try{ const dh=await pvDayHours(st.slice(0,10),(to||st).slice(0,10)); if(!curP()) return msg;
+      const nt=pvNightAt(dh,st); let a=null, b=null;
+      if(!nt){ a=await hubNear(st,'sx'); if(!curP()) return msg;
+        if(!(a&&a.sx)){ await new Promise(r=>setTimeout(r,2500)); if(!curP()) return msg; a=await hubNear(st,'sx'); } }      /* SolaX czasem dociąga dzień z historii dopiero za drugim razem */
+      const s=a?a.sx:null;
+      if(nt){ hubPut($w(p+'_pvon'),'0',force); hubPut($w(p+'_pvkw'),0,force); hubPut($w(p+'_pvday'),nt.y,force);
+        msg.push('w chwili startu falownik nie produkuje — '+nt.why+(nt.y>0?', od rana '+nt.y+' kWh':'')+'; w nocy falownik nie wysyła próbek, więc to nie jest błąd pobierania'); }
+      else if(s){ hubPut($w(p+'_pvon'),s.on?'1':'0',force); if(s.pw!=null) hubPut($w(p+'_pvkw'),+(s.pw/1000).toFixed(2),force); if(s.yt!=null) hubPut($w(p+'_pvday'),s.yt,force);
         msg.push('w chwili startu PV '+(s.on?'pracuje':'nie pracuje')+(s.pw!=null?' ('+(s.pw/1000).toFixed(2)+' kW)':'')+(s.yt!=null?', od rana '+s.yt+' kWh':'')); }
       else msg.push('brak próbki falownika dla chwili startu');
-      if(to&&Date.parse(to)>Date.parse(st)+4*60000){
+      if(to&&Date.parse(to)>Date.parse(st)+4*60000&&pvPeriodIsNight(dh,st,to)){ hubPut($w(p+'_pvwin'),0,force); hubPut($w(p+'_pvrun'),0,force);
+        msg.push('w całym okresie'+lbl+' falownik nie produkował (cały okres poza godzinami jego pracy) → PV 0 kWh'); }
+      else if(to&&Date.parse(to)>Date.parse(st)+4*60000){
         let w=await hubGet('pvwin',{from:st.slice(0,16),to:to.slice(0,16)},60000); if(!curP()) return msg;
         if(!(w.n>0)){ await new Promise(r=>setTimeout(r,2500)); if(!curP()) return msg; w=await hubGet('pvwin',{from:st.slice(0,16),to:to.slice(0,16)},60000); if(!curP()) return msg; }
         if(w.n>0){ hubPut($w(p+'_pvwin'),w.kwh,force); if(w.runKwh!=null) hubPut($w(p+'_pvrun'),w.runKwh,force);
-          msg.push('w całym okresie'+lbl+' PV wyprodukowało '+(w.kwh!=null?w.kwh+' kWh':'—')+' (szczyt '+(w.peakW/1000).toFixed(2)+' kW'+(w.covPct<80?', dane tylko z '+w.covPct+'% okresu':'')+')'+(w.runKwh!=null?'; w minutach pracy sprężarki ('+w.runMin+' min) '+w.runKwh+' kWh':'')); }
+          msg.push('w całym okresie'+lbl+' PV wyprodukowało '+(w.kwh!=null?w.kwh+' kWh':'—')+' (szczyt '+(w.peakW/1000).toFixed(2)+' kW'+(w.covPct<80?', próbki tylko z '+w.covPct+'% okresu — falownik wysyła je tylko za dnia':'')+')'+(w.runKwh!=null?'; w minutach pracy sprężarki ('+w.runMin+' min) '+w.runKwh+' kWh':'')); }
         else msg.push('brak próbek falownika w okresie pracy'+(w&&w.errs&&w.errs.length?' ('+w.errs.join('; ')+')':'')); }
     }catch(e2){ msg.push('SolaX: '+e2.message+' (dane pompy z Warmlinka nie zależą od tego błędu)'); }
     return msg; };
