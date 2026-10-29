@@ -1006,6 +1006,7 @@ details.card[open]>summary{margin-bottom:12px}
 </div>
 
 <div class="tab" id="live">
+  <p class="note" style="margin:0 0 10px">Narzędzia naprawy danych (🔄 Przelicz czasy pracy sprężarki, 🛠 Napraw sumy dzienne PV, ⬇ Pobierz historię SolaX) są w <a href="#" onclick="document.querySelector('nav button[data-tab=ustawienia]').click();return false">Ustawieniach → Hub i dane</a>.</p>
   <div class="card"><h2>🔥 Pompa — teraz (Warmlink)</h2><div id="live_wl"></div><div class="apirow"><div style="flex:0 0 auto"><button class="apibtn" id="live_btn" onclick="hubRefreshLive(true)">↻ Odśwież teraz</button></div><div style="flex:1 1 200px"><span class="note" id="live_msg"></span></div></div></div>
   <div class="card"><h2>☀️ Falownik — teraz (SolaX)</h2><div id="live_sx"></div></div>
   <div id="live_chart"></div>
@@ -2745,10 +2746,13 @@ function renderDashboard(){
     if(c.Eh>0) return c.EhE>0?`<span title="COP z pomiaru dla ${Math.round(100*c.Eh/Et)}% energii; pozostałe ${Math.round(100*c.EhE/Et)}% (cykle bez pomiaru przepływu) nie jest wliczone">≈ ${(c.heat/c.Eh).toFixed(2)}</span>`:'≈ '+(c.heat/c.Eh).toFixed(2);
     const v=c.heatE/c.EhE; return c.EhE>0?`<span style="color:var(--muted)" title="szacunek: ${Math.round(100*c.EhE/Et)}% energii bez pomiaru przepływu — przyjęto średnie COP z pomiarów (CO: ${REF.CO.cop!=null?REF.CO.cop.toFixed(2):'—'}, CWU: ${REF.CWU.cop!=null?REF.CWU.cop.toFixed(2):'—'})">~ ${v.toFixed(2)}</span>`:'≈ '+v.toFixed(2); };
   const runCell=c=>c&&c.run>0?fmtHM(c.run)+(c.hNoRun>0?`<span title="część okresów nie ma zapisanego czasu pracy sprężarki">*</span>`:''):'—';
+  /* PV: źródło wpisu w podpowiedzi + ostrzeżenie, gdy dzienna produkcja jest nieprawdopodobnie wysoka względem nasłonecznienia (typowo: błędny odczyt z falownika) */
+  const pvCell=r=>{ if(!r.hasPv) return 'brak'; if(gran!=='day') return r.pv.toFixed(1); const es=PV.filter(x=>x.date===r.k), src=es.map(x=>x.src||'wpis ręczny').join(', '), est=wxPvEst(r.k), bad=est!=null&&est>0.5&&r.pv>est*1.8+2;
+    return `<span title="źródło: ${src||'—'}${est!=null?' · szacunek z nasłonecznienia ≈ '+est.toFixed(1)+' kWh':''}">${r.pv.toFixed(1)}</span>${bad?` <span style="color:var(--danger)" title="Produkcja ${r.pv.toFixed(1)} kWh jest ponad 1,8× wyższa niż szacunek z nasłonecznienia (${est.toFixed(1)} kWh) — sprawdź wpis PV z tego dnia (źródło: ${src||'wpis ręczny'}) i produkcję w aplikacji SolaX">⚠</span>`:''}`; };
   const covC=(b,has)=>has&&b.coverPct!=null?b.coverPct.toFixed(0)+'%':'—';
-  $('dashGranNote').textContent=`Wiersze: ${gran==='day'?'dni':gran==='week'?'tygodnie':'miesiące'} z wpisami (${rows.length}). „Brak” przy PV = brak wpisów produkcji w tym wierszu. Nadwyżka brutto = PV − pobór bezpośredni w godzinach PV; „do odbioru po opuście” = nadwyżka × opust (to jest energia realnie dostępna); bilans = do odbioru − pobór z sieci. Wiersz RAZEM liczony jest łącznie, nie jako suma wierszy. COP: „≈” = z pomiaru przepływu, „~” = szacunek dla okresów bez pomiaru (średnie COP z Twoich pomiarów osobno dla CO i CWU, minimum 3 okresy). „Czas okresów” to czas trwania okresów COP, „Praca sprężarki” — faktyczna praca sprężarki z odczytów (* = część okresów bez tego pomiaru).`;
-  $('dashMonths').innerHTML=rows.length?'<table class="rc"><thead><tr><th>Okres</th><th>Pompa kWh</th><th>w tym CO</th><th>w tym CWU</th><th>Koszt zł</th><th>Pompa w godz. PV kWh</th><th>Pompa z sieci kWh</th><th>PV kWh</th><th>Nadwyżka do sieci (brutto) kWh</th><th>Do odbioru po opuście kWh</th><th>Bilans (odbiór − pobór) kWh</th><th>Pokrycie przez PV</th><th>COP</th><th title="czas trwania okresów COP (start → koniec), nie praca sprężarki">Czas okresów (COP)</th><th title="faktyczny czas pracy sprężarki z odczytów; * = część okresów bez tego pomiaru">Praca sprężarki</th></tr></thead><tbody>'+rows.map(r=>
-    `<tr><td class="num">${lbl(r.k)}</td><td class="num"><b>${r.hp.toFixed(1)}</b></td><td class="num">${r.co.toFixed(1)}</td><td class="num">${r.cwu.toFixed(1)}</td><td class="num">${r.cost.toFixed(2)}</td><td class="num">${r.b.Eday.toFixed(1)}</td><td class="num">${r.b.grid.toFixed(1)}</td><td class="num">${r.hasPv?r.pv.toFixed(1):'brak'}</td><td class="num">${r.hasPv?r.b.surplus.toFixed(1):'—'}</td><td class="num">${r.hasPv?r.b.credit.toFixed(1):'—'}</td><td class="num">${balC(r.b,r.hasPv)}</td><td class="num">${covC(r.b,r.hasPv)}</td><td class="num"><b>${copCell(r.c)}</b></td><td class="num">${r.c&&r.c.h>0?fmtHM(r.c.h):'—'}</td><td class="num">${runCell(r.c)}</td></tr>`).join('')
+  $('dashGranNote').textContent=`Wiersze: ${gran==='day'?'dni':gran==='week'?'tygodnie':'miesiące'} z wpisami (${rows.length}). „Brak” przy PV = brak wpisów produkcji w tym wierszu. Nadwyżka brutto = PV − pobór bezpośredni w godzinach PV; „do odbioru po opuście” = nadwyżka × opust (to jest energia realnie dostępna); bilans = do odbioru − pobór z sieci. Wiersz RAZEM liczony jest łącznie, nie jako suma wierszy. UWAGA: nadwyżka PV jest teoretyczna — to produkcja minus pobór pompy w godzinach PV; aplikacja nie zna poboru innych urządzeń w domu, więc rzeczywisty eksport do sieci (a z nim „do odbioru po opuście” i bilans) bywa mniejszy, nawet zerowy. COP: „≈” = z pomiaru przepływu, „~” = szacunek dla okresów bez pomiaru (średnie COP z Twoich pomiarów osobno dla CO i CWU, minimum 3 okresy). „Czas okresów” to czas trwania okresów COP, „Praca sprężarki” — faktyczna praca sprężarki z odczytów (* = część okresów bez tego pomiaru).`;
+  $('dashMonths').innerHTML=rows.length?'<table class="rc"><thead><tr><th>Okres</th><th>Pompa kWh</th><th>w tym CO</th><th>w tym CWU</th><th>Koszt zł</th><th>Pompa w godz. PV kWh</th><th>Pompa z sieci kWh</th><th>PV kWh</th><th title="PV minus pobór pompy w godzinach PV. Nie uwzględnia innych odbiorników w domu, więc rzeczywisty eksport do sieci jest mniejszy (nawet zero).">Nadwyżka PV (teoretyczna) kWh</th><th title="nadwyżka teoretyczna × opust">Do odbioru po opuście kWh</th><th>Bilans (odbiór − pobór) kWh</th><th>Pokrycie przez PV</th><th>COP</th><th title="czas trwania okresów COP (start → koniec), nie praca sprężarki">Czas okresów (COP)</th><th title="faktyczny czas pracy sprężarki z odczytów; * = część okresów bez tego pomiaru">Praca sprężarki</th></tr></thead><tbody>'+rows.map(r=>
+    `<tr><td class="num">${lbl(r.k)}</td><td class="num"><b>${r.hp.toFixed(1)}</b></td><td class="num">${r.co.toFixed(1)}</td><td class="num">${r.cwu.toFixed(1)}</td><td class="num">${r.cost.toFixed(2)}</td><td class="num">${r.b.Eday.toFixed(1)}</td><td class="num">${r.b.grid.toFixed(1)}</td><td class="num">${pvCell(r)}</td><td class="num">${r.hasPv?r.b.surplus.toFixed(1):'—'}</td><td class="num">${r.hasPv?r.b.credit.toFixed(1):'—'}</td><td class="num">${balC(r.b,r.hasPv)}</td><td class="num">${covC(r.b,r.hasPv)}</td><td class="num"><b>${copCell(r.c)}</b></td><td class="num">${r.c&&r.c.h>0?fmtHM(r.c.h):'—'}</td><td class="num">${runCell(r.c)}</td></tr>`).join('')
     +`</tbody><tfoot><tr style="font-weight:700"><td>RAZEM<div class="note" style="font-size:.68rem;font-weight:400">bilans: tylko okresy z PV</div></td><td class="num">${T.hp.toFixed(1)}</td><td class="num">${T.co.toFixed(1)}</td><td class="num">${T.cwu.toFixed(1)}</td><td class="num">${T.cost.toFixed(2)}</td><td class="num">${T.b.Eday.toFixed(1)}</td><td class="num">${T.b.grid.toFixed(1)}</td><td class="num">${T.pv.toFixed(1)}</td><td class="num">${T.b.surplus.toFixed(1)}</td><td class="num">${T.b.credit.toFixed(1)}</td><td class="num">${balC(T.b,true)}</td><td class="num">${covC(T.b,true)}</td><td class="num">${T.Eh>0?'≈ '+(T.heat/T.Eh).toFixed(2):'—'}${T.EhE>0?`<div class="note" style="font-size:.68rem;font-weight:400">z pomiarów; z szacunkiem ~ ${((T.heat+T.heatE)/(T.Eh+T.EhE)).toFixed(2)}</div>`:''}</td><td class="num">${T.h?fmtHM(T.h):'—'}</td><td class="num">${T.run>0?fmtHM(T.run)+(T.hNoRun>0?'*':''):'—'}</td></tr></tfoot></table>`:'<div class="empty">Brak danych.</div>';
   const cats=keys.map(lbl);
   setCW('dashBalChart',1); $('dashBalChart').innerHTML=keys.length?svgGroup(cats,[{name:'Pompa (CO+CWU) kWh',color:'#e0904f',values:rows.map(r=>+r.hp.toFixed(2))},{name:'Pompa z sieci (poza godz. PV) kWh',color:'#c0504d',values:rows.map(r=>+r.b.grid.toFixed(2))},{name:'PV — produkcja kWh',color:'#e8c547',values:rows.map(r=>+r.pv.toFixed(2))},{name:'PV do odbioru po opuście kWh',color:'#5fb87a',values:rows.map(r=>+r.b.credit.toFixed(2))}],'kWh'):'<div class="empty">Brak danych.</div>';
@@ -3138,7 +3142,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-10-27 · v47';
+const APP_BUILD='2026-10-29 · v49';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -3661,11 +3665,20 @@ async function hubLoadAllDays(force){
     PV.forEach(p=>{ if(p.src&&p.src.indexOf('hub-auto')===0){ const r=HUBC.days[p.date]; if(r&&r.y>0&&p.date<to&&Math.abs(p.kwh-r.y)>0.05){ pvAutoSet(p,r.y); p.src='hub-auto'; n0++; } } });
     Object.values(HUBC.days).sort((a,b)=>a.d<b.d?-1:1).forEach(r=>{ if(!r.d||r.d>=to||!(r.y>0)||have.has(r.d)||skip.has(r.d)) return;
       const kwh=+(+r.y).toFixed(2), price=SET.pvPrice||0, credit=+(kwh*op).toFixed(3);
-      PV.push({id:uid(),date:r.d,kwh,price,mode,opust:op,creditKwh:credit,value:+(credit*price).toFixed(2),note:'auto z SolaX (hub)',src:'hub-auto',srcKwh:'hub'}); n++; });
+      PV.push({id:'pva'+r.d.replace(/-/g,''),date:r.d,kwh,price,mode,opust:op,creditKwh:credit,value:+(credit*price).toFixed(2),note:'auto z SolaX (hub)',src:'hub-auto',srcKwh:'hub'}); n++; });
     if(n||n0){ await persist(); }
   }catch(e){ HUBC.adErr=e.message; } finally{ HUBC.adBusy=false; }
 }
 function pvAutoSet(p,kwh){ const mode=SET.pvMode||'netbilling', op=mode==='opusty'?(SET.pvOpust||0):1, k=+(+kwh).toFixed(2), c=+(k*op).toFixed(3); p.kwh=k; p.creditKwh=c; p.opust=op; p.mode=mode; p.value=+(c*(p.price||SET.pvPrice||0)).toFixed(2); }
+/* Jeden dzień = jeden wpis PV. Duplikaty (np. dwa urządzenia założyły dzisiejszy wpis równocześnie, każde z innym ID) podwajały produkcję w Przeglądzie
+   (27.10: 15,5 + 15,5 = 31,0). Zostaje wpis najbliższy sumie dziennej z falownika (arkusz DNI), potem ręczny, potem najświeższy; reszta dostaje znacznik usunięcia. */
+function pvDedupe(){ const by=new Map(); PV.forEach(p=>{ if(!p.date) return; if(!by.has(p.date)) by.set(p.date,[]); by.get(p.date).push(p); });
+  let n=0, now=Date.now();
+  by.forEach((arr,d)=>{ if(arr.length<2) return; const hy=(HUBC.days&&HUBC.days[d]&&HUBC.days[d].y>0)?HUBC.days[d].y:null,
+      score=p=>[hy!=null?Math.abs(p.kwh-hy):0,(p.src&&p.src.indexOf('hub-auto')===0)?1:0,-(p.updatedAt||0)];
+    arr.sort((a,b)=>{ const x=score(a), y=score(b); for(let i=0;i<3;i++){ if(Math.abs(x[i]-y[i])>(i===0?0.05:0)) return x[i]-y[i]; } return 0; });
+    arr.slice(1).forEach(x=>{ const i=PV.indexOf(x); if(i>-1){ PV.splice(i,1); TOMB.push({type:'pv',id:x.id,deletedAt:now}); delete SIG['pv:'+x.id]; n++; } }); });
+  return n; }
 /* dzisiejszy wpis PV: powstaje, gdy falownik zacznie produkować, i rośnie z licznikiem dnia (po północy dostaje wartość końcową) */
 let PV_TODAY_AT=0;
 let EDIT_ORIG=null;      /* daty wpisu w chwili otwarcia do edycji — jeśli ich nie ruszysz ręcznie, zapis zostawia je bez zmian */
@@ -3673,7 +3686,7 @@ document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if(/^(co|
 async function pvAutoToday(){
   const L=HUBC.live&&HUBC.live.sx, d=ymd(new Date()); if(!L||!(L.yt>0)||(SET.pvNoAuto||[]).includes(d)||Date.now()-PV_TODAY_AT<5*60000) return; PV_TODAY_AT=Date.now();
   let p=PV.find(x=>x.date===d);
-  if(!p){ p={id:uid(),date:d,kwh:0,price:SET.pvPrice||0,note:'auto z SolaX (hub) — dzień trwa',src:'hub-auto-live',srcKwh:'hub'}; pvAutoSet(p,L.yt); PV.push(p); await persist(); }
+  if(!p){ p={id:'pva'+d.replace(/-/g,''),date:d,kwh:0,price:SET.pvPrice||0,note:'auto z SolaX (hub) — dzień trwa',src:'hub-auto-live',srcKwh:'hub'};      /* stałe ID: dwa urządzenia tworzą ten sam wpis, a nie dwa różne */ pvAutoSet(p,L.yt); PV.push(p); await persist(); }
   else if(p.src&&p.src.indexOf('hub-auto')===0&&Math.abs(p.kwh-L.yt)>0.05){ pvAutoSet(p,L.yt); p.src='hub-auto-live'; await persist(); }
 }
 /* przebiegi sprężarki z Warmlinka → szkice cykli (bez zużycia energii — to dopisuje użytkownik) */
@@ -4548,7 +4561,7 @@ function labelRc(){
   paginateTables();
   fitRc();
 }
-function renderAll(){ try{ pvNormalize(); }catch(e){} try{ hubRunHint(); renderTodo(); }catch(e){} renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); updateStoreBar(); renderDiskInfo(); renderApiTab(); renderLive(); labelRc(); }
+function renderAll(){ try{ if(pvDedupe()) persist(); }catch(e){} try{ pvNormalize(); }catch(e){} try{ hubRunHint(); renderTodo(); }catch(e){} renderTable(); renderDaily(); renderReports(); renderPv(); renderInv(); renderDocs(); renderDashboard(); renderCopHist(); updateStoreBar(); renderDiskInfo(); renderApiTab(); renderLive(); labelRc(); }
 renderAll();
 startupInit();
 setTimeout(()=>{ if(hubCfg()){ hubLoadAllDays(); hubAutoCycles(); } },4000); setInterval(()=>{ if(hubCfg()){ hubAutoCycles(); hubLoadAllDays(); } },10*60000);
