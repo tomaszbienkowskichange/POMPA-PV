@@ -1067,7 +1067,7 @@ details.card[open]>summary{margin-bottom:12px}
       <div style="flex:3 1 320px"><label>Adres huba (zawiera klucz dostępu)</label><input id="hub_url" type="password" autocomplete="off" onchange="hubSaveUrl()"></div>
       <div style="flex:0 0 auto"><button class="apibtn pri" onclick="hubTest()">Test połączenia</button></div>
       <div style="flex:0 0 auto"><button class="apibtn" onclick="hubBfRun()">⬇ Pobierz historię SolaX</button></div>
-      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubDayFix()" title="Poprawia sumy dzienne PV zawyżone starym odczytem z poprzedniej doby (wymaga nowego Code.gs)">🛠 Napraw sumy dzienne PV</button></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubDayFix()" title="Poprawia sumy dzienne PV zawyżone starym odczytem z poprzedniej doby (wymaga nowego Code.gs)">🛠 Napraw dane PV (czas próbek + sumy dzienne)</button></div>
       <div style="flex:0 0 auto"><button class="apibtn" onclick="hubRecalcRuns()" title="Przelicza zapisane czasy pracy sprężarki (cykle i okresy COP) z odczytów huba">🔄 Przelicz czasy pracy sprężarki</button></div>
     </div>
     <div id="hub_status" class="note" style="margin-top:8px"></div>
@@ -3142,7 +3142,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-10-29 · v49';
+const APP_BUILD='2026-10-29 · v50';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -3651,11 +3651,16 @@ async function hubRecalcRuns(){ const out=$w('hub_recalc'); if(!hubCfg()){ out.t
     else { c.x.runMin=c.run; c.x.defMin=Math.round(S.defMin); c.x.defN=S.defN||0; c.x.pauseMin=pause; }
     c.x.updatedAt=now; });
   await persist(); renderAll(); out.textContent='Zaktualizowano czas pracy sprężarki w '+ch.length+' wpisach.'+(miss?' '+miss+' wpisów bez odczytów w hubie pominięto.':''); }
-async function hubDayFix(){ const out=$w('hub_dayfix'); if(!hubCfg()){ out.textContent='Najpierw skonfiguruj hub.'; return; } out.textContent='Sprawdzam sumy dzienne z próbek falownika…';
+async function hubDayFix(){ const out=$w('hub_dayfix'); if(!hubCfg()){ out.textContent='Najpierw skonfiguruj hub.'; return; }
+  /* 1) uporządkuj kolumnę czasu w arkuszach SX/WL (mieszane formaty → formularz „brak próbek falownika”), 2) popraw zawyżone sumy dzienne PV */
+  out.textContent='Porządkuję kolumnę czasu w arkuszach…'; let tsMsg='';
+  try{ const t=await hubGet('tsfix',{},90000); const f=t.sx?t.sx.fixed:0, r=t.sx?t.sx.removed:0; tsMsg='Arkusz próbek SolaX: '+(f||r?'ujednolicono '+f+' czasów, usunięto '+r+' duplikatów':'czas w porządku')+'. '; }
+  catch(e){ tsMsg='(porządkowanie czasu pominięte: '+e.message+(/akcj|unknown|nieznan/i.test(e.message)?' — wdróż nowy Code.gs':'')+') '; }
+  out.textContent=tsMsg+'Sprawdzam sumy dzienne…';
   try{ const j=await hubGet('dayfix',{n:60},60000); HUBC.days={}; hubSave();
-    out.textContent=(j.fixed&&j.fixed.length)?'Poprawiono '+j.fixed.length+' dni: '+j.fixed.map(x=>fmtDpl(x.d)+' '+x.was+' → '+x.now+' kWh').join('; ')+'.':'Sumy dzienne w arkuszu są spójne (sprawdzono '+j.checked+' dni).';
+    out.textContent=tsMsg+((j.fixed&&j.fixed.length)?'Poprawiono '+j.fixed.length+' dni PV: '+j.fixed.map(x=>fmtDpl(x.d)+' '+x.was+' → '+x.now+' kWh').join('; ')+'.':'Sumy dzienne PV są spójne (sprawdzono '+j.checked+' dni).');
     if(j.fixed&&j.fixed.length){ try{ await hubLoadAllDays(true); }catch(e){} renderAll(); }
-  }catch(e){ out.textContent='Nie udało się: '+e.message+(/akcj|unknown|nieznan/i.test(e.message)?' — w Apps Script wklej nowy Code.gs i zrób „Nowa wersja → Wdróż”.':''); } }
+  }catch(e){ out.textContent=tsMsg+'Sumy PV: nie udało się: '+e.message+(/akcj|unknown|nieznan/i.test(e.message)?' — w Apps Script wklej nowy Code.gs i zrób „Nowa wersja → Wdróż”.':''); } }
 async function hubLoadAllDays(force){
   if(!hubCfg()||HUBC.adBusy) return; if(!force&&HUBC.adAt&&Date.now()-HUBC.adAt<4*3600000) return; HUBC.adBusy=true;
   try{
