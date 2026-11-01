@@ -1074,6 +1074,7 @@ details.card[open]>summary{margin-bottom:12px}
     <div id="hub_bf" class="note" style="margin-top:6px"></div>
     <div id="hub_dayfix" class="note" style="margin-top:6px"></div>
     <div id="hub_recalc" class="note" style="margin-top:6px"></div>
+    <label class="chk" style="margin-top:8px"><input type="checkbox" id="hub_mergeco" onchange="SET.mergeCO=this.checked;persist()"> Łącz w jeden cykl CO przerwane tylko CWU (domyślnie wyłączone: każdy odcinek CO między CWU jest osobnym cyklem, tak jak przy odczycie licznika przy każdym CWU)</label>
   </div>
     <div class="card">
     <h2>Cena energii — zużycie pompy ciepła</h2>
@@ -3149,7 +3150,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-11-01 · v52';
+const APP_BUILD='2026-11-01 · v53';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -3157,7 +3158,7 @@ const INST_DEFAULT=()=>[
   {name:'Separator zanieczyszczeń',maker:'Flamco',model:'Smart Clean 1" DN25',param:'',note:''}];
 function renderInstall(){
   const t=document.getElementById('inst_tbl'); if(!t) return; if(!Array.isArray(SET.install)) SET.install=INST_DEFAULT(); if(SET.waterL==null) SET.waterL=465;
-  const w=document.getElementById('inst_water'); if(w) w.value=SET.waterL; const ab=document.getElementById('app_build'); if(ab) ab.textContent='Wersja aplikacji: '+APP_BUILD+' (jeśli widzisz starszą, odśwież stronę — po zmianie wersji aplikacja sama pobiera nowy kod).';
+  const mcb=document.getElementById('hub_mergeco'); if(mcb) mcb.checked=!!SET.mergeCO; const w=document.getElementById('inst_water'); if(w) w.value=SET.waterL; const ab=document.getElementById('app_build'); if(ab) ab.textContent='Wersja aplikacji: '+APP_BUILD+' (jeśli widzisz starszą, odśwież stronę — po zmianie wersji aplikacja sama pobiera nowy kod).';
   const inp=(i,k,ph)=>`<input type="text" data-i="${i}" data-k="${k}" value="${escH(SET.install[i][k]||'')}" placeholder="${ph||''}" onchange="instSave()" style="width:100%;min-width:110px">`;
   t.innerHTML='<thead><tr><th>Składnik</th><th>Producent</th><th>Model</th><th>Parametr</th><th>Uwagi</th><th></th></tr></thead><tbody>'+SET.install.map((x,i)=>`<tr><td>${inp(i,'name')}</td><td>${inp(i,'maker')}</td><td>${inp(i,'model','do uzupełnienia')}</td><td>${inp(i,'param')}</td><td>${inp(i,'note')}</td><td><button type="button" class="apibtn" title="Usuń składnik" onclick="instDel(${i})">✕</button></td></tr>`).join('')+'</tbody>';
 }
@@ -3736,7 +3737,7 @@ async function hubAutoCycles(){
   if(!hubCfg()||HUBC.acBusy) return; HUBC.acBusy=true;
   try{
     const from0=SET.acLast&&SET.acLast>ymd(new Date(Date.now()-14*864e5))?SET.acLast:ymd(new Date(Date.now()-10*864e5));
-    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs0=wlSegments(rows), segs=wlMergeCO(segs0,(a,b)=>!R.some(r=>r.type==='CO'&&r.start&&Date.parse(r.start)>Date.parse(a.first)+15*60000&&Date.parse(r.start)<=Date.parse(b.last))), lastG=segs.reduce((m,g)=>!m||Date.parse(g.last)>Date.parse(m.last)?g:m,null);
+    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs0=wlSegments(rows), segs=SET.mergeCO?wlMergeCO(segs0,(a,b)=>!R.some(r=>r.type==='CO'&&r.start&&Date.parse(r.start)>Date.parse(a.first)+15*60000&&Date.parse(r.start)<=Date.parse(b.last))):segs0, lastG=segs.reduce((m,g)=>!m||Date.parse(g.last)>Date.parse(m.last)?g:m,null);
     syncAutoEnergy(); let changed=hubDedupeCycles(); const nowMs=Date.now(), labAll=new Map(); segs0.forEach(g=>g.rows.forEach(r=>labAll.set(String(r.ts).slice(0,16),g.mode)));
     const rdOf=(r0,ts,def)=>{ const r=wlFill(rows,r0); return {ts,c1:true,c2:true,def:!!def,k:null,t01:r?r.T01:null,t02:r?r.T02:null,t04:r?r.T04:null,flow:r?r.T39:null,hz:r?r.T30:null,volt:r?r.T34:null,amp:r?r.T35:null,p:null}; };
     const isDef=r=>r&&r.T01!=null&&r.T02!=null&&r.T02<r.T01-1;
@@ -4467,7 +4468,7 @@ function liveChartHtml(){
   const rows=P.rows, runs=P.runs, days=LIVE_RGS.find(x=>x[0]===LIVE_RG)[2], now=Date.now(), f0=HUBC.wlR[LIVE_RG].from||0;
   if(rows.length<2) return chips+'<div class="empty">Za mało odczytów w tym zakresie ('+rows.length+'). Hub zbiera dane co 5 min.</div>';
   runs.forEach(r=>{ r.live=segRunning(r.g); const lastT=Date.parse(r.g.last); r.end=r.live?Math.max(lastT,Math.min(now,lastT+15*60000)):r.end0;      /* trwa: do ostatniego odczytu (najwyżej +15 min), nie w przyszłość */
-    if(r.live){ r.items.forEach(x=>{ x.w=Math.max(0.5,Math.min(x.w,(r.end-x.t)/60000)); }); r.work=r.items.reduce((a,b)=>a+b.w,0); }
+    r.items.forEach(x=>{ x.w=Math.max(0.5,Math.min(x.w,(r.end-x.t)/60000)); }); r.work=r.items.reduce((a,b)=>a+b.w,0);      /* suma próbek nie przekracza czasu cyklu (CWU: 25 min w liście = 25 min w kafelku) */
     r.min=Math.max(1,(r.end-r.start)/60000); r.cut=r.start-f0<45*60000; });
   HUBC.lzMap={}; runs.forEach(r=>HUBC.lzMap[r.id]=r);
   const from=LIVE_RG===1?now-864e5:lzDay0(days-1), inRg=runs.filter(r=>r.end>from);
