@@ -1006,7 +1006,7 @@ details.card[open]>summary{margin-bottom:12px}
 </div>
 
 <div class="tab" id="live">
-  <p class="note" style="margin:0 0 10px">Narzędzia naprawy danych (🔄 Przelicz czasy pracy sprężarki, 🛠 Napraw sumy dzienne PV, ⬇ Pobierz historię SolaX) są w <a href="#" onclick="document.querySelector('nav button[data-tab=ustawienia]').click();return false">Ustawieniach → Hub i dane</a>.</p>
+  <p class="note" style="margin:0 0 10px">Narzędzia naprawy danych (🔄 Przelicz czas pracy i COP z huba, 🛠 Napraw sumy dzienne PV, ⬇ Pobierz historię SolaX) są w <a href="#" onclick="document.querySelector('nav button[data-tab=ustawienia]').click();return false">Ustawieniach → Hub i dane</a>.</p>
   <div class="card"><h2>🔥 Pompa — teraz (Warmlink)</h2><div id="live_wl"></div><div class="apirow"><div style="flex:0 0 auto"><button class="apibtn" id="live_btn" onclick="hubRefreshLive(true)">↻ Odśwież teraz</button></div><div style="flex:1 1 200px"><span class="note" id="live_msg"></span></div></div></div>
   <div class="card"><h2>☀️ Falownik — teraz (SolaX)</h2><div id="live_sx"></div></div>
   <div id="live_chart"></div>
@@ -1068,7 +1068,7 @@ details.card[open]>summary{margin-bottom:12px}
       <div style="flex:0 0 auto"><button class="apibtn pri" onclick="hubTest()">Test połączenia</button></div>
       <div style="flex:0 0 auto"><button class="apibtn" onclick="hubBfRun()">⬇ Pobierz historię SolaX</button></div>
       <div style="flex:0 0 auto"><button class="apibtn" onclick="hubDayFix()" title="Poprawia sumy dzienne PV zawyżone starym odczytem z poprzedniej doby (wymaga nowego Code.gs)">🛠 Napraw dane PV (czas próbek + sumy dzienne)</button></div>
-      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubRecalcRuns()" title="Przelicza zapisane czasy pracy sprężarki (cykle i okresy COP) z odczytów huba">🔄 Przelicz czasy pracy sprężarki</button></div>
+      <div style="flex:0 0 auto"><button class="apibtn" onclick="hubRecalcRuns()" title="Przelicza zapisane czasy pracy sprężarki (cykle i okresy COP) z odczytów huba">🔄 Przelicz czas pracy i COP z huba</button></div>
     </div>
     <div id="hub_status" class="note" style="margin-top:8px"></div>
     <div id="hub_bf" class="note" style="margin-top:6px"></div>
@@ -2931,6 +2931,12 @@ function calcPeriod(P,opt){
     }
   } else add('info','Brak poprawnego odczytu cieplnego (T01, T02 i T39 w trakcie pracy) — okres policzy zużycie, ale nie COP.');
 
+  /* ciepło z całkowania odczytów huba (co ok. 5 min) jest stabilniejsze niż 1–2 odczyty chwilowe: przy krótkim CWU jeden odczyt przy stopie dawał
+     COP od 1,4 do 4,2 przy podobnych warunkach, bo moc chwilowa waha się kilkukrotnie w trakcie podgrzewu */
+  { const hq=P.hq; if(hq&&hq.heat>0&&hq.start===P.start&&hq.end===P.end&&r.E>0&&!opt.noHq){ const runH=hq.run>0?hq.run/60:(r.runH!=null?r.runH:(P.runMin>0?P.runMin/60:null));
+      r.heatReadings=r.heat; r.copReadings=r.cop; r.heat=hq.heat; r.hasHeat=true; r.q=runH>0?hq.heat/runH:hq.heat/r.hours; r.cop=hq.heat/r.E; r.heatSrc='hub'; r.nHub=hq.n;
+      r.rel=0.08+(rE/r.E); r.lo=r.cop*(1-r.rel); r.hi=r.cop*(1+r.rel);
+      add('info','Ciepło ('+hq.heat.toFixed(2)+' kWh) policzone z całkowania '+hq.n+' odczytów z huba (co ok. 5 min) — dokładniejsze niż 1–2 odczyty chwilowe.'+(r.copReadings!=null?' COP z samych odczytów formularza: '+r.copReadings.toFixed(2)+'.':'')); } }
   /* --- średnie pozostałych wielkości --- */
   const ptsOf=(key,skipDef)=>rds.filter(x=>x[key]!=null&&!(skipDef&&x.def)).map(x=>({t:x.t,v:x[key]}));
   [['t01',1],['t02',1],['dt',1],['flow',1],['q',1],['t04',0],['hz',0],['S',0],['p',0],['volt',0]].forEach(([k,sd])=>{ const p=ptsOf(k,sd); r.avg[k]=p.length?twAvg(p,t0,t1):null; });
@@ -3067,6 +3073,7 @@ function rdAdd(){
 function rdDel(i){ collectRd(); RDS.splice(i,1); buildRdUi(); liveCop(); }
 function cpNow(id){ cpEl(id).value=nowLocal(); liveCop(); if(((id==='cp_end')||(id==='cp_start'&&!copEditId))&&hubCfg()) hubFillAll(false); }
 
+let CP_HQ=null;      /* ciepło z całkowania odczytów huba dla okresu w formularzu COP */
 function readCopForm(){
   collectRd();
   const c=copCtx||{rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff}, uo=!!(cpEl('cp_useoff')&&cpEl('cp_useoff').checked);
@@ -3074,7 +3081,7 @@ function readCopForm(){
   const rd=RDS.map((x,i)=>{ const o={ts:i===0?start:(i===last?end:x.ts),c1:x.c1,c2:x.c2,def:x.def,k:num(x.k)}; COPK.forEach(k=>o[k]=num(x.v[k])); return o; });
   const mx=(keys,minD)=>Math.max(minD,...RDS.flatMap(x=>keys.map(k=>decs(x.v[k],minD))));
   const kd=Math.max(1,...RDS.map(x=>decs(x.k,1)), decs(cpEl('cp_kwh').value,1));
-  return {id:copEditId,start,end,mode:cpEl('cp_mode').value,defMin:num(cpEl('cp_defmin').value)||0,kwh:num(cpEl('cp_kwh').value),rd,
+  return {id:copEditId,start,end,mode:cpEl('cp_mode').value,defMin:num(cpEl('cp_defmin').value)||0,kwh:num(cpEl('cp_kwh').value),rd,hq:(CP_HQ&&CP_HQ.start===start&&CP_HQ.end===end)?CP_HQ:undefined,
     res:{T:Math.pow(10,-mx(['t01','t02'],1)),F:Math.pow(10,-mx(['flow'],1)),E:Math.pow(10,-kd)},
     rho:c.rho,cpw:c.cpw,dtOff:c.dtOff,useOff:uo,hzMax:SET.hzMax,note:cpEl('cp_note').value.trim(),kmode:(cpEl('cp_kmode')||{}).value||'abs',runMin:num(cpEl('cp_runmin').value)||0};
 }
@@ -3142,7 +3149,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-10-29 · v50';
+const APP_BUILD='2026-11-01 · v52';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -3184,11 +3191,11 @@ function resetCopForm(){
   cpEl('cp_end').value=''; cpEl('cp_mode').value='CO'; cpEl('cp_useoff').checked=false;
   buildRdUi(); liveCop();
 }
-function cancelCopEdit(){ copEditId=null; copCtx=null; cpEl('copSubmitBtn').textContent='Zapisz okres pracy'; cpEl('copEditBar').style.display='none'; resetCopForm(); }
+function cancelCopEdit(){ copEditId=null; CP_HQ=null; copCtx=null; cpEl('copSubmitBtn').textContent='Zapisz okres pracy'; cpEl('copEditBar').style.display='none'; resetCopForm(); }
 function editCop(id){
   const m=M.find(x=>x.id===id); if(!m) return;
   document.querySelector('nav button[data-tab="cop"]').click();
-  copEditId=id; copCtx={rho:m.rho,cpw:m.cpw,dtOff:m.dtOff||0}; cpEl('cp_useoff').checked=!!m.useOff;
+  copEditId=id; CP_HQ=m.hq||null; copCtx={rho:m.rho,cpw:m.cpw,dtOff:m.dtOff||0}; cpEl('cp_useoff').checked=!!m.useOff;
   cpEl('copEditBar').style.display='flex'; cpEl('copSubmitBtn').textContent='Zapisz zmiany okresu';
   cpEl('cp_start').value=m.start; cpEl('cp_end').value=m.end||''; cpEl('cp_mode').value=m.mode;
   cpEl('cp_defmin').value=m.defMin||''; cpEl('cp_runmin').value=m.runMin||''; cpEl('cp_kmode').value=m.kmode||'abs'; cpEl('cp_kwh').value=m.kwh==null?'':m.kwh; cpEl('cp_note').value=m.note||'';
@@ -3210,7 +3217,7 @@ async function addCop(){
   const wasEdit=!!copEditId;
   if(wasEdit){ const i=M.findIndex(x=>x.id===copEditId); if(i>-1) M[i]={...M[i],...rec}; }
   else M.push({id:uid(),...rec});
-  copEditId=null; copCtx=null; cpEl('copSubmitBtn').textContent='Zapisz okres pracy'; cpEl('copEditBar').style.display='none';
+  copEditId=null; CP_HQ=null; copCtx=null; cpEl('copSubmitBtn').textContent='Zapisz okres pracy'; cpEl('copEditBar').style.display='none';
   resetCopForm(); await persist(); alert((wasEdit?'Zaktualizowano okres pracy.':'Zapisano okres pracy.')+(open?' Okres jest w toku (bez zatrzymania) — dopisz zatrzymanie później przyciskiem „Edytuj” w historii.':''));
 }
 async function delCop(id){ if(!confirm('Usunąć okres pracy?')) return; M=M.filter(m=>m.id!==id); await persist(); }
@@ -3637,20 +3644,21 @@ function wxSavePvWin(){
 /* Przeliczenie czasów pracy sprężarki dla WSZYSTKICH zapisanych cykli i okresów COP z odczytów huba (stare wpisy mają wartości sprzed poprawek:
    zerowe/„5 min” przy scalonym CO, CWU wliczone do CO, ostatni wiersz liczony za pełne 5 min). Najpierw podgląd i potwierdzenie. */
 async function hubRecalcRuns(){ const out=$w('hub_recalc'); if(!hubCfg()){ out.textContent='Najpierw skonfiguruj hub.'; return; }
-  const cut=addDaysS(ymd(new Date()),-45), rs=R.filter(r=>r.start&&r.end&&r.start>=cut&&(autoOwned(r)||(r.wls&&r.wls.src==='warmlink'))), ms=M.filter(m=>m.start&&m.end&&m.start>=cut&&(m.auto||m.src==='warmlink-auto')), ch=[]; let done=0, miss=0;
+  const cut=addDaysS(ymd(new Date()),-45), rs=R.filter(r=>r.start&&r.end&&r.start>=cut&&(autoOwned(r)||(r.wls&&r.wls.src==='warmlink'))), ms=M.filter(m=>m.start&&m.end&&m.start>=cut), ch=[]; let done=0, miss=0;
   for(const it of [...rs.map(x=>({k:'R',x})),...ms.map(x=>({k:'M',x}))]){ const x=it.x, mode=it.k==='R'?x.type:x.mode; out.textContent='Przeliczam… '+(++done)+' / '+(rs.length+ms.length);
-    try{ const rows=await wlSnapFetch(x.start,x.end), S=hubWlSummary(rows,x.start,x.end,mode); if(!S.n||!S.cover){ miss++; continue; }
-      const run=Math.round(S.runMin), old=it.k==='R'?(x.wls?x.wls.run:null):x.runMin;
-      if(old==null||!(old>0)||Math.abs(old-run)>=2) ch.push({k:it.k,x,mode,S,run,old}); }catch(e){ miss++; } }
-  if(!ch.length){ out.textContent='Wszystkie zapisane czasy pracy są zgodne z odczytami huba (sprawdzono '+(rs.length+ms.length)+' wpisów'+(miss?', '+miss+' bez odczytów w hubie':'')+').'; return; }
-  const ex=ch.slice(0,10).map(c=>(c.k==='R'?'cykl ':'okres COP ')+c.mode+' '+fmtY(c.x.start)+': '+(c.old==null?'brak':c.old)+' → '+c.run+' min').join('\n');
-  if(!confirm('Zmienię czas pracy sprężarki w '+ch.length+' wpisach (pozostałe '+(rs.length+ms.length-ch.length-miss)+' bez zmian):\n\n'+ex+(ch.length>10?'\n… i '+(ch.length-10)+' kolejnych':'')+'\n\nKontynuować? (zalecana kopia zapasowa pliku danych)')){ out.textContent='Anulowano — nic nie zmieniono.'; return; }
+    try{ const rows=await wlSnapFetch(x.start,x.end), isM=it.k==='M', S=hubWlSummary(rows,x.start,x.end,mode); if(!S.n||!S.cover){ miss++; continue; }
+      const run=Math.round(S.runMin), old=isM?x.runMin:(x.wls?x.wls.run:null), auto=isM?(x.auto||x.src==='warmlink-auto'):true;
+      const runChg=(auto||!(old>0))&&(old==null||!(old>0)||Math.abs(old-run)>=2), hq=isM?hqOf(hubWlSummary(rows,x.start,x.end,null,null,{rho:x.rho||SET.rho,cpw:x.cpw||SET.cpw,off:x.useOff?(x.dtOff||SET.dtOff||0):0}),x.start,x.end):undefined, hqChg=!!hq&&(!x.hq||x.hq.start!==x.start||x.hq.end!==x.end||Math.abs(x.hq.heat-hq.heat)>0.05);
+      if(runChg||hqChg){ let cop0=null,cop1=null; if(isM&&hqChg){ try{ cop0=calcPeriod(x).cop; cop1=calcPeriod(Object.assign({},x,{hq})).cop; }catch(e){} } ch.push({k:it.k,x,mode,S,run,old,runChg,hq,hqChg,cop0,cop1}); } }catch(e){ miss++; } }
+  if(!ch.length){ out.textContent='Czasy pracy i ciepło (COP) są zgodne z odczytami huba (sprawdzono '+(rs.length+ms.length)+' wpisów'+(miss?', '+miss+' bez odczytów w hubie':'')+').'; return; }
+  const f2=v=>v==null?'—':v.toFixed(2), ex=ch.slice(0,12).map(c=>(c.k==='R'?'cykl ':'okres COP ')+c.mode+' '+fmtY(c.x.start)+': '+(c.runChg?'czas pracy '+(c.old==null?'brak':c.old)+' → '+c.run+' min':'')+(c.runChg&&c.hqChg?' · ':'')+(c.hqChg?'COP '+f2(c.cop0)+' → '+f2(c.cop1)+' (ciepło z całkowania odczytów)':'')).join('\n');
+  if(!confirm('Zmienię '+ch.length+' wpisów (pozostałe '+(rs.length+ms.length-ch.length-miss)+' bez zmian):\n\n'+ex+(ch.length>12?'\n… i '+(ch.length-12)+' kolejnych':'')+'\n\nKontynuować? (zalecana kopia zapasowa pliku danych)')){ out.textContent='Anulowano — nic nie zmieniono.'; return; }
   const now=Date.now();
   ch.forEach(c=>{ const S=c.S, el=(Date.parse(c.x.end)-Date.parse(c.x.start))/60000, pause=Math.max(0,Math.round(el-S.runMin-S.otherMin));
     if(c.k==='R'){ c.x.wls=Object.assign({},c.x.wls||{},{run:c.run,def:Math.round(S.defMin),defN:S.defN||0,pause,src:'warmlink'}); if(S.t04!=null&&c.x.wls.t04==null) c.x.wls.t04=+S.t04.toFixed(1); if(S.hz&&c.x.wls.hz==null) c.x.wls.hz=Math.round(S.hz); }
-    else { c.x.runMin=c.run; c.x.defMin=Math.round(S.defMin); c.x.defN=S.defN||0; c.x.pauseMin=pause; }
+    else { if(c.runChg){ c.x.runMin=c.run; c.x.defMin=Math.round(S.defMin); c.x.defN=S.defN||0; c.x.pauseMin=pause; } if(c.hqChg) c.x.hq=c.hq; }
     c.x.updatedAt=now; });
-  await persist(); renderAll(); out.textContent='Zaktualizowano czas pracy sprężarki w '+ch.length+' wpisach.'+(miss?' '+miss+' wpisów bez odczytów w hubie pominięto.':''); }
+  await persist(); renderAll(); out.textContent='Zaktualizowano '+ch.length+' wpisów (czas pracy sprężarki i ciepło do COP).'+(miss?' '+miss+' wpisów bez odczytów w hubie pominięto.':''); }
 async function hubDayFix(){ const out=$w('hub_dayfix'); if(!hubCfg()){ out.textContent='Najpierw skonfiguruj hub.'; return; }
   /* 1) uporządkuj kolumnę czasu w arkuszach SX/WL (mieszane formaty → formularz „brak próbek falownika”), 2) popraw zawyżone sumy dzienne PV */
   out.textContent='Porządkuję kolumnę czasu w arkuszach…'; let tsMsg='';
@@ -3728,7 +3736,7 @@ async function hubAutoCycles(){
   if(!hubCfg()||HUBC.acBusy) return; HUBC.acBusy=true;
   try{
     const from0=SET.acLast&&SET.acLast>ymd(new Date(Date.now()-14*864e5))?SET.acLast:ymd(new Date(Date.now()-10*864e5));
-    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs0=wlSegments(rows), segs=wlMergeCO(segs0), lastG=segs.reduce((m,g)=>!m||Date.parse(g.last)>Date.parse(m.last)?g:m,null);
+    const j=await hubGet('wl',{from:from0+'T00:00',to:nowLocal()},60000), rows=(j.rows||[]).map(r=>Object.assign({},r,hubVals(r))).sort((a,b)=>a.ts<b.ts?-1:1), segs0=wlSegments(rows), segs=wlMergeCO(segs0,(a,b)=>!R.some(r=>r.type==='CO'&&r.start&&Date.parse(r.start)>Date.parse(a.first)+15*60000&&Date.parse(r.start)<=Date.parse(b.last))), lastG=segs.reduce((m,g)=>!m||Date.parse(g.last)>Date.parse(m.last)?g:m,null);
     syncAutoEnergy(); let changed=hubDedupeCycles(); const nowMs=Date.now(), labAll=new Map(); segs0.forEach(g=>g.rows.forEach(r=>labAll.set(String(r.ts).slice(0,16),g.mode)));
     const rdOf=(r0,ts,def)=>{ const r=wlFill(rows,r0); return {ts,c1:true,c2:true,def:!!def,k:null,t01:r?r.T01:null,t02:r?r.T02:null,t04:r?r.T04:null,flow:r?r.T39:null,hz:r?r.T30:null,volt:r?r.T34:null,amp:r?r.T35:null,p:null}; };
     const isDef=r=>r&&r.T01!=null&&r.T02!=null&&r.T02<r.T01-1;
@@ -3750,16 +3758,29 @@ async function hubAutoCycles(){
       if(ex){ const mm=ex.mid&&M.find(m=>m.id===ex.mid);
         if(en&&(!ex.end||(ex.guess&&ex.end!==en))){ ex.end=en; ex.open=undefined; if(ex.type==='CWU'&&tEnd!=null&&ex.t2==null) ex.t2=tEnd; changed=true; }
         if(ex.type==='CWU'&&ex.guess&&tEnd!=null&&ex.t2!==tEnd){ ex.t2=tEnd; changed=true; }
-        if(wls){ ex.wls=wls; changed=true; }
-        if(mm&&mm.auto&&!(mm.rd||[]).some(x=>x&&x.k!=null)){ if(!ex.guess){ mm.start=ex.start; mm.date=ex.start.slice(0,10); mm.end=ex.end||''; mm.open=ex.end?undefined:true; } else { mm.end=en||''; mm.open=en?undefined:true; } mm.rd=buildRd(g,st,en); if(wls){ mm.runMin=wls.run; mm.defMin=wls.def; mm.pauseMin=wls.pause; mm.defN=wls.defN; } changed=true; }
+        const own=(ex.end&&!ex.guess)?hubWlSummary(rows,ex.start,ex.end,ex.type,labAll):null;      /* cykl rozdzielony/poprawiony ręcznie: czasy z jego własnego okna, a nie ze scalonego odcinka */
+        const w2=own?(own.n&&own.cover?{run:Math.round(own.runMin),def:Math.round(own.defMin),defN:own.defN||0,pause:Math.max(0,Math.round((Date.parse(ex.end)-Date.parse(ex.start))/60000-own.runMin-own.otherMin)),t04:own.t04!=null?+own.t04.toFixed(1):undefined,hz:own.hz||undefined,src:'warmlink'}:undefined):wls;
+        if(w2){ ex.wls=w2; changed=true; }
+        if(mm&&mm.auto&&!(mm.rd||[]).some(x=>x&&x.k!=null)){ if(!ex.guess){ mm.start=ex.start; mm.date=ex.start.slice(0,10); mm.end=ex.end||''; mm.open=ex.end?undefined:true; } else { mm.end=en||''; mm.open=en?undefined:true; } mm.rd=buildRd(g,st,en); if(w2){ mm.runMin=w2.run; mm.defMin=w2.def; mm.pauseMin=w2.pause; mm.defN=w2.defN; }
+          if(mm.end){ const Sh=hubWlSummary(rows,mm.start,mm.end,null,null,{rho:mm.rho||SET.rho,cpw:mm.cpw||SET.cpw,off:mm.useOff?(mm.dtOff||0):0}); mm.hq=hqOf(Sh,mm.start,mm.end); } else mm.hq=undefined; changed=true; }
         return; }
       const type=g.mode, kk=type+Math.floor(Date.parse(st)/60000), mid='am'+kk, rid='ar'+kk;      /* id z czasu startu: to samo urządzenie/drugie urządzenie nie utworzy drugiego wpisu */
       if(TOMB.some(t=>t.id===rid)||R.some(r=>r.id===rid)) return;                              /* usunięty przez użytkownika albo już jest */
       const a=wlFill(rows,g.rows[0]), t04=a.T04!=null?a.T04:null, price=SET.price||0;
       R.push(type==='CO'?{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,out1:t04,out2:null,rad:null,slope:null,offset:null,kwh:null,price,note:'',auto:true,guess:true,wls}
                        :{id:rid,mid,type,date:st.slice(0,10),start:st,end:en,open:en?undefined:true,t1:a.T08>0?a.T08:null,t2:tEnd,out:t04,kwh:null,price,note:'',auto:true,guess:true,wls});
-      M.push({id:mid,rid,mode:type,date:st.slice(0,10),start:st,end:en||'',open:en?undefined:true,kwh:null,defMin:wls?wls.def:0,runMin:wls?wls.run:0,pauseMin:wls?wls.pause:0,defN:wls?wls.defN:0,rd:buildRd(g,st,en),res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true});
+      M.push({id:mid,rid,mode:type,date:st.slice(0,10),start:st,end:en||'',open:en?undefined:true,kwh:null,defMin:wls?wls.def:0,runMin:wls?wls.run:0,pauseMin:wls?wls.pause:0,defN:wls?wls.defN:0,rd:buildRd(g,st,en),res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true,hq:en?hqOf(hubWlSummary(rows,st,en,null,null,{rho:SET.rho,cpw:SET.cpw,off:0}),st,en):undefined});
       changed=true; });
+    /* Okres COP dla każdego zamkniętego cyklu z kWh: wcześniej automat zakładał go tylko razem z własnym wpisem, więc cykl wpisany ręcznie
+       (np. CO 31.10 12:32 → 01.11 12:17, 23,7 kWh) zostawał bez COP. Pomijam cykle, które mają już okres (też usunięty przez użytkownika: r.mid). */
+    { const first=rows.length?rows[0].ts.slice(0,16):'9';
+      R.forEach(r=>{ if(r.mid||!r.start||!r.end||!(r.kwh>0)||(r.type!=='CO'&&r.type!=='CWU')||r.start<first) return;
+        if(M.some(m=>m.mode===r.type&&m.start&&Math.abs(Date.parse(m.start)-Date.parse(r.start))<=30*60000)) return;
+        const mid='am'+r.type+Math.floor(Date.parse(r.start)/60000); if(TOMB.some(t=>t.id===mid)||M.some(m=>m.id===mid)) return;
+        const Sx=hubWlSummary(rows,r.start,r.end,r.type,labAll), Sq=hubWlSummary(rows,r.start,r.end,null,null,{rho:SET.rho,cpw:SET.cpw,off:0});
+        const w=rows.filter(x=>x.ts.slice(0,16)>=r.start&&x.ts.slice(0,16)<=r.end&&x.T30>0); if(!Sx.n||!Sx.cover||w.length<2) return;
+        M.push({id:mid,rid:r.id,mode:r.type,date:r.start.slice(0,10),start:r.start,end:r.end,kwh:r.kwh,defMin:Math.round(Sx.defMin),runMin:Math.round(Sx.runMin),pauseMin:Math.max(0,Math.round((Date.parse(r.end)-Date.parse(r.start))/60000-Sx.runMin-Sx.otherMin)),defN:Sx.defN||0,rd:buildRd({rows:w},r.start,r.end),res:{T:0.1,F:0.1,E:0.01},rho:SET.rho,cpw:SET.cpw,dtOff:SET.dtOff,useOff:false,hzMax:SET.hzMax,note:'',kmode:'abs',src:'warmlink-auto',auto:true,hq:hqOf(Sq,r.start,r.end)});
+        r.mid=mid; r.updatedAt=Date.now(); changed=true; }); }
     SET.acLast=ymd(new Date(Date.now()-5*864e5)); if(changed){ await persist(); }
     renderTodo(); setTimeout(()=>hubRepairM(true),500);
   }catch(e){ HUBC.acErr=e.message; } finally{ HUBC.acBusy=false; }
@@ -3819,11 +3840,11 @@ function wlSegments(rows){
 }
 /* Wieloletnia praktyka z Twojej instalacji: jedno grzanie CO trwa kilka dób i bywa tylko przerywane krótkim CWU. Odcinki CO przedzielone wyłącznie CWU
    sklejam w jeden cykl (CWU zostaje osobnym wpisem) — inaczej każdy odcinek lądował w „Do uzupełnienia” jako osobny cykl i energia była liczona kilka razy. */
-function wlMergeCO(segs){ const out=segs.slice();
+function wlMergeCO(segs,can){ const out=segs.slice();
   for(let i=0;i<out.length;){ const a=out[i]; if(a.mode!=='CO'){ i++; continue; }
     const nx=out.findIndex((g,k)=>k>i&&g.mode==='CO'); if(nx<0){ i++; continue; }
     const mid=out.slice(i+1,nx), b=out[nx];
-    if(mid.length&&mid.every(g=>g.mode==='CWU')&&(Date.parse(b.first)-Date.parse(a.last))/60000<=WL_CO_CWU_GAP){
+    if(mid.length&&mid.every(g=>g.mode==='CWU')&&(Date.parse(b.first)-Date.parse(a.last))/60000<=WL_CO_CWU_GAP&&(!can||can(a,b))){
       out[i]=Object.assign({},a,{rows:a.rows.concat(b.rows),last:b.last,boundaryEnd:b.boundaryEnd,valve:a.valve||b.valve,merged:(a.merged||1)+1}); out.splice(nx,1); }
     else i++; }
   return out; }
@@ -4003,7 +4024,7 @@ async function hubFillAll(manual){
     }
     let filled=0, got=0; const last=RDS.length-1;
     RDS.forEach((x,i)=>{ if(i===last&&open) return; const ts=i===0?s:(i===last?e:x.ts), r=ts?(i===0?pick(ts,1):i===last?pick(ts,-1):near(ts,12)):null; if(r){ got++; filled+=hubFillRd(i,wlFill(all,r),false); } });
-    const S=hubWlSummary(all,s,e,(cpEl('cp_mode')||{}).value||null), extra=[]; const rm=cpEl('cp_runmin'), dm=cpEl('cp_defmin');
+    const S=hubWlSummary(all,s,e,(cpEl('cp_mode')||{}).value||null), extra=[]; CP_HQ=open?null:hqOf(hubWlSummary(all,s,e,null,null,{rho:SET.rho,cpw:SET.cpw,off:(cpEl('cp_useoff')&&cpEl('cp_useoff').checked)?(+SET.dtOff||0):0}),s,e); if(CP_HQ) extra.push('ciepło z całkowania odczytów huba: '+CP_HQ.heat.toFixed(2)+' kWh ('+CP_HQ.n+' odczytów) — użyte do COP'); const rm=cpEl('cp_runmin'), dm=cpEl('cp_defmin');
     if(S.n&&S.cover){
       if(rm&&!rm.value&&S.runMin>0){ rm.value=Math.round(S.runMin); extra.push('czas pracy sprężarki '+Math.round(S.runMin)+' min'); }
       if(dm&&!dm.value&&S.defMin>0){ dm.value=Math.round(S.defMin); extra.push('odszranianie ok. '+Math.round(S.defMin)+' min'); }
@@ -4054,10 +4075,12 @@ document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if(/^(co|
 /* Podsumowanie pracy sprężarki w oknie [s,e]. onlyMode ('CO'|'CWU'): liczy tylko minuty pracy w tej fazie — CWU w środku cyklu CO jest osobnym wpisem,
    więc nie wlicza się do czasu pracy CO (pominięte minuty w otherMin). Przerwa w odczytach między dwoma „pracującymi” wierszami (np. CWU w środku
    scalonego cyklu CO albo chwilowy brak odczytu) nie unieważnia już całego okresu: do 90 min uznaję ciągłość pracy, a ilość takich minut zwracam. */
-function hubWlSummary(rows,s,e,onlyMode,lab){
+/* ciepło okresu z całkowania odczytów huba: Σ Q·Δt (Q = T39·ρ·c·ΔT, tylko gdy sprężarka pracuje i ΔT > 0). Zapisywane w okresie jako hq. */
+function hqOf(S,st,en){ return (S&&S.n&&S.cover&&S.nHeat>=2&&S.heat>0&&st&&en)?{heat:+S.heat.toFixed(3),n:S.nHeat,min:Math.round(S.heatMin),run:Math.round(S.runMin+(S.otherMin||0)),start:st,end:en,src:'warmlink'}:undefined; }
+function hubWlSummary(rows,s,e,onlyMode,lab,opt){
   const s16=s.slice(0,16), e16=e.slice(0,16), win=rows.map(r=>Object.assign({},r,hubVals(r),{ts:r.ts})).filter(r=>r.ts>=s16&&r.ts<=e16).sort((a,b)=>a.ts<b.ts?-1:1);
   if(onlyMode&&!lab){ lab=new Map(); try{ wlSegments(rows).forEach(g=>g.rows.forEach(r=>lab.set(String(r.ts).slice(0,16),g.mode))); }catch(_){} }
-  let runMin=0,otherMin=0,defMin=0,defN=0,prevDef=false,hz=0,t4s=0,t4t=0,t4n=0,t4a=null,t4b=null,lostMin=0,bridged=0,maxGap=0;
+  let runMin=0,otherMin=0,defMin=0,defN=0,prevDef=false,hz=0,t4s=0,t4t=0,t4n=0,t4a=null,t4b=null,lostMin=0,bridged=0,maxGap=0,heat=0,nHeat=0,heatMin=0;
   const eMs=Date.parse(e16);
   win.forEach((r,i)=>{ const t=Date.parse(r.ts), nx=win[i+1], tn=nx?Date.parse(nx.ts):t+5*60000, gap=(tn-t)/60000, run=r.T30>0; let dt=Math.min(15,Math.max(0,gap));
     if(nx){ maxGap=Math.max(maxGap,gap);
@@ -4065,10 +4088,11 @@ function hubWlSummary(rows,s,e,onlyMode,lab){
       else if(!run&&gap>200) lostMin+=gap-60; }                                                          /* długa przerwa w postoju — nie wiadomo, czy sprężarka nie pracowała */
     dt=Math.min(dt,Math.max(0,(eMs-t)/60000));      /* ostatni wiersz nie liczy się poza koniec okresu */
     const lb=lab?lab.get(String(r.ts).slice(0,16)):null, mine=!onlyMode||!lb||lb===onlyMode;
-    if(run){ if(mine){ runMin+=dt; hz=Math.max(hz,r.T30); const df=r.T01!=null&&r.T02!=null&&r.T02<r.T01-1; if(df){ defMin+=dt; if(!prevDef) defN++; } prevDef=df; } else { otherMin+=dt; prevDef=false; } }
+    if(run){ if(mine){ runMin+=dt; hz=Math.max(hz,r.T30); const df=r.T01!=null&&r.T02!=null&&r.T02<r.T01-1; if(df){ defMin+=dt; if(!prevDef) defN++; } prevDef=df;
+        if(opt&&opt.rho>0){ const dT=(r.T01!=null&&r.T02!=null)?(r.T02-r.T01-(opt.off||0)):null; if(dT>0&&r.T39>0){ heat+=r.T39*opt.rho*opt.cpw*dT/3600*dt/60; nHeat++; heatMin+=dt; } } } else { otherMin+=dt; prevDef=false; } }
     if(r.T04!=null){ t4s+=r.T04*dt; t4t+=dt; t4n++; t4a=t4a==null?r.T04:Math.min(t4a,r.T04); t4b=t4b==null?r.T04:Math.max(t4b,r.T04); } });
   const elapsed=Math.max(1,(Date.parse(e16)-Date.parse(s16))/60000);
-  return {n:win.length,runMin,otherMin,defMin,defN,hz,t04:t4n?(t4t>0?t4s/t4t:null):null,t04min:t4a,t04max:t4b,maxGap,lostMin,bridged,cover:lostMin<=Math.max(15,0.05*elapsed),first:win.length?win[0].ts:null,win};
+  return {n:win.length,runMin,otherMin,defMin,defN,heat,nHeat,heatMin,hz,t04:t4n?(t4t>0?t4s/t4t:null):null,t04min:t4a,t04max:t4b,maxGap,lostMin,bridged,cover:lostMin<=Math.max(15,0.05*elapsed),first:win.length?win[0].ts:null,win};
 }
 /* kontekst odczytów Warmlink dla okresu: rozszerzone okno (3 h przed startem), odczyt „start/stop” bierzemy z pracującej sprężarki */
 function hubWlCtx(all,s,e){
