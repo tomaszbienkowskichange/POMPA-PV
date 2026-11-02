@@ -3150,7 +3150,7 @@ function liveCop(){
 }
 document.getElementById('cop').addEventListener('input',liveCop);
 /* ===================== INSTALACJA (opis, edytowalny) ===================== */
-const APP_BUILD='2026-11-01 · v53';
+const APP_BUILD='2026-11-02 · v54';
 const INST_DEFAULT=()=>[
   {name:'Bufor',maker:'Galmet',model:'70-300000N',param:'322 l',note:''},
   {name:'Zawór rogowy (zawieszar)',maker:'Afriso',model:'',param:'',note:''},
@@ -4343,11 +4343,12 @@ function lzRuns(rows){
   const ix=new Map(rows.map((r,i)=>[r.ts,i])), rho=(+SET.rho||1000), cp=(+SET.cpw||4.186);
   return segs.map(g=>{
     const rs=g.rows, start=Date.parse(g.first), end0=Date.parse(segEnd(g)), items=rs.map(r=>{ const i=ix.get(r.ts), t=Date.parse(r.ts), n=rows[i+1], nx=n?(Date.parse(n.ts)-t)/60000:5; return {t,w:Math.max(1,Math.min(15,nx)),ty:g.mode}; });
-    const hz=rs.map(r=>r.T30).filter(v=>v>0), okdt=r=>r.T01!=null&&r.T02!=null&&r.T02>=r.T01;
-    let base=rs.filter(r=>r.T30>=40&&okdt(r)); if(!base.length) base=rs.filter(r=>r.T30>0&&okdt(r));
-    const t2=rs.map(r=>r.T02).filter(v=>v!=null), t4=rs.map(r=>r.T04).filter(v=>v!=null), qs=base.filter(r=>r.T39!=null).map(r=>r.T39*rho*cp*(r.T02-r.T01)/3600);
+    const hz=rs.map(r=>r.T30).filter(v=>v>0), okdt=r=>r.T01!=null&&r.T02!=null&&r.T02>=r.T01&&r.T30>0;
+    /* średnie ważone czasem po WSZYSTKICH odczytach pracy sprężarki (wcześniej tylko odczyty ≥ 40 Hz — zawyżało ΔT i moc o ok. 25–30%); moc jak w COP: Q = T39·ρ·c·ΔT, brak ΔT > 0 = 0 */
+    const wm=fn=>{ let sm=0,ww=0; rs.forEach((r,k)=>{ const v=fn(r); if(v==null||isNaN(v)) return; const w=items[k].w; sm+=v*w; ww+=w; }); return ww>0?sm/ww:null; };
+    const t2=rs.map(r=>r.T02).filter(v=>v!=null), t4=rs.map(r=>r.T04).filter(v=>v!=null);
     return {id:g.first,g,type:g.mode,valve:!!g.valve,start,end0,end:end0,live:false,min:Math.max(1,(end0-start)/60000),items,work:items.reduce((a,b)=>a+b.w,0),
-      hzAvg:lzAvg(hz),hzMax:hz.length?Math.max(...hz):null,t02max:t2.length?Math.max(...t2):null,dt:lzAvg(base.map(r=>r.T02-r.T01)),q:lzAvg(qs),t04:lzAvg(t4)};
+      hzAvg:wm(r=>r.T30>0?r.T30:null),hzMax:hz.length?Math.max(...hz):null,t02max:t2.length?Math.max(...t2):null,dt:wm(r=>okdt(r)?r.T02-r.T01:null),q:wm(r=>(okdt(r)&&r.T39!=null)?r.T39*rho*cp*(r.T02-r.T01)/3600:null),t04:lzAvg(t4)};
   });
 }
 /* odszranianie: sprężarka pracuje, a woda na wylocie jest zimniejsza od wlotu (T02 < T01 − 1 K) — ta sama zasada co w hubie (def) i w podsumowaniach cykli */
@@ -4376,11 +4377,11 @@ function lzKpis(runs,rows,from,now){
   const on=lv&&lvAge<=20?lv.T30>0:!!liveRun;
   const hzTxt=on?lzF0(lv&&lvAge<=20&&lv.T30>0?lv.T30:(liveRun&&liveRun.g.rows[liveRun.g.rows.length-1].T30))+' Hz'+(liveRun?' · '+liveRun.type+' od '+lzDM(liveRun.start)+' '+lzHM(liveRun.start):''):(last?'ostatnio '+last.type+' do '+lzDM(last.end)+' '+lzHM(last.end):'brak cykli w danych');
   const dfs=lzDefs(rows).filter(q=>q.b>from), dfm=dfs.reduce((a,q)=>a+(q.b-Math.max(q.a,from))/60000,0);
-  const k=(v,l)=>`<div class="lzkpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  const win=LIVE_RG===1?'ostatnie 24 h wstecz od teraz':'cały wybrany zakres', tipW=m=>`Suma czasu pracy sprężarki w ${m}: ${win}. Okno przesuwa się razem z czasem, więc przy podobnej pracy pompy każdego dnia wartość zmienia się wolno. Doba kalendarzowa: wykres poniżej (dziś / wczoraj).`, k=(v,l,tip)=>`<div class="lzkpi"${tip?` title="${tip}"`:''}><div class="v">${v}</div><div class="l">${l}</div></div>`;
   return `<div class="lzkpi"><div class="v"><span class="lzdot" style="background:${on?'var(--ok)':'var(--muted)'}"></span>${on?'pracuje':'stoi'}</div><div class="l">${hzTxt}</div></div>`
-    +k(hm(wco0(co,wk)),`<span style="color:${LZ_C.CO}">●</span> CO — praca sprężarki · <span style="color:var(--text)">${co.length} ${co.length===1?'cykl':'cykli'}</span>`)
-    +k(hm(wk(cw)),`<span style="color:${LZ_C.CWU}">●</span> CWU — praca sprężarki · <span style="color:var(--text)">${cw.length} ${cw.length===1?'cykl':'cykli'}</span>`)
-    +k(`${lzF1(dtAvg)}<small>K</small>`,'średnia ΔT (T02−T01) w cyklach CO')
+    +k(hm(wco0(co,wk)),`<span style="color:${LZ_C.CO}">●</span> CO — praca sprężarki · <span style="color:var(--text)">${co.length} ${co.length===1?'cykl':'cykli'}</span>`,tipW('CO'))
+    +k(hm(wk(cw)),`<span style="color:${LZ_C.CWU}">●</span> CWU — praca sprężarki · <span style="color:var(--text)">${cw.length} ${cw.length===1?'cykl':'cykli'}</span>`,tipW('CWU'))
+    +k(`${lzF1(dtAvg)}<small>K</small>`,'średnia ΔT (T02−T01) w cyklach CO',`Średnia ważona czasem po wszystkich odczytach pracy sprężarki w cyklach CO (${win}).`)
     +k(t4.length?`${lzF0(Math.min(...t4))}…${lzF0(Math.max(...t4))}<small>°C</small>`:'—',t4.length?`temp. zewnętrzna w całym zakresie (min…max) · średnia <span style="color:var(--text)">${lzF1(t4avg)} °C</span>${t4co!=null?` · w trakcie pracy CO <span style="color:var(--text)">${lzF1(t4co)} °C</span>`:''}`:'temp. zewnętrzna — brak odczytów')
     +k(dfs.length?`❄ ${dfs.length}<small>×</small>`:'0',dfs.length?`odszraniań w zakresie · łącznie <span style="color:var(--text)">${lzDur(Math.max(1,dfm))}</span>`:'odszraniań w zakresie');
 }

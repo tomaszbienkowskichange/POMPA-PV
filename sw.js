@@ -1,4 +1,4 @@
-const CACHE = 'pompa-pv-v53';
+const CACHE = 'pompa-pv-v54';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (e) => {
